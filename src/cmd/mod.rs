@@ -1,11 +1,11 @@
-use std::{env, vec};
+use std::{env, iter::repeat, vec};
 
 pub fn hello() {
     println!("--------hello--------");
-    let re = App::new()
+    let re = App::new("cmd")
         .about("这个程序主要是为了测试我写的 cmd crate")
         .author("chen bao")
-        .version("0.0.1".to_string())
+        .app_version_message("0.0.1".to_string())
         .add_command(
             Command::new("run")
                 .about("运行程序")
@@ -25,10 +25,10 @@ pub fn hello() {
         .run();
 
     match re {
-        Sdafadsf::Success => {
+        DidHandled::Handled => {
             return; // runs perfact.
         }
-        Sdafadsf::Failed(err_message) => {
+        DidHandled::Failed(err_message) => {
             print!("{}\n", err_message);
             return;
         }
@@ -37,16 +37,16 @@ pub fn hello() {
 
 pub fn test_app_default_action() {
     println!("--------test_app_default_action--------");
-    let re = App::new()
+    let re = App::new("cmd")
         .app_default_action(|| {
             print!("{:?}", "_x");
         })
         .run();
     match re {
-        Sdafadsf::Success => {
+        DidHandled::Handled => {
             return; // runs perfact.
         }
-        Sdafadsf::Failed(err_message) => {
+        DidHandled::Failed(err_message) => {
             print!("{}\n", err_message);
             return;
         }
@@ -54,11 +54,22 @@ pub fn test_app_default_action() {
 }
 
 struct App {
+    /// 此程序的名称
+    pub app_name: String,
+
+    /// 一句话介绍此程序.
     pub about: &'static str,
+
+    pub examples: Vec<String>,
+
+    /// 此程序的作者
     pub author: &'static str,
-    pub version: String,
+
+    /// 当用户查询此程序的 version 信息时显示的信息;
+    pub app_version_message: String,
 
     /// 此程序的帮助文档,
+    ///
     pub help_message: String,
 
     _commands: Vec<Command>,
@@ -70,9 +81,7 @@ struct App {
     pub command_arg: Vec<String>,
 
     /// 只输入了程序名称没有子命令也没有任何 flag 时之行的 action.
-    /// 如果 _app_default_action is None, 则会调用: self.print_help_message()
     _app_default_action: AppDefaultAction,
-    // _app_default_action: Option<(ArgCount, CommandAction)>,
 }
 
 enum AppDefaultAction {
@@ -81,7 +90,7 @@ enum AppDefaultAction {
 }
 
 impl App {
-    pub fn new() -> App {
+    pub fn new(app_name: &str) -> App {
         let env_arg: Vec<String> = env::args().collect();
 
         // 第 2 个一级后面的所有.
@@ -94,25 +103,32 @@ impl App {
         return App {
             about: "",
             author: "",
-            version: "0.0.1".to_string(),
+            app_version_message: "0.0.1".to_string(),
             help_message: "".to_string(),
 
             env_arg: env::args().collect(),
             command_arg: cmd_arg,
             _commands: vec![],
-            _app_default_action: AppDefaultAction::PrintHelpMessage, // _app_default_action == None 时会调用: self.print_help_message();
+            _app_default_action: AppDefaultAction::PrintHelpMessage,
+            app_name: app_name.to_string(),
+            examples: vec![], // _app_default_action == None 时会调用: self.print_help_message();
         };
     }
-
+    pub fn app_name(self, app_name: String) -> Self {
+        let mut re = self;
+        re.app_name = app_name;
+        return re;
+    }
     pub fn about(self, about: &'static str) -> Self {
         let mut re = self;
         re.about = about;
         return re;
     }
 
-    pub fn version(self, version: String) -> Self {
+    /// 当用户查询此程序的 version 信息时显示的信息;
+    pub fn app_version_message(self, version: String) -> Self {
         let mut re = self;
-        re.version = version;
+        re.app_version_message = version;
         return re;
     }
 
@@ -149,69 +165,101 @@ impl App {
         return re;
     }
 
-    pub fn run(self) -> Sdafadsf {
+    pub fn examples(self, arr: Vec<String>) -> Self {
+        let mut re = self;
+
+        re.examples = arr;
+        return re;
+    }
+    pub fn run(self) -> DidHandled {
         // 处理只输入了程序名称没有子命令也没有任何 flag 的情况.
         if self.env_arg.len() == 1 {
             match &self._app_default_action {
                 AppDefaultAction::PrintHelpMessage => {
-                    (&self).print_help_message();
-                    return Sdafadsf::Success;
+                    (&self).print_app_help();
+                    return DidHandled::Handled;
                 }
                 AppDefaultAction::RunAction(f) => {
                     f();
 
-                    return Sdafadsf::Success;
+                    return DidHandled::Handled;
                 }
             }
         }
 
-        // if self.env_arg.len() == 2 {
-        //     let first_arg = self.env_arg[1].clone();
         // 处理 App 的flags.
         // -h --help -v -version
-        //
-        // 有必要提供默认实现么?
-        // 先不提供默认实现.
-        // if first_arg.starts_with('-') {
-        //     if first_arg == "-h" || first_arg == "--help" {}
+        // if self.env_arg.len() == 2 {
+        //     if let Some(flag) = self.command_arg.first() {
+        //         let first_arg = flag;
 
-        //     if first_arg == "-v" || first_arg == "--version" {}
-        // }
-        // }
-
-        // let cmd = self.env_arg[1].clone();
-        // 处理子命令
-        // self._commands.iter().for_each(|x| {
-        //     if cmd == x.name || cmd == x.short_name {
-        //         if let Some(f) = &x.action {
-        //             f(&self.command_arg)
-        //         } else if is_debug_mode() {
-        //             print!(
-        //                 "DEBUG MESSAGE: x.action 是 None. \n{}:{} \n",
-        //                 file!(),
-        //                 line!()
-        //             );
+        //         if first_arg == "v"
+        //             || first_arg == "version"
+        //             || first_arg == "-v"
+        //             || first_arg == "--version"
+        //         {
+        //             println!("{}", self.app_version_message);
+        //             return Sdafadsf::Handled;
         //         }
         //     }
-        // });
+        // }
 
-        let cmd = self.env_arg[1].clone();
-
+        let re = heldle_app_version(&self);
+        match re {
+            DidHandled::Handled => return re,
+            DidHandled::Failed(_x) => {
+                // do nothing and continue.
+                if is_debug_mode() {
+                    println!("{}", _x);
+                }
+            }
+        }
         // 处理子命令
+        let command_name = self.env_arg[1].clone();
+
+        let re = handle_app_help(&self);
+        match re {
+            DidHandled::Handled => return re,
+            DidHandled::Failed(_x) => {
+                // do nothing and continue.
+            }
+        }
+
         for x in &self._commands {
-            if cmd == x.name || cmd == x.short_name {
+            if command_name == x.command_name || command_name == x.short_name {
+                let cmd_args = self.command_arg;
+
+                println!("self.env_arg.len() {}", self.env_arg.len());
+                if let Some(flag) = cmd_args.first() {
+                    let first_arg = flag;
+
+                    // println!("first_arg {}",first_arg);
+
+                    // 有必要提供默认实现么?
+                    // 先不提供默认实现.
+
+                    if first_arg == "--help" || first_arg == "-h" {
+                        // 打印 command 的帮助信息.
+                        x.print_command_help(self.app_name);
+                        println!("    x.print_help_message(self.app_name);");
+                        // println!("{}", x.help_document);
+                        return DidHandled::Handled;
+                    }
+                }
+
+                // 检查参数的数量是否是需要的参数数量.
                 if let Some((arg_count, f)) = &x.action {
-                    let cmd_args = self.command_arg;
                     match arg_count.check(&cmd_args) {
-                        Sdafadsf::Success => {
+                        DidHandled::Handled => {
+                            // 参数的数量符合要求.
                             f(cmd_args);
 
-                            return Sdafadsf::Success;
+                            return DidHandled::Handled;
                         }
-                        Sdafadsf::Failed(message) => return Sdafadsf::Failed(message),
+                        DidHandled::Failed(message) => return DidHandled::Failed(message),
                     };
                 } else {
-                    return Sdafadsf::Failed("还没有为此命令设置 action".to_string());
+                    return DidHandled::Failed("还没有为此命令设置 action".to_string());
                 }
             }
         }
@@ -219,11 +267,71 @@ impl App {
         // 错误处理
 
         // 一个命令都没匹配到.
+        return DidHandled::Failed(format!("未知命令: {:?}", self.env_arg));
 
-        return Sdafadsf::Failed(format!("未知命令: {:?}", self.env_arg));
+        fn heldle_app_version(app: &App) -> DidHandled {
+            // 处理 App 的flags.
+            // -h --help -v -version
+            let command_name = app.env_arg[1].clone();
+
+            if command_name == "v"
+                || command_name == "version"
+                || command_name == "-v"
+                || command_name == "--version"
+            {
+                println!("{}", app.app_version_message);
+
+                return DidHandled::Handled;
+            } else {
+                return DidHandled::Failed("不是 version 命令".to_string());
+            }
+        }
+
+        /// 处理 app help 的默认实现;  
+        /// // -h --help -v -version
+        fn handle_app_help(app: &App) -> DidHandled {
+            let command_name = app.env_arg[1].clone();
+
+            if !(command_name == "help"
+                || command_name == "h"
+                || command_name == "-h"
+                || command_name == "--help")
+            {
+                return DidHandled::Failed("不是程序的 help 命令".to_string());
+            }
+
+            //  "help" 命令 的默认实现, 这里处理的是: 是用 help 命令查询其他命令.
+            // 比如 `app help run` 查询 run 命令的帮助文档. 效果等同于 `app run --help`
+            if let Some(需要查心的命令名称) = app.command_arg.first() {
+                if 需要查心的命令名称 == "help"
+                    || 需要查心的命令名称 == "h"
+                    || 需要查心的命令名称 == "-h"
+                    || 需要查心的命令名称 == "--help"
+                {
+                    // 命令 ‘help' 的帮助文档
+                    //TODO:
+                    println!("命令 ‘help' 的帮助文档");
+
+                    return DidHandled::Handled;
+                }
+
+                for x in &app._commands {
+                    if 需要查心的命令名称 == x.command_name || 需要查心的命令名称 == x.short_name
+                    {
+                        x.print_command_help(app.app_name.clone());
+                        return DidHandled::Handled;
+                    }
+                }
+                return DidHandled::Failed("查询的命令不存在".to_string());
+            } else {
+                // 打印 App 的帮助信息.
+                app.print_app_help();
+                return DidHandled::Handled;
+            }
+        }
     }
 
-    pub fn print_help_message(&self) {
+    pub fn print_app_help(&self) {
         if self.help_message.trim() != "" {
             print!("{}", self.help_message);
             return;
@@ -238,7 +346,7 @@ impl App {
                 } else {
                     ", ".to_string() + x.short_name
                 };
-                let command_name = x.name;
+                let command_name = x.command_name;
 
                 // TODO: 为 cmd_name 添加颜色.
                 let cmd_name = command_name.to_string() + &short_name;
@@ -259,14 +367,17 @@ commands:
 "#,
             about = self.about,
             author = self.author,
-            version = self.version,
+            version = self.app_version_message,
         );
         print!("{}", message);
     }
 }
 
-enum Sdafadsf {
-    Success,
+enum DidHandled {
+    /// 表示匹配到了相关命令并正确执行了相关 action.
+    Handled,
+
+    /// 没匹配到相关命令或者其他错误.
     Failed(String),
 }
 #[derive(Clone, Copy, Debug)]
@@ -291,13 +402,13 @@ pub enum ArgCount {
 }
 
 impl ArgCount {
-    fn check(&self, cmd_args: &Vec<String>) -> Sdafadsf {
+    fn check(&self, cmd_args: &Vec<String>) -> DidHandled {
         let need_arg_count = self;
         let real_atgs_count = cmd_args.len();
         match need_arg_count {
             ArgCount::Zero => {
                 if real_atgs_count != 0 {
-                    return Sdafadsf::Failed(format!(
+                    return DidHandled::Failed(format!(
                         "需要的参数数量是 0 个, 实际是 {} 个: {:?}\n",
                         real_atgs_count, cmd_args,
                     ));
@@ -305,7 +416,7 @@ impl ArgCount {
             }
             ArgCount::One => {
                 if real_atgs_count != 1 {
-                    return Sdafadsf::Failed(format!(
+                    return DidHandled::Failed(format!(
                         "需要的参数数量是 1 个, 实际是 {} 个\n",
                         real_atgs_count
                     ));
@@ -313,7 +424,7 @@ impl ArgCount {
             }
             ArgCount::ZeroOrOne => {
                 if real_atgs_count == 0 || real_atgs_count == 1 {
-                    return Sdafadsf::Failed(format!(
+                    return DidHandled::Failed(format!(
                         "需要的参数数量是 0 个 或者 1 个参数, 实际是 {} 个\n",
                         real_atgs_count
                     ));
@@ -322,7 +433,7 @@ impl ArgCount {
             ArgCount::ZoreOrMany => {}
             ArgCount::OneOrMany => {
                 if real_atgs_count == 0 {
-                    return Sdafadsf::Failed(format!(
+                    return DidHandled::Failed(format!(
                         "至少需要一个参数, 实际是 {} 个\n",
                         real_atgs_count
                     ));
@@ -330,7 +441,7 @@ impl ArgCount {
             }
             ArgCount::Count(count) => {
                 if real_atgs_count == *count as usize {
-                    return Sdafadsf::Failed(format!(
+                    return DidHandled::Failed(format!(
                         "至少需要 {} 个参数, 实际是 {} 个\n",
                         count, real_atgs_count,
                     ));
@@ -338,26 +449,25 @@ impl ArgCount {
             }
         };
 
-        return Sdafadsf::Success;
+        return DidHandled::Handled;
     }
 }
 
 // #[derive(Debug)]
 pub struct Command {
+    /// 命令名   
     /// 命令的名称长度最好不要超过 20 个字符.
-    name: &'static str,
+    command_name: &'static str,
 
-    ///
+    /// 命令名的简写形式, 通常是一个字符  
     short_name: &'static str,
 
-    /// 参数的数量,
-    /// 如果没有参数, arg_count = ArgCount::Zero.
-    arg_count: ArgCount,
-
+    /// 一句话介绍此命令
     about: &'static str,
 
-    /// 此命令的帮助文档.
-    help_message: &'static str,
+    /// 自定义的帮助文档.
+    /// 当用户使用 help 命令查询此命令时显示的帮助文档.
+    help_document: &'static str,
 
     /// command action with command_arg
     action: Option<(ArgCount, CommandAction)>,
@@ -374,11 +484,11 @@ impl Command {
         }
 
         return Command {
-            name: name,
+            command_name: name,
             about: "",
-            help_message: "",
+            help_document: "",
             action: None,
-            arg_count: ArgCount::Zero,
+            // arg_count: ArgCount::Zero,
             short_name: "",
         };
     }
@@ -398,9 +508,9 @@ impl Command {
     }
 
     /// set `Command.example`
-    pub fn example(self, str: &'static str) -> Self {
+    pub fn help_document(self, str: &'static str) -> Self {
         let mut re = self;
-        re.help_message = str;
+        re.help_document = str;
         return re;
     }
 
@@ -415,6 +525,53 @@ impl Command {
         return re;
     }
 
+    pub fn print_command_help(&self, app_name: String) {
+        println!("command  print_help_message");
+        if self.help_document != "" {
+            // 自定义了帮助文档的情况;
+            println!("{}", self.help_document);
+        } else {
+            // 自动生成这个 Command 的帮助文档
+
+            let arg: String = if let Some((arg_count, _)) = &self.action {
+                match arg_count {
+                    ArgCount::Zero => "".to_string(),
+                    ArgCount::One => "argument -- one argument".to_string(),
+                    ArgCount::ZeroOrOne => "[argument] -- zore or one argument".to_string(),
+                    ArgCount::ZoreOrMany => "[arguments...] -- zore or many argument".to_string(),
+                    ArgCount::OneOrMany => "<arguments...> -- zore or many argument".to_string(),
+                    ArgCount::Count(count) => {
+                        let mut i = 0;
+                        let mut re: String = "".to_string();
+                        while i < *count {
+                            re.push_str(" argument");
+                            i += 1;
+                        }
+
+                        re
+                    }
+                }
+            } else {
+                "".to_string()
+            };
+
+            let message = format!(
+                r#"
+{about}
+Usage:
+    {app_name} {command_name} {arg}
+version: {command_name}
+
+commands:
+{short_name}
+"#,
+                about = self.about,
+                command_name = self.command_name,
+                short_name = self.short_name,
+            );
+            print!("{}", message);
+        }
+    }
     // /// set `Command.arg_count`
     // pub fn arg_count(self, arg_count: ArgCount) -> Self {
     //     let mut re = self;
