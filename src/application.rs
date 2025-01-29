@@ -1,10 +1,13 @@
 use super::*;
+use std::rc::Rc;
 
+#[derive(Clone)]
 pub enum AppDefaultAction {
     PrintHelpMessage,
-    RunAction(Box<dyn Fn() -> ()>),
+    RunAction(Rc<dyn Fn() -> ()>),
 }
 
+#[derive(Clone)]
 pub struct App {
     /// 此程序的名称
     pub app_name: String,
@@ -30,7 +33,7 @@ pub struct App {
     pub env_arg: Vec<String>,
 
     /// 子命令的 “参数”
-    pub command_arg: Vec<String>,
+    pub sub_command_arg: Vec<String>,
 
     /// 只输入了程序名称没有子命令也没有任何 flag 时之行的 action.
     _app_default_action: AppDefaultAction,
@@ -39,11 +42,42 @@ pub struct App {
 impl App {
     // -------- Public Part --------
 
+    /// 在 debug 模式下强制使用 debug_run(env_args: Vec<&str>) 函数中的 env_args.
+    /// 此函数会忽略程序真正的 env_args.
+    pub fn test_run(self, env_args: Vec<&str>) -> Self {
+        println!("------- test_run: {:?} -------", env_args);
+
+        let mut re = self.clone();
+        let env_arg: Vec<String> = env_args.iter().map(|x| x.to_string()).collect();
+
+        // 第 2 个一级后面的所有.
+        let sub_cmd_arg: Vec<String> = if env_arg.len() > 2 {
+            env_arg[2..].to_vec()
+        } else {
+            vec![]
+        };
+
+        re.sub_command_arg = sub_cmd_arg;
+        re.env_arg = env_arg;
+
+        let did_handled = re.run();
+
+        match did_handled {
+            DidHandled::Handled => { /* runs perfact. */ }
+            DidHandled::Failed(err_message) => {
+                print!("{}\n", err_message);
+            }
+        }
+
+        return self;
+    }
+
     pub fn new(app_name: &str) -> App {
+        use std::env;
         let env_arg: Vec<String> = env::args().collect();
 
         // 第 2 个一级后面的所有.
-        let cmd_arg: Vec<String> = if env_arg.len() > 2 {
+        let sub_cmd_arg: Vec<String> = if env_arg.len() > 2 {
             env_arg[2..].to_vec()
         } else {
             vec![]
@@ -55,8 +89,9 @@ impl App {
             app_version_message: "0.0.1".to_string(),
             help_message: "".to_string(),
 
-            env_arg: env::args().collect(),
-            command_arg: cmd_arg,
+            // env_arg: env::args().collect(),
+            env_arg: env_arg,
+            sub_command_arg: sub_cmd_arg,
             _commands: vec![],
             _app_default_action: AppDefaultAction::PrintHelpMessage,
             app_name: app_name.to_string(),
@@ -93,7 +128,7 @@ impl App {
         F: Fn() -> () + 'static,
     {
         let mut re = self;
-        re._app_default_action = AppDefaultAction::RunAction(Box::new(action));
+        re._app_default_action = AppDefaultAction::RunAction(Rc::new(action));
         return re;
     }
 
@@ -122,35 +157,78 @@ impl App {
     }
 
     pub fn run(self) -> DidHandled {
-        if let Some(command_name) = self.env_arg.get(1) {
-            {
-                let re = self._heldle_app_version();
-                match re {
-                    DidHandled::Handled => return re,
-                    DidHandled::Failed(_x) => {
-                        /*  do nothing and continue. */
-                        // if is_debug_mode() {
-                        //     println!("{}", _x)
-                        // }
+        let asdf = self.env_arg.get(1);
+        match asdf {
+            None => {
+                //只输入了程序名称没有子命令也没有任何 flag
+
+                return self._handle_app_default_acton();
+            }
+            Some(command_name) => {
+                {
+                    let re = self._heldle_app_version();
+                    match re {
+                        DidHandled::Handled => return re,
+                        DidHandled::Failed(_x) => {
+                            /* continue. */
+
+                            // if is_debug_mode() {
+                            //     println!("{}", _x)
+                            // }
+                        }
+                    }
+                }
+
+                {
+                    let re = self._handle_app_help();
+                    match re {
+                        DidHandled::Handled => return re,
+                        DidHandled::Failed(_x) => { /* continue. */ }
+                    }
+                }
+
+                {
+                    let re = self._handle_commands(command_name);
+                    match re {
+                        DidHandled::Handled => return re,
+                        DidHandled::Failed(_x) => { /* 这是最后一个 handle 项目了, 直接返回. */ 
+                                    return DidHandled::Failed(_x);
+                        }
                     }
                 }
             }
+        }
+        // if let Some(command_name) = self.env_arg.get(1) {
+        //     {
+        //         let re = self._heldle_app_version();
+        //         match re {
+        //             DidHandled::Handled => return re,
+        //             DidHandled::Failed(_x) => {
+        //                 /*  do nothing and continue. */
+        //                 // if is_debug_mode() {
+        //                 //     println!("{}", _x)
+        //                 // }
+        //             }
+        //         }
+        //     }
 
-            {
-                let re = self._handle_app_help();
-                match re {
-                    DidHandled::Handled => return re,
-                    DidHandled::Failed(_x) => { /*  do nothing and continue. */ }
-                }
-            }
+        //     {
+        //         let re = self._handle_app_help();
+        //         match re {
+        //             DidHandled::Handled => return re,
+        //             DidHandled::Failed(_x) => { /*  do nothing and continue. */ }
+        //         }
+        //     }
 
-            {
-                let re = self._handle_commands(command_name);
-                match re {
-                    DidHandled::Handled => return re,
-                    DidHandled::Failed(_x) => { /*  do nothing and continue. */ }
-                }
-            }
+        //     {
+        //         let re = self._handle_commands(command_name);
+        //         match re {
+        //             DidHandled::Handled => return re,
+        //             DidHandled::Failed(_x) => { /*  do nothing and continue. */ }
+        //         }
+        //     }
+
+
             // for x in &self._commands {
             //     if command_name == x.command_name || command_name == x.short_name {
             //         let cmd_args = self.command_arg;
@@ -189,20 +267,20 @@ impl App {
             //         }
             //     }
             // }
-        } else {
-            //只输入了程序名称没有子命令也没有任何 flag
+        // } else {
+        //     //只输入了程序名称没有子命令也没有任何 flag
 
-            let re = self._handle_app_default_acton();
-            match re {
-                DidHandled::Handled => return re,
-                DidHandled::Failed(_x) => { /*  do nothing and continue. */ }
-            }
-        }
+        //     let re = self._handle_app_default_acton();
+        //     match re {
+        //         DidHandled::Handled => return re,
+        //         DidHandled::Failed(_x) => { /*  do nothing and continue. */ }
+        //     }
+        // }
 
         // 错误处理
 
         // 一个命令都没匹配到.
-        return DidHandled::Failed(format!("未知命令: {:?}", self.env_arg));
+        // return DidHandled::Failed(format!("未知命令: {:?}", self.env_arg));
     }
 
     pub fn print_app_help(&self) {
@@ -218,9 +296,9 @@ impl App {
                 let short_name = if x.short_name == "" {
                     "".to_string()
                 } else {
-                    ", ".to_string() + x.short_name
+                    ", ".to_string() + &x.short_name
                 };
-                let command_name = x.command_name;
+                let command_name = &x.command_name;
 
                 // TODO: 为 cmd_name 添加颜色.
                 let cmd_name = command_name.to_string() + &short_name;
@@ -265,7 +343,7 @@ commands:
 
         //  "help" 命令 的默认实现, 这里处理的是: 是用 help 命令查询其他命令.
         // 比如 `app help run` 查询 run 命令的帮助文档. 效果等同于 `app run --help`
-        if let Some(需要查询的命令名称) = self.command_arg.first() {
+        if let Some(需要查询的命令名称) = self.sub_command_arg.first() {
             if 需要查询的命令名称 == "help"
                 || 需要查询的命令名称 == "h"
                 || 需要查询的命令名称 == "-h"
@@ -279,7 +357,7 @@ commands:
             }
 
             for x in &self._commands {
-                if 需要查询的命令名称 == x.command_name || 需要查询的命令名称 == x.short_name
+                if 需要查询的命令名称 == &x.command_name || 需要查询的命令名称 == &x.short_name
                 {
                     x.print_command_help(self.app_name.clone());
                     return DidHandled::Handled;
@@ -332,22 +410,23 @@ commands:
 
     fn _handle_commands(&self, command_name: &String) -> DidHandled {
         for x in &self._commands {
-            if command_name == x.command_name || command_name == x.short_name {
-                let cmd_args = &self.command_arg;
+            if command_name == &x.command_name || command_name == &x.short_name {
+                let cmd_args = &self.sub_command_arg;
 
-                // println!("self.env_arg.len() {}", self.env_arg.len());
-                if let Some(first_arg) = cmd_args.first() {
-                    // 有必要提供默认实现么?
-                    // 先不提供默认实现.
-
-                    if first_arg == "--help" || first_arg == "-h" {
-                        // 打印 command 的帮助信息.
-                        x.print_command_help(self.app_name.clone());
-                        if is_debug_mode() {
-                            println!("    x.print_help_message(self.app_name);");
+                {
+                    // 处理当前子命令的 flag.
+                    if let Some(first_arg) = cmd_args.first() {
+                        // 处理当前子命令的 help flag.
+                        if first_arg == "--help" || first_arg == "-h" {
+                            x.print_command_help(self.app_name.clone());
+                            return DidHandled::Handled;
                         }
 
-                        return DidHandled::Handled;
+                        // 处理当前子命令的 example flag.
+                        if first_arg == "--example" || first_arg == "-e" {
+                            x.print_command_example();
+                            return DidHandled::Handled;
+                        }
                     }
                 }
 
@@ -360,15 +439,26 @@ commands:
 
                             return DidHandled::Handled;
                         }
-                        DidHandled::Failed(message) => return DidHandled::Failed(message),
+                        DidHandled::Failed(message) => {
+                            // println!(
+                            //     "command_name: {}\tx.command_name: {}\tx.short_name:{}",
+                            //     command_name, x.command_name, x.short_name
+                            // );
+                            return DidHandled::Failed(message);
+                        }
                     };
                 } else {
                     return DidHandled::Failed("还没有为此命令设置 action".to_string());
                 }
+            } else {
+                continue;
             }
         }
 
-        return DidHandled::Handled;
+        return DidHandled::Failed(format!(
+            "_handle_commands(&self, command_name: &String) -> DidHandled \n未知命令: {:?}",
+            self.env_arg
+        ));
     }
 
     fn _handle_app_example(&self) -> DidHandled {
@@ -384,7 +474,7 @@ commands:
 
         //  "help" 命令 的默认实现, 这里处理的是: 是用 help 命令查询其他命令.
         // 比如 `app help run` 查询 run 命令的帮助文档. 效果等同于 `app run --help`
-        if let Some(需要示例的命令名称) = self.command_arg.first() {
+        if let Some(需要示例的命令名称) = self.sub_command_arg.first() {
             if 需要示例的命令名称 == "example"
                 || 需要示例的命令名称 == "e"
                 || 需要示例的命令名称 == "-e"
@@ -398,7 +488,7 @@ commands:
             }
 
             for x in &self._commands {
-                if 需要示例的命令名称 == x.command_name || 需要示例的命令名称 == x.short_name
+                if 需要示例的命令名称 == &x.command_name || 需要示例的命令名称 == &x.short_name
                 {
                     x.print_command_help(self.app_name.clone());
                     return DidHandled::Handled;
