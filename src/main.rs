@@ -1,9 +1,12 @@
 mod cmd;
+use cmd::App;
 
 fn main() {
     cmd::hello();
     cmd::test_app_default_action();
+    App::new("app_name");
 
+    cmd::App::new("app_name");
 }
 
 // #[cfg(test)]
