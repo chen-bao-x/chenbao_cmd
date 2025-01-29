@@ -121,6 +121,7 @@ mod tests {
             // .run()
             ;
 
+            
         let _ = app
             // .test_run(vec!["debug_env_args testing", "b"])
             // .test_run(vec!["debug_env_args testing", "build"])
@@ -130,22 +131,9 @@ mod tests {
             // .test_run(vec!["debug_env_args testing", "-h"])
             // .test_run(vec!["debug_env_args testing"])
             // .test_run(vec!["debug_env_args testing", "help"])
-            
-            .test_run(vec!["debug_env_args testing", "arg_zero"])
-            .test_run(vec!["debug_env_args testing", "arg_zero"])
-
-
-            .test_run(vec!["debug_env_args testing", "arg_zero_or_one"])
-
-            .test_run(vec!["debug_env_args testing", "arg_zero_or_many"])
-
-            .test_run(vec!["debug_env_args testing", "arg_one_or_many"])
-
-            .test_run(vec!["debug_env_args testing", "arg_one_or_many"])
-
-            .test_run(vec!["debug_env_args testing", "arg_count_2"])
-
-
+            .test_run(vec!["debug_env_args testing", "arg_one","-h"])
+            .test_run(vec!["debug_env_args testing", "-h"])
+             
 
 
             ;

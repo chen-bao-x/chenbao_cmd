@@ -308,13 +308,20 @@ impl App {
             })
             .collect();
 
+             // TODO: 让打印的信息更优美.
+             let flag_message =
+             "Flags:\n\n    -h, --help\t\t显示此命令的帮助.\n    -v, --version\t查看此程序的版本.\n    -e, --example\t查看示例.\n";
+
+
         let message = format!(
             r#"
 {about}
 author: {author}
 version: {version}
 
+{flag_message}
 commands:
+
 {all_commands_about}
 "#,
             about = self.about,
@@ -432,7 +439,7 @@ commands:
 
                 // 检查参数的数量是否是需要的参数数量.
                 if let Some((arg_count, f)) = &x.action {
-                    match arg_count.check(&cmd_args) {
+                    match arg_count.check_with_tips(&cmd_args, WhenFiledTips::new(&self.app_name, &x.command_name)) {
                         DidHandled::Handled => {
                             // 参数的数量符合要求.
                             f(cmd_args.clone());

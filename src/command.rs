@@ -26,6 +26,12 @@ pub struct Command {
     pub action: Option<(ArgCount, CommandAction)>,
 }
 
+// String
+// Number
+// PATH
+// FILE_PATH
+// FOLDER_PATH
+
 pub type CommandAction = Rc<dyn Fn(Vec<String>) -> ()>;
 
 impl Command {
@@ -118,17 +124,11 @@ impl Command {
                 "".to_string()
             };
 
-            // let short_name_message = if self.short_name == "" {
-            //     "".to_string()
-            // } else {
-            //     "\nshort_name: ".to_string() + &self.short_name + "\n"
-            // };
-            let examples_message = if self.exaples.is_empty() {
-                "".to_string()
-            } else {
-                let asdf = self.exaples.iter().fold(String::new(), |a, b| a + b + "\n");
-                "\nExamples: \n".to_string() + &asdf + "\n"
-            };
+            // let examples_message = self.print_command_example();
+            
+            // TODO: 让打印的信息更优美.
+            let flag_message =
+                "Flags:\n\n    -h, --help\t\t显示此命令的帮助.\n    -e, --example\t查看示例.\n";
 
             let message = format!(
                 r#"
@@ -138,10 +138,9 @@ Usage: {app_name} {command_name} {arg}
 
 Arguments:
 
-Flags:
-    -h, --help
-    -v, --version
-{examples_message}
+    {arg}
+
+{flag_message}
 
 "#,
                 about = self.about,
@@ -152,7 +151,16 @@ Flags:
     }
 
     pub fn print_command_example(&self) -> String {
-        let example_messae = self.exaples.iter().fold(String::new(), |a, b| a + b);
+        // TODO: 让打印的 Example 更优美.
+
+        let example_messae = self.exaples.iter().fold(String::new(), |a, b| a + b + "\n");
+
+        let example_messae = "".to_string()
+            + &example_messae
+                .lines()
+                .map(|line| format!("{}{}\n    --------\n", "    ", line))
+                .collect::<String>();
+
         println!("\n{}", example_messae);
 
         return example_messae;
