@@ -1,5 +1,3 @@
-use std::fmt::format;
-
 use super::DidHandled;
 
 #[derive(Clone, Copy, Debug)]
@@ -83,7 +81,7 @@ impl ArgCount {
             ArgCount::Zero => {
                 if real_args_count != 0 {
                     return DidHandled::Failed(format!(
-                        "需要的参数数量是 0 个, 实际是 {} 个: {:?}",
+                        "需要的参数数量是 0 个, 传入的参数数量是: {} 个: {:?}",
                         real_args_count, args_for_subcommand,
                     ));
                 }
@@ -91,7 +89,7 @@ impl ArgCount {
             ArgCount::One => {
                 if real_args_count != 1 {
                     return DidHandled::Failed(format!(
-                        "ArgCount.check() 需要的参数数量是 1 个, 实际是 {} 个",
+                        "需要的参数数量是 1 个, 传入的参数数量是: {} 个",
                         real_args_count
                     ));
                 }
@@ -99,7 +97,7 @@ impl ArgCount {
             ArgCount::ZeroOrOne => {
                 if real_args_count >= 2 {
                     return DidHandled::Failed(format!(
-                        "ArgCount.check() 需要的参数数量是 0 个 或者 1 个参数, 实际是 {} 个",
+                        "需要的参数数量是 0 个 或者 1 个, 传入的参数数量是: {} 个",
                         real_args_count
                     ));
                 }
@@ -108,7 +106,7 @@ impl ArgCount {
             ArgCount::OneOrMany => {
                 if real_args_count < 1 {
                     return DidHandled::Failed(format!(
-                        "ArgCount.check() 至少需要一个参数, 实际是 {} 个",
+                        "至少需要一个参数, 传入的参数数量是: {} 个",
                         real_args_count
                     ));
                 }
@@ -116,7 +114,7 @@ impl ArgCount {
             ArgCount::Count(count) => {
                 if real_args_count != *count as usize {
                     return DidHandled::Failed(format!(
-                        "ArgCount.check() 需要 {} 个参数, 实际是 {} 个",
+                        "需要 {} 个参数, 传入的参数数量是: {} 个",
                         count, real_args_count,
                     ));
                 }

@@ -26,12 +26,6 @@ pub struct Command {
     pub action: Option<(ArgCount, CommandAction)>,
 }
 
-// String
-// Number
-// PATH
-// FILE_PATH
-// FOLDER_PATH
-
 pub type CommandAction = Rc<dyn Fn(Vec<String>) -> ()>;
 
 impl Command {
@@ -67,7 +61,7 @@ impl Command {
         return re;
     }
 
-    pub fn add_example(self, example: &str) -> Self {
+    pub fn add_command_example(self, example: &str) -> Self {
         let mut re = self;
         re.exaples.push(example.to_string());
         return re;
@@ -102,13 +96,37 @@ impl Command {
         } else {
             // 自动生成这个 Command 的帮助文档
 
-            let arg: String = if let Some((arg_count, _)) = &self.action {
+            let arg_message: String = if let Some((arg_count, _)) = &self.action {
                 match arg_count {
                     ArgCount::Zero => "".to_string(),
-                    ArgCount::One => "argument # 需要 1 个参数".to_string(),
-                    ArgCount::ZeroOrOne => "[argument] # 需要 [0 个 或 1 个] 参数".to_string(),
-                    ArgCount::ZoreOrMany => "[arguments...] -- ".to_string(),
-                    ArgCount::OneOrMany => "<arguments...> -- zore or many argument".to_string(),
+                    ArgCount::One => "<argument> -- 需要 1 个参数".to_string(),
+                    ArgCount::ZeroOrOne => "[argument] -- 需要 [0 个 或 1 个] 参数".to_string(),
+                    ArgCount::ZoreOrMany => {
+                        "[arguments...] -- 需要 [0 个 或 多个] 参数".to_string()
+                    }
+                    ArgCount::OneOrMany => "<arguments...> -- 需要 <1 个 或 多个> 参数".to_string(),
+                    ArgCount::Count(count) => {
+                        let mut i = 0;
+                        let mut re: String = "".to_string();
+                        while i < *count {
+                            re.push_str(" argument");
+                            i += 1;
+                        }
+
+                        re
+                    }
+                }
+            } else {
+                "".to_string()
+            };
+
+            let arg_in_usage = if let Some((arg_count, _)) = &self.action {
+                match arg_count {
+                    ArgCount::Zero => "".to_string(),
+                    ArgCount::One => "<argument> ".to_string(),
+                    ArgCount::ZeroOrOne => "[argument] ".to_string(),
+                    ArgCount::ZoreOrMany => "[arguments...] ".to_string(),
+                    ArgCount::OneOrMany => "<arguments...> ".to_string(),
                     ArgCount::Count(count) => {
                         let mut i = 0;
                         let mut re: String = "".to_string();
@@ -125,7 +143,7 @@ impl Command {
             };
 
             // let examples_message = self.print_command_example();
-            
+
             // TODO: 让打印的信息更优美.
             let flag_message =
                 "Flags:\n\n    -h, --help\t\t显示此命令的帮助.\n    -e, --example\t查看示例.\n";
@@ -134,11 +152,11 @@ impl Command {
                 r#"
 {about}
 
-Usage: {app_name} {command_name} {arg}
+Usage: {app_name} {command_name} {arg_in_usage}
 
 Arguments:
 
-    {arg}
+    {arg_message}
 
 {flag_message}
 

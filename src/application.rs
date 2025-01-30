@@ -27,16 +27,20 @@ pub struct App {
     ///
     pub help_message: String,
 
-    _commands: Vec<Command>,
+    pub _commands: Vec<Command>,
 
     /// env::args().collect()
     pub env_arg: Vec<String>,
+
+    /// 是用此程序的一些示范和例子.
+    /// 自动生成帮助文档时会用的这里面的例子.
+    pub exaples: Vec<String>,
 
     /// 子命令的 “参数”
     pub sub_command_arg: Vec<String>,
 
     /// 只输入了程序名称没有子命令也没有任何 flag 时之行的 action.
-    _app_default_action: AppDefaultAction,
+    pub _app_default_action: AppDefaultAction,
 }
 
 impl App {
@@ -95,7 +99,8 @@ impl App {
             _commands: vec![],
             _app_default_action: AppDefaultAction::PrintHelpMessage,
             app_name: app_name.to_string(),
-            examples: vec![], // _app_default_action == None 时会调用: self.print_help_message();
+            examples: vec![],
+            exaples: vec![],
         };
     }
     pub fn app_name(self, app_name: String) -> Self {
@@ -106,6 +111,12 @@ impl App {
     pub fn about(self, about: &'static str) -> Self {
         let mut re = self;
         re.about = about;
+        return re;
+    }
+
+    pub fn add_app_example(self, example: &str) -> Self {
+        let mut re = self;
+        re.exaples.push(example.to_string());
         return re;
     }
 
@@ -191,8 +202,9 @@ impl App {
                     let re = self._handle_commands(command_name);
                     match re {
                         DidHandled::Handled => return re,
-                        DidHandled::Failed(_x) => { /* 这是最后一个 handle 项目了, 直接返回. */ 
-                                    return DidHandled::Failed(_x);
+                        DidHandled::Failed(_x) => {
+                            /* 这是最后一个 handle 项目了, 直接返回. */
+                            return DidHandled::Failed(_x);
                         }
                     }
                 }
@@ -228,45 +240,44 @@ impl App {
         //         }
         //     }
 
+        // for x in &self._commands {
+        //     if command_name == x.command_name || command_name == x.short_name {
+        //         let cmd_args = self.command_arg;
 
-            // for x in &self._commands {
-            //     if command_name == x.command_name || command_name == x.short_name {
-            //         let cmd_args = self.command_arg;
+        //         println!("self.env_arg.len() {}", self.env_arg.len());
+        //         if let Some(flag) = cmd_args.first() {
+        //             let first_arg = flag;
 
-            //         println!("self.env_arg.len() {}", self.env_arg.len());
-            //         if let Some(flag) = cmd_args.first() {
-            //             let first_arg = flag;
+        //             // println!("first_arg {}",first_arg);
 
-            //             // println!("first_arg {}",first_arg);
+        //             // 有必要提供默认实现么?
+        //             // 先不提供默认实现.
 
-            //             // 有必要提供默认实现么?
-            //             // 先不提供默认实现.
+        //             if first_arg == "--help" || first_arg == "-h" {
+        //                 // 打印 command 的帮助信息.
+        //                 x.print_command_help(self.app_name);
+        //                 println!("    x.print_help_message(self.app_name);");
+        //                 // println!("{}", x.help_document);
+        //                 return DidHandled::Handled;
+        //             }
+        //         }
 
-            //             if first_arg == "--help" || first_arg == "-h" {
-            //                 // 打印 command 的帮助信息.
-            //                 x.print_command_help(self.app_name);
-            //                 println!("    x.print_help_message(self.app_name);");
-            //                 // println!("{}", x.help_document);
-            //                 return DidHandled::Handled;
-            //             }
-            //         }
+        //         // 检查参数的数量是否是需要的参数数量.
+        //         if let Some((arg_count, f)) = &x.action {
+        //             match arg_count.check(&cmd_args) {
+        //                 DidHandled::Handled => {
+        //                     // 参数的数量符合要求.
+        //                     f(cmd_args);
 
-            //         // 检查参数的数量是否是需要的参数数量.
-            //         if let Some((arg_count, f)) = &x.action {
-            //             match arg_count.check(&cmd_args) {
-            //                 DidHandled::Handled => {
-            //                     // 参数的数量符合要求.
-            //                     f(cmd_args);
-
-            //                     return DidHandled::Handled;
-            //                 }
-            //                 DidHandled::Failed(message) => return DidHandled::Failed(message),
-            //             };
-            //         } else {
-            //             return DidHandled::Failed("还没有为此命令设置 action".to_string());
-            //         }
-            //     }
-            // }
+        //                     return DidHandled::Handled;
+        //                 }
+        //                 DidHandled::Failed(message) => return DidHandled::Failed(message),
+        //             };
+        //         } else {
+        //             return DidHandled::Failed("还没有为此命令设置 action".to_string());
+        //         }
+        //     }
+        // }
         // } else {
         //     //只输入了程序名称没有子命令也没有任何 flag
 
@@ -308,10 +319,9 @@ impl App {
             })
             .collect();
 
-             // TODO: 让打印的信息更优美.
-             let flag_message =
+        // TODO: 让打印的信息更优美.
+        let flag_message =
              "Flags:\n\n    -h, --help\t\t显示此命令的帮助.\n    -v, --version\t查看此程序的版本.\n    -e, --example\t查看示例.\n";
-
 
         let message = format!(
             r#"
@@ -331,7 +341,21 @@ commands:
         print!("{}", message);
     }
 
-    pub fn print_app_examples() {}
+    pub fn print_app_examples(&self) -> String {
+        // TODO: 让打印的 Example 更优美.
+
+        let example_messae = self.exaples.iter().fold(String::new(), |a, b| a + b + "\n");
+
+        let example_messae = "".to_string()
+            + &example_messae
+                .lines()
+                .map(|line| format!("{}{}\n    --------\n", "    ", line))
+                .collect::<String>();
+
+        println!("\n{}", example_messae);
+
+        return example_messae;
+    }
 
     // -------- Private Part --------
 
@@ -397,6 +421,25 @@ commands:
         }
     }
 
+    /// app version 命令的默认实现
+    fn _heldle_app_example(&self) -> DidHandled {
+        // 处理 App 的flags.
+        // -h --help -v -version
+        let command_name = self.env_arg[1].clone();
+
+        if command_name == "v"
+            || command_name == "version"
+            || command_name == "-v"
+            || command_name == "--version"
+        {
+            println!("{}", self.app_version_message);
+
+            return DidHandled::Handled;
+        } else {
+            return DidHandled::Failed("不是 version 命令".to_string());
+        }
+    }
+
     /// 处理只输入了程序名称没有子命令也没有任何 flag 的情况.
     fn _handle_app_default_acton(&self) -> DidHandled {
         if self.env_arg.len() == 1 {
@@ -439,7 +482,10 @@ commands:
 
                 // 检查参数的数量是否是需要的参数数量.
                 if let Some((arg_count, f)) = &x.action {
-                    match arg_count.check_with_tips(&cmd_args, WhenFiledTips::new(&self.app_name, &x.command_name)) {
+                    match arg_count.check_with_tips(
+                        &cmd_args,
+                        WhenFiledTips::new(&self.app_name, &x.command_name),
+                    ) {
                         DidHandled::Handled => {
                             // 参数的数量符合要求.
                             f(cmd_args.clone());
