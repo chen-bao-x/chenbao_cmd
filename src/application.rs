@@ -1,5 +1,5 @@
 use super::*;
-use std::rc::Rc;
+use std::{collections::HashSet, rc::Rc};
 
 #[derive(Clone)]
 pub enum AppDefaultAction {
@@ -45,36 +45,6 @@ pub struct App {
 
 impl App {
     // -------- Public Part --------
-
-    /// 在 debug 模式下强制使用 debug_run(env_args: Vec<&str>) 函数中的 env_args.
-    /// 此函数会忽略程序真正的 env_args.
-    pub fn test_run(self, env_args: Vec<&str>) -> Self {
-        println!("------- test_run: {:?} -------", env_args);
-
-        let mut re = self.clone();
-        let env_arg: Vec<String> = env_args.iter().map(|x| x.to_string()).collect();
-
-        // 第 2 个一级后面的所有.
-        let sub_cmd_arg: Vec<String> = if env_arg.len() > 2 {
-            env_arg[2..].to_vec()
-        } else {
-            vec![]
-        };
-
-        re.sub_command_arg = sub_cmd_arg;
-        re.env_arg = env_arg;
-
-        let did_handled = re.run();
-
-        match did_handled {
-            DidHandled::Handled => { /* runs perfact. */ }
-            DidHandled::Failed(err_message) => {
-                print!("{}\n", err_message);
-            }
-        }
-
-        return self;
-    }
 
     pub fn new(app_name: &str) -> App {
         use std::env;
@@ -357,6 +327,75 @@ commands:
         return example_messae;
     }
 
+    //  ------- Debug Functions -------
+
+    /// 在 debug 模式下强制使用 debug_run(env_args: Vec<&str>) 函数中的 env_args.
+    /// 此函数会忽略程序真正的 env_args.
+    pub fn deubg_run(self, env_args: Vec<&str>) -> Self {
+        println!("------- test_run: {:?} -------", env_args);
+
+        let mut re = self.clone();
+        let env_arg: Vec<String> = env_args.iter().map(|x| x.to_string()).collect();
+
+        // 第 2 个一级后面的所有.
+        let sub_cmd_arg: Vec<String> = if env_arg.len() > 2 {
+            env_arg[2..].to_vec()
+        } else {
+            vec![]
+        };
+
+        re.sub_command_arg = sub_cmd_arg;
+        re.env_arg = env_arg;
+
+        let did_handled = re.run();
+
+        match did_handled {
+            DidHandled::Handled => { /* runs perfact. */ }
+            DidHandled::Failed(err_message) => {
+                print!("{}\n", err_message);
+            }
+        }
+
+        return self;
+    }
+
+    pub fn debug_duplicate_names_check(&self) -> Result<(), HashSet<String>> {
+        let mut duplicated_names: HashSet<String> = HashSet::new();
+        let mut set: HashSet<String> = HashSet::new();
+
+        for x in &self._commands {
+            {
+                let name = x.command_name.clone();
+
+                if set.contains(&name) {
+                    println!(
+                        "name:{:?}\nduplicated_names:{:?}\nset: {:?}",
+                        name.clone(),
+                        duplicated_names,
+                        set
+                    );
+                    duplicated_names.insert(name);
+                } else {
+                    set.insert(name);
+                }
+            }
+            {
+                let short_name = x.short_name.clone();
+                if set.contains(&short_name) && short_name != "" {
+                    duplicated_names.insert(short_name);
+                } else {
+                    set.insert(short_name);
+                }
+            }
+        }
+
+        if duplicated_names.is_empty() {
+            return Ok(());
+        } else {
+            return Err(duplicated_names);
+        }
+    }
+
     // -------- Private Part --------
 
     /// app help 的默认实现;  
@@ -481,25 +520,12 @@ commands:
                 }
 
                 // 检查参数的数量是否是需要的参数数量.
-                if let Some((arg_count, f)) = &x.action {
-                    match arg_count.check_with_tips(
-                        &cmd_args,
-                        WhenFiledTips::new(&self.app_name, &x.command_name),
-                    ) {
-                        DidHandled::Handled => {
-                            // 参数的数量符合要求.
-                            f(cmd_args.clone());
-
-                            return DidHandled::Handled;
-                        }
-                        DidHandled::Failed(message) => {
-                            // println!(
-                            //     "command_name: {}\tx.command_name: {}\tx.short_name:{}",
-                            //     command_name, x.command_name, x.short_name
-                            // );
-                            return DidHandled::Failed(message);
-                        }
-                    };
+                if let Some(f) = &x.action {
+                    f(SubcommandArgsValue::new(
+                        x.need_arg_type.clone(),
+                        cmd_args.clone(),
+                    ));
+                    return DidHandled::Handled;
                 } else {
                     return DidHandled::Failed("还没有为此命令设置 action".to_string());
                 }

@@ -22,15 +22,17 @@ pub struct Command {
     /// 当用户使用 help 命令查询此命令时显示的帮助文档.
     pub help_document: String,
 
+    /// 子命令需要的参数的类型.
+    /// 在打印子命令的帮助文档时需要用到此属性.
+    pub need_arg_type: ArgType,
+
     /// command action with command_arg
-    pub action: Option<(ArgCount, CommandAction)>,
+    pub action: Option<CommandAction>,
 }
 
-pub type CommandAction = Rc<dyn Fn(Vec<String>) -> ()>;
+pub type CommandAction = Rc<dyn Fn(SubcommandArgsValue) -> ()>;
 
 impl Command {
-    /// Creates a new [`Command`].
-    /// name:
     pub fn new(name: &str) -> Self {
         if is_debug_mode() && name == "" {
             eprintln!("WARNING: name 不能是空字符串 \"\", name 的值至少需要一个字符.");
@@ -44,6 +46,7 @@ impl Command {
             // arg_count: ArgCount::Zero,
             short_name: "".to_string(),
             exaples: vec![],
+            need_arg_type: ArgType::Empty,
         };
     }
 
@@ -75,71 +78,36 @@ impl Command {
     }
 
     /// set `Command.action`
-    pub fn action<F>(self, arg_count: ArgCount, action: F) -> Self
+    pub fn action<F>(self, need_arg_type: ArgType, action: F) -> Self
     where
-        F: Fn(Vec<String>) -> () + 'static,
+        F: Fn(SubcommandArgsValue) -> () + 'static,
     {
         let mut re = self;
-        re.action = Some((arg_count, Rc::new(action)));
+        re.need_arg_type = need_arg_type;
+        re.action = Some(Rc::new(action));
 
         return re;
     }
 
     pub fn print_command_help(&self, app_name: String) {
-        // debug_run(|| {
-        //     println!("command  print_help_message");
-        // });
-
         if self.help_document != "" {
             // 自定义了帮助文档的情况;
             println!("{}", self.help_document);
         } else {
             // 自动生成这个 Command 的帮助文档
 
-            let arg_message: String = if let Some((arg_count, _)) = &self.action {
-                match arg_count {
-                    ArgCount::Zero => "".to_string(),
-                    ArgCount::One => "<argument> -- 需要 1 个参数".to_string(),
-                    ArgCount::ZeroOrOne => "[argument] -- 需要 [0 个 或 1 个] 参数".to_string(),
-                    ArgCount::ZoreOrMany => {
-                        "[arguments...] -- 需要 [0 个 或 多个] 参数".to_string()
-                    }
-                    ArgCount::OneOrMany => "<arguments...> -- 需要 <1 个 或 多个> 参数".to_string(),
-                    ArgCount::Count(count) => {
-                        let mut i = 0;
-                        let mut re: String = "".to_string();
-                        while i < *count {
-                            re.push_str(" argument");
-                            i += 1;
-                        }
+            let arg_message: String = self.need_arg_type.arg_message();
 
-                        re
-                    }
-                }
-            } else {
-                "".to_string()
-            };
-
-            let arg_in_usage = if let Some((arg_count, _)) = &self.action {
-                match arg_count {
-                    ArgCount::Zero => "".to_string(),
-                    ArgCount::One => "<argument> ".to_string(),
-                    ArgCount::ZeroOrOne => "[argument] ".to_string(),
-                    ArgCount::ZoreOrMany => "[arguments...] ".to_string(),
-                    ArgCount::OneOrMany => "<arguments...> ".to_string(),
-                    ArgCount::Count(count) => {
-                        let mut i = 0;
-                        let mut re: String = "".to_string();
-                        while i < *count {
-                            re.push_str(" argument");
-                            i += 1;
-                        }
-
-                        re
-                    }
-                }
-            } else {
-                "".to_string()
+            let arg_in_usage = match self.need_arg_type {
+                ArgType::Empty => "",
+                ArgType::String => r#""string""#,
+                ArgType::VecString => r#""string...""#,
+                ArgType::Number => r#"Number"#,
+                ArgType::VecNumber => r#"Number..."#,
+                ArgType::Path => r#""path""#,
+                ArgType::VecPath => r#""path"..."#,
+                ArgType::Bool => r#"bool"#,
+                ArgType::VecBool => r#"bool..."#,
             };
 
             // let examples_message = self.print_command_example();
