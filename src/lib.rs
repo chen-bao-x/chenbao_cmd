@@ -51,7 +51,6 @@ mod tests {
                     print!("command \"run  1\"\n");
                 }),
         )
-       
         .add_command(
             Command::new("build")
                 .short_name("b")

@@ -73,11 +73,13 @@ impl App {
             exaples: vec![],
         };
     }
+
     pub fn app_name(self, app_name: String) -> Self {
         let mut re = self;
         re.app_name = app_name;
         return re;
     }
+
     pub fn about(self, about: &'static str) -> Self {
         let mut re = self;
         re.about = about;
@@ -122,7 +124,7 @@ impl App {
     }
 
     /// 自定义帮助信息.  
-    /// 如果不自定义钢珠信息, 则会使用自动生成的帮助信息.
+    /// 此方法会替换掉由 chenbao_cmd 提供的帮助文档.
     pub fn help_message(self, message: String) -> Self {
         let mut re = self;
         re.help_message = message;
@@ -130,13 +132,16 @@ impl App {
         return re;
     }
 
-    pub fn examples(self, arr: Vec<String>) -> Self {
+    /// 是用此程序的一些示例,
+    /// 不提供默认实现.
+    pub fn app_examples(self, arr: Vec<String>) -> Self {
         let mut re = self;
 
         re.examples = arr;
         return re;
     }
 
+    /// 运行 App.
     pub fn run(self) -> DidHandled {
         let asdf = self.env_arg.get(1);
         match asdf {

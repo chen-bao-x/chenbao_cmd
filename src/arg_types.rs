@@ -11,7 +11,7 @@ pub type ParseResultMessage = String;
 pub type ParseResult<T> = Result<T, ParseResultMessage>;
 
 /// 用来表示这个 subcommand 不需要参数.
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Empty {}
 
 impl Empty {
@@ -70,7 +70,7 @@ impl ArgType {
 }
 
 /// 子命令实际接收到的参数
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SubcommandArgsValue {
     pub value: Vec<String>,
     pub need_arg_type: ArgType,
