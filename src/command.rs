@@ -1,4 +1,5 @@
 use owo_colors::OwoColorize;
+use prettytable::{row, table, Row};
 
 use super::*;
 use std::rc::Rc;
@@ -17,7 +18,7 @@ pub struct Command {
 
     /// 是用此命令的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
-    pub exaples: Vec<String>,
+    pub exaples: Option<String>,
 
     /// 自定义的帮助文档.
     /// 当用户使用 help 命令查询此命令时显示的帮助文档.
@@ -29,6 +30,13 @@ pub struct Command {
     // /// command action with command_arg
     // pub action: Option<CommandAction>,
 }
+
+// #[derive(Clone)]
+// pub struct Example {
+//     cmd_name: String,
+
+//     about: String,
+// }
 
 pub type CommandAction = Rc<dyn Fn(SubcommandArgsValue) -> ()>;
 
@@ -45,7 +53,7 @@ impl Command {
             // action: None,
             // arg_count: ArgCount::Zero,
             short_name: "".to_string(),
-            exaples: vec![],
+            exaples: None,
             need_arg_type: ArgType::Empty(Rc::new(|| {})),
         };
     }
@@ -64,9 +72,9 @@ impl Command {
         return re;
     }
 
-    pub fn add_command_example(self, example: &str) -> Self {
+    pub fn add_command_example(self, example: Option<String>) -> Self {
         let mut re = self;
-        re.exaples.push(example.to_string());
+        re.exaples = example;
         return re;
     }
 
@@ -151,54 +159,43 @@ Arguments:
         println!("{}", self.formated_command_help(app_name));
     }
 
-    pub fn formated_command_example(&self, app_name: String) -> String {
+    pub fn formated_command_example(&self, app_name: String) -> Vec<prettytable::Row> {
         // TODO: 让打印的 Example 更优美.
 
-        if self.exaples.is_empty() {
-            // 自动生成一条 example
-            // self.command_name;
-            // self.need_arg_type;
-            // app_name;
-            let asdf = match self.need_arg_type {
-                ArgType::Empty(_) => "",
-                ArgType::String(_) => r#""thid is an string example.""#,
-                ArgType::VecString(_) => r#""str 1" "str 2" "str 3"#,
-                ArgType::Number(_) => r#"9"#,
-                ArgType::VecNumber(_) => r#"5 9 100 12"#,
-                ArgType::Path(_) => r#""./path/to/folder/or/file.txt""#,
-                ArgType::VecPath(_) => r#""./path 1" "/path/2/" "./" "path3.txt""#,
-                ArgType::Bool(_) => r#"true"#,
-                ArgType::VecBool(_) => r#"true false"#,
-                ArgType::Repl(_) => "",
-            };
+        match &self.exaples {
+            Some(s) => {
+                println!("{}", s);
 
-            let re = format!(
-                "    {app_name} {command_name} {arg}\t# {about}\n",
-                command_name = self.command_name.cyan(),
-                arg = asdf.green(),
-                about = self.about,
-            );
-            // println!("formated_command_example(): {}", re);
-            return re;
-        } else {
-            // println!("formated_command_example() self.examples: {:?}", self.exaples);
+                let mut re: Vec<Row> = vec![];
+                re.push(row![s]);
 
-            let example_messae = self.exaples.iter().fold(String::new(), |a, b| a + b + "\n");
+                return re;
+            }
+            None => {
+                let arg = self.need_arg_type.value_example().green().to_string();
 
-            let example_messae = "".to_string()
-                + &example_messae
-                    .lines()
-                    .map(|line| format!("{}{}\n", "    ", line))
-                    .collect::<String>();
+                let r = row![
+                    format!(
+                        "{app_name} {command_name} {arg}",
+                        command_name = self.command_name.cyan(),
+                    ),
+                    self.about
+                ];
 
-            // println!("\n{}", example_messae);
-
-            return example_messae;
+                return vec![r];
+            }
         }
     }
 
     pub fn print_command_example(&self, app_name: String) {
-        println!("{}", self.formated_command_example(app_name));
+        let arr = self.formated_command_example(app_name);
+        let mut table = table!();
+        table.set_format(table_formater());
+        for x in arr {
+            table.add_row(x);
+        }
+
+        println!("{}",table);
     }
 }
 

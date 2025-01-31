@@ -43,37 +43,8 @@ pub enum ArgType {
     Bool(Rc<dyn Fn(bool) -> ()>),
     /// Vec<bool>
     VecBool(Rc<dyn Fn(Vec<bool>) -> ()>),
+
     Repl(Rc<dyn Fn(Option<String>) -> ()>),
-    // Empty,
-
-    // /// String
-    // String,
-
-    // /// Vec<String>
-    // VecString,
-
-    // /// usize
-    // Number,
-
-    // /// Vec<usize>
-    // VecNumber,
-
-    // /// PathBuf
-    // Path,
-
-    // /// Vec<PathBuf>
-    // VecPath,
-
-    // /// bool
-    // Bool,
-
-    // /// Vec<bool>
-    // VecBool,
-
-    // /// 问答式交互
-    // /// 为什么不直接使用 Empty 而要单独在做一个 Repl 选项?
-    // /// 为了让 Repl 的子命令类型
-    // Repl,
 }
 
 impl std::fmt::Display for ArgType {
@@ -95,24 +66,57 @@ impl std::fmt::Display for ArgType {
 
 impl ArgType {
     pub fn arg_message(&self) -> String {
-        let sdafdsaf: &str = match self {
-            ArgType::Empty(_) => "",
-            ArgType::String(_) => r#""string" -- 需要 1 个 "字符串""#,
-            ArgType::VecString(_) => r#"["string"...] -- 需要 多个 "字符串""#,
-            ArgType::Number(_) => r#"Number -- 需要 1 个 Number, 示例: 0 1 2 5 123 100"#,
+        let arg_tips = match self {
+            ArgType::Empty(_) => "".to_string(),
+            ArgType::String(_) => format!(
+                r#"{s} -- 需要 1 个 {z}"#,
+                s = r#""string""#.magenta(),
+                z = r#""字符串""#.green(),
+            ),
+            ArgType::VecString(_) => format!(
+                r#"{s} -- 需要 多个 {z}"#,
+                s = r#"["string"...]"#.magenta(),
+                z = r#""字符串""#.green(),
+            ),
+            ArgType::Number(_) => format!(
+                r#"{s} -- 需要 1 个 Number, 示例: {z}"#,
+                s = r#"Number"#.magenta(),
+                z = r#"100"#.green(),
+            ),
             ArgType::VecNumber(_) => {
-                r#"[Number...] -- 需要 多个 Number, 每个 Number 用 [空格] 分开."#
+                format!(
+                    r#"{s} -- 需要 多个 Number, 每个 Number 用 [空格] 分开, 示例: {z}"#,
+                    s = r#"[Number...]"#.magenta(),
+                    z = r#"0 1 2 5 123 100"#.green(),
+                )
             }
-            ArgType::Path(_) => r#"Path -- 需要 1 个 "Path""#,
-            ArgType::VecPath(_) => r#"[Path...] -- 需要 多个 "Path",  每个 Path 用 [空格] 分开."#,
-            ArgType::Bool(_) => r#"Bool -- 需要 1 个 Bool 类型的值, true 或者 false"#,
-            ArgType::Repl(_) => "",
+            ArgType::Path(_) => format!(r#"Path -- 需要 1 个 "Path""#),
+            ArgType::VecPath(_) => {
+                format!(
+                    r#"{s} -- 需要 多个 "Path",  每个 Path 用 [空格] 分开, 示例: {z}"#,
+                    s = r#"[Path...]"#.magenta(),
+                    z = r#"0 1 2 5 123 100"#.green(),
+                )
+            }
+            ArgType::Bool(_) => format!(
+                r#"{s} -- 需要 1 个 Bool 类型的值, {t} 或者 {f}."#,
+                s = r#"bool"#.magenta(),
+                t = r#"true"#.green(),
+                f = r#"true"#.green(),
+            ),
+            ArgType::Repl(_) => "".to_string(),
             ArgType::VecBool(_) => {
-                r#"[Bool...] -- 需要 多个 Bool 类型的值, true 或者 false, 每个 bool 用 [空格] 分开."#
+                format!(
+                    r#"{s} -- 需要 多个 {b} 类型的值, {t} 或者 {f}, 每个 {b} 用 [空格] 分开."#,
+                    s = r#"[Bool...]"#.magenta(),
+                    b = r#"bool"#.magenta(),
+                    t = r#"true"#.green(),
+                    f = r#"true"#.green(),
+                )
             }
         };
 
-        return sdafdsaf.to_string();
+        return format!("    {}", arg_tips);
     }
 
     pub fn arg_type_tips(&self) -> String {
@@ -136,6 +140,23 @@ impl ArgType {
         };
 
         return sdafdsaf.to_string();
+    }
+
+    pub fn value_example(&self) -> String {
+        let re = match self {
+            ArgType::Empty(_) => "",
+            ArgType::String(_) => r#""thid is an string example.""#,
+            ArgType::VecString(_) => r#""str 1" "str 2" "str 3"#,
+            ArgType::Number(_) => r#"9"#,
+            ArgType::VecNumber(_) => r#"5 9 100 12"#,
+            ArgType::Path(_) => r#""./path/to/folder/or/file.txt""#,
+            ArgType::VecPath(_) => r#""./path 1" "/path/2/" "./" "path3.txt""#,
+            ArgType::Bool(_) => r#"true"#,
+            ArgType::VecBool(_) => r#"true false"#,
+            ArgType::Repl(_) => "",
+        };
+
+        return re.to_string();
     }
 }
 

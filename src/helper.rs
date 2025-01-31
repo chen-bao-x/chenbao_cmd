@@ -1,4 +1,5 @@
 use owo_colors::OwoColorize;
+use prettytable::format::TableFormat;
 
 pub fn is_debug_mode() -> bool {
     return cfg!(debug_assertions);
@@ -66,17 +67,14 @@ fn test_parse_string() {
     println!("{:?}", result); // ["a", "b", "c", "d", "e  f "]
 }
 
-// arg_color
-// sub_cmd_color
-// type_color magenta
+// arg_color        green
+// sub_cmd_color    cyan
+// type_color       magenta
 
+pub fn table_formater() -> TableFormat {
+    let mut f = TableFormat::new();
+    f.column_separator(' ');
+    f.padding(4, 0);
 
-fn arg_color(s: &String) -> String {
-    s.green().to_string()
+    return f;
 }
-
-fn sub_cmd_color(s: &String) -> String {
-    s.cyan().to_string()
-}
-
-

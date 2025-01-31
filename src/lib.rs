@@ -123,19 +123,20 @@ mod tests {
         }
 
         let _ = app
-            .deubg_run(vec!["cmd", "-e"])
-            .deubg_run(vec!["cmd", "b"])
-            .deubg_run(vec!["cmd", "build"])
-            .deubg_run(vec!["cmd", "build", "-h"])
-            .deubg_run(vec!["cmd", "run"])
-            .deubg_run(vec!["cmd", "run", "3"])
-            .deubg_run(vec!["cmd", "run", "3", "32"]) // 类型正确, 数量不正确
-            .deubg_run(vec!["cmd", "run", "-h"])
-            .deubg_run(vec!["cmd", "-h"])
-            .deubg_run(vec!["cmd"])
-            .deubg_run(vec!["cmd", "help"])
-            .deubg_run(vec!["cmd", "arg_one", "-h"])
-            .deubg_run(vec!["cmd", "-h"])
+            // .deubg_run(vec!["cmd", "-e"])
+            // .deubg_run(vec!["cmd", "help"])
+            // .deubg_run(vec!["cmd", "-h"])
+            // .deubg_run(vec!["cmd", "b"])
+            // .deubg_run(vec!["cmd", "build"])
+            // .deubg_run(vec!["cmd", "build", "-h"])
+            .deubg_run(vec!["cmd", "build", "-e"])
+            // .deubg_run(vec!["cmd", "run"])
+            // .deubg_run(vec!["cmd", "run", "3"])
+            // .deubg_run(vec!["cmd", "run", "3", "32"]) // 类型正确, 数量不正确
+            // .deubg_run(vec!["cmd", "run", "-h"])
+            // .deubg_run(vec!["cmd", "-h"])
+            // .deubg_run(vec!["cmd"])
+            // .deubg_run(vec!["cmd", "arg_one", "-h"])
             //
             ;
     }

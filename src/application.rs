@@ -1,4 +1,5 @@
 use owo_colors::OwoColorize;
+use prettytable::{row, table};
 
 use super::*;
 use std::{collections::HashSet, rc::Rc};
@@ -169,31 +170,31 @@ impl App {
     }
 
     pub fn print_app_help(&self) {
-        if self.help_message.trim() != "" {
+        if self.help_message.trim() != "" { // 有自定义的帮助文档.
             print!("{}", self.help_message);
             return;
         }
 
-        let all_commands_about: String = self
-            ._commands
-            .iter()
-            .map(|x| {
-                let short_name = if x.short_name == "" {
-                    "".to_string()
-                } else {
-                    x.short_name.to_string()
-                };
+        let mut table = table!();
+        table.set_format(table_formater());
 
-                let command_name = &x.command_name;
+        for x in &self._commands {
+            let short_name = if x.short_name == "" {
+                "".to_string()
+            } else {
+                ", ".to_string() + &x.short_name
+            };
 
-                // TODO: 为 cmd_name 添加颜色.
-                let cmd_name = format!("{}, {}", command_name.cyan(), short_name.cyan());
+            let command_name = &x.command_name;
 
-                // TODO:  可以考虑使用 pretty Table 来美化输出
-                format!("    {cmd_name}\t\t\t{about}\n", about = x.about,)
-            })
-            .collect();
+            // TODO: 为 cmd_name 添加颜色.
+            let cmd_name = format!("{}{}", command_name.cyan(), short_name.cyan());
 
+            table.add_row(row![cmd_name, x.about]);
+        }
+
+        let all_commands_about: String = table.to_string();
+ 
         let help = format!("{}, {}", "-h".cyan(), "--help".cyan());
         let ver = format!("{}, {}", "-v".cyan(), "--version".cyan());
         let example = format!("{}, {}", "-e".cyan(), "--example".cyan());
@@ -223,18 +224,18 @@ Commands:
         // TODO: 让打印的 Example 更优美.
 
         if self.exaples.is_empty() {
-            let mut arr: Vec<String> = vec![];
+            let mut table = table!();
+            table.set_format(table_formater());
+
             for x in &self._commands {
-                arr.push(x.formated_command_example(self.app_name.clone()) + "\n");
+                let rows = x.formated_command_example(self.app_name.clone());
+
+                for r in rows {
+                    table.add_row(r);
+                }
             }
-
-            let message = arr.iter().fold(String::new(), |a, b| {
-                return a + b;
-            });
-
-            println!("{}", message);
-
-            // return "".to_string();
+            println!("{}", table);
+            // table.printstd();
         } else {
             let example_messae = self.exaples.iter().fold(String::new(), |a, b| a + b + "\n");
 
