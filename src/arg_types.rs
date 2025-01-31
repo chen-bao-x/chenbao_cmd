@@ -1,11 +1,14 @@
 use std::{
     num::ParseIntError,
-    path::{self, PathBuf},
+    path::{self, Path},
+    rc::Rc,
 };
 
-pub type Number = usize;
+use owo_colors::OwoColorize;
 
-pub type Path = path::Path;
+pub type Number = isize;
+
+pub type PathBuf = path::PathBuf;
 
 pub type ParseResultMessage = String;
 pub type ParseResult<T> = Result<T, ParseResultMessage>;
@@ -20,31 +23,72 @@ impl Empty {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone)]
 pub enum ArgType {
-    Empty,
-    String,
-    VecString,
-    Number,
-    VecNumber,
-    Path,
-    VecPath,
-    Bool,
-    VecBool,
+    Empty(Rc<dyn Fn() -> ()>),
+
+    /// String
+    String(Rc<dyn Fn(String) -> ()>),
+    /// Vec<String>
+    VecString(Rc<dyn Fn(Vec<String>) -> ()>),
+    /// isize
+    Number(Rc<dyn Fn(Number) -> ()>),
+    /// Vec<isize>
+    VecNumber(Rc<dyn Fn(Vec<Number>) -> ()>),
+    /// Path
+    Path(Rc<dyn Fn(Rc<PathBuf>) -> ()>),
+    /// Vec<Path>
+    VecPath(Rc<dyn Fn(Rc<Vec<PathBuf>>) -> ()>),
+    /// bool
+    Bool(Rc<dyn Fn(bool) -> ()>),
+    /// Vec<bool>
+    VecBool(Rc<dyn Fn(Vec<bool>) -> ()>),
+    Repl(Rc<dyn Fn(Option<String>) -> ()>),
+    // Empty,
+
+    // /// String
+    // String,
+
+    // /// Vec<String>
+    // VecString,
+
+    // /// usize
+    // Number,
+
+    // /// Vec<usize>
+    // VecNumber,
+
+    // /// PathBuf
+    // Path,
+
+    // /// Vec<PathBuf>
+    // VecPath,
+
+    // /// bool
+    // Bool,
+
+    // /// Vec<bool>
+    // VecBool,
+
+    // /// 问答式交互
+    // /// 为什么不直接使用 Empty 而要单独在做一个 Repl 选项?
+    // /// 为了让 Repl 的子命令类型
+    // Repl,
 }
 
 impl std::fmt::Display for ArgType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ArgType::Empty => write!(f, "{}", "ArgType::Empty"),
-            ArgType::String => write!(f, "{}", "ArgType::String"),
-            ArgType::VecString => write!(f, "{}", "ArgType::VecString"),
-            ArgType::Number => write!(f, "{}", "ArgType::Number"),
-            ArgType::VecNumber => write!(f, "{}", "ArgType::VecNumber"),
-            ArgType::Path => write!(f, "{}", "ArgType::Path"),
-            ArgType::VecPath => write!(f, "{}", "ArgType::VecPath"),
-            ArgType::Bool => write!(f, "{}", "ArgType::Bool"),
-            ArgType::VecBool => write!(f, "{}", "ArgType::VecBool"),
+            ArgType::Empty(_) => write!(f, "{}", "ArgType::Empty"),
+            ArgType::String(_) => write!(f, "{}", "ArgType::String"),
+            ArgType::VecString(_) => write!(f, "{}", "ArgType::VecString"),
+            ArgType::Number(_) => write!(f, "{}", "ArgType::Number"),
+            ArgType::VecNumber(_) => write!(f, "{}", "ArgType::VecNumber"),
+            ArgType::Path(_) => write!(f, "{}", "ArgType::Path"),
+            ArgType::VecPath(_) => write!(f, "{}", "ArgType::VecPath"),
+            ArgType::Bool(_) => write!(f, "{}", "ArgType::Bool"),
+            ArgType::VecBool(_) => write!(f, "{}", "ArgType::VecBool"),
+            ArgType::Repl(_) => write!(f, "{}", "ArgType::Repl"),
         }
     }
 }
@@ -52,17 +96,43 @@ impl std::fmt::Display for ArgType {
 impl ArgType {
     pub fn arg_message(&self) -> String {
         let sdafdsaf: &str = match self {
-            ArgType::Empty => "",
-            ArgType::String => r#""string" -- 需要 1 个 "字符串""#,
-            ArgType::VecString => r#"["string"...] -- 需要 多个 "字符串""#,
-            ArgType::Number => r#"Number -- 需要 1 个 Number, 示例: 0 1 2 5 123 100"#,
-            ArgType::VecNumber => r#"[Number...] -- 需要 多个 Number, 每个 Number 用 [空格] 分开."#,
-            ArgType::Path => r#"Path -- 需要 1 个 "Path""#,
-            ArgType::VecPath => r#"[Path...] -- 需要 多个 "Path",  每个 Path 用 [空格] 分开."#,
-            ArgType::Bool => r#"Bool -- 需要 1 个 Bool, true 或者 false"#,
-            ArgType::VecBool => {
-                r#"[Bool...] -- 需要 多个 Bool, true 或者 false, 每个 bool 用 [空格] 分开."#
+            ArgType::Empty(_) => "",
+            ArgType::String(_) => r#""string" -- 需要 1 个 "字符串""#,
+            ArgType::VecString(_) => r#"["string"...] -- 需要 多个 "字符串""#,
+            ArgType::Number(_) => r#"Number -- 需要 1 个 Number, 示例: 0 1 2 5 123 100"#,
+            ArgType::VecNumber(_) => {
+                r#"[Number...] -- 需要 多个 Number, 每个 Number 用 [空格] 分开."#
             }
+            ArgType::Path(_) => r#"Path -- 需要 1 个 "Path""#,
+            ArgType::VecPath(_) => r#"[Path...] -- 需要 多个 "Path",  每个 Path 用 [空格] 分开."#,
+            ArgType::Bool(_) => r#"Bool -- 需要 1 个 Bool 类型的值, true 或者 false"#,
+            ArgType::Repl(_) => "",
+            ArgType::VecBool(_) => {
+                r#"[Bool...] -- 需要 多个 Bool 类型的值, true 或者 false, 每个 bool 用 [空格] 分开."#
+            }
+        };
+
+        return sdafdsaf.to_string();
+    }
+
+    pub fn arg_type_tips(&self) -> String {
+        let sdafdsaf: &str = match self {
+            ArgType::Empty(_) => "",
+            ArgType::String(_) => r#"参数类型: string, 示例: "string" -- 需要 1 个 "string""#,
+            ArgType::VecString(_) => {
+                r#"参数类型: ["string"...]], 示例: "str 1" "string 2" string_three "#
+            }
+            ArgType::Number(_) => r#"参数类型: number, 示例: 999"#,
+            ArgType::VecNumber(_) => {
+                r#"参数类型: [number...], 示例: 1 2 3 100 555 -- 需要 多个 Number, 每个 Number 用 [空格] 分开."#
+            }
+            ArgType::Path(_) => r#"参数类型: path, 示例: /path/to/file.txt"#,
+            ArgType::VecPath(_) => {
+                r#"参数类型: [path...], 示例: "/path/to/folder/" "./path/to/file.txt" "filename.txt""#
+            }
+            ArgType::Bool(_) => r#"参数类型: bool, 示例: "true""#,
+            ArgType::VecBool(_) => r#"参数类型: [bool...], 示例: true false true false"#,
+            ArgType::Repl(_) => "",
         };
 
         return sdafdsaf.to_string();
@@ -70,46 +140,52 @@ impl ArgType {
 }
 
 /// 子命令实际接收到的参数
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone)]
 pub struct SubcommandArgsValue {
-    pub value: Vec<String>,
-    pub need_arg_type: ArgType,
+    /// 子命令的 参数
+    pub subcommand_args: Vec<String>,
+    // pub need_arg_type: ArgType,
 }
 
 impl SubcommandArgsValue {
-    pub fn new(need_arg_type: ArgType, value: Vec<String>) -> Self {
+    pub fn new(
+        // need_arg_type: ArgType,
+        value: Vec<String>,
+    ) -> Self {
         Self {
-            value,
-            need_arg_type,
+            subcommand_args: value,
+            // need_arg_type,
         }
     }
 
-    fn arg_check(&self, geting_argtype: ArgType) -> Result<(), String> {
-        // 检查需要的参数类型和实际获取的参数类型是否一致.
-        if self.need_arg_type == geting_argtype {
-            return Ok(());
-        }
+    // pub fn arg_check(&self, geting_argtype: ArgType) -> Result<(), String> {
+    //     return Ok(());
 
-        return Err(format!(
-            "你告诉这个命令行程序的用户这个子命令需要 {} 类型的参数, 而你却在获取 {} 类型的参数",
-            self.need_arg_type, geting_argtype
-        ));
-    }
+    // // 检查需要的参数类型和实际获取的参数类型是否一致.
+    // if self.need_arg_type == geting_argtype {
+    //     return Ok(());
+    // }
+
+    // return Err(format!(
+    //     "你告诉这个命令行程序的用户这个子命令需要 {} 类型的参数, 而你却在获取 {} 类型的参数",
+    //     self.need_arg_type, geting_argtype
+    // ));
+    // }
 
     pub fn get_empty(self) -> ParseResult<Empty> {
-        if let Err(e) = self.arg_check(ArgType::Empty) {
-            return Err(e);
-        }
+        // if let Err(e) = self.arg_check(ArgType::Empty) {
+        //     return Err(e);
+        // }
 
         return Ok(Empty::new());
     }
 
     pub fn get_string(self) -> ParseResult<String> {
-        if let Err(e) = self.arg_check(ArgType::String) {
-            return Err(e.clone());
-        }
+        // if let Err(e) = self.arg_check(ArgType::String) {
+        //     return Err(e.clone());
+        // }
 
-        let s = self.value;
+        let s = self.subcommand_args;
 
         if s.len() == 1 {
             if let Some(str) = s.first() {
@@ -118,49 +194,49 @@ impl SubcommandArgsValue {
         }
         return Err(format!(
             "参数数量不正确: 需要 1 个参数, 实际接收到了 {} 个参数: {:?}",
-            s.len(),
-            s,
+            s.len().cyan(),
+            s.green(),
         ));
     }
 
     pub fn get_vec_string(self) -> ParseResult<Vec<String>> {
-        if let Err(e) = self.arg_check(ArgType::VecString) {
-            return Err(e.clone());
-        }
-        return Ok(self.value);
+        // if let Err(e) = self.arg_check(ArgType::VecString) {
+        //     return Err(e.clone());
+        // }
+        return Ok(self.subcommand_args);
     }
 
     pub fn get_number(self) -> ParseResult<Number> {
-        if let Err(e) = self.arg_check(ArgType::Number) {
-            return Err(e.clone());
-        }
+        // if let Err(e) = self.arg_check(ArgType::Number) {
+        //     return Err(e.clone());
+        // }
 
-        let s = self.value;
+        let s = self.subcommand_args;
         if s.len() == 1 {
             if let Some(str) = s.first() {
-                let re: usize = str.parse().unwrap();
+                let re: isize = str.parse().unwrap();
                 return Ok(re);
             }
         } else {
             return Err(format!(
                 "参数数量不正确: 需要 1 个参数, 实际接收到了 {} 个参数: {:?}",
-                s.len(),
-                s,
+                s.len().cyan(),
+                s.green(),
             ));
         }
         return Err("()".to_string());
     }
 
     pub fn get_vec_number(self) -> ParseResult<Vec<Number>> {
-        if let Err(e) = self.arg_check(ArgType::VecNumber) {
-            return Err(e.clone());
-        }
-        let s = self.value;
+        // if let Err(e) = self.arg_check(ArgType::VecNumber) {
+        //     return Err(e.clone());
+        // }
+        let s = self.subcommand_args;
 
         let mut re: Vec<Number> = vec![];
 
         for x in s {
-            let u: Result<usize, ParseIntError> = x.parse();
+            let u: Result<Number, ParseIntError> = x.parse();
             match u {
                 Ok(n) => {
                     re.push(n);
@@ -176,10 +252,10 @@ impl SubcommandArgsValue {
     }
 
     pub fn get_path(self) -> ParseResult<PathBuf> {
-        if let Err(e) = self.arg_check(ArgType::Path) {
-            return Err(e.clone());
-        }
-        let s = self.value;
+        // if let Err(e) = self.arg_check(ArgType::Path) {
+        //     return Err(e.clone());
+        // }
+        let s = self.subcommand_args;
 
         if s.len() == 1 {
             if let Some(str) = s.first() {
@@ -190,34 +266,34 @@ impl SubcommandArgsValue {
         } else {
             return Err(format!(
                 "参数数量不正确: 需要 1 个参数, 实际接收到了 {} 个参数: {:?}",
-                s.len(),
-                s,
+                s.len().cyan(),
+                s.green(),
             ));
         }
         return Err("()".to_string());
     }
 
     pub fn get_vec_path(self) -> ParseResult<Vec<PathBuf>> {
-        if let Err(e) = self.arg_check(ArgType::VecPath) {
-            return Err(e.clone());
-        }
-        let s = self.value;
+        // if let Err(e) = self.arg_check(ArgType::VecPath) {
+        //     return Err(e.clone());
+        // }
+        let s = self.subcommand_args;
 
         let mut re: Vec<PathBuf> = vec![];
 
         for x in s {
-            let u = Path::new(&x).to_owned();
-            re.push(u);
+            let path_buf = Path::new(&x).to_owned();
+            re.push(path_buf);
         }
 
         return Ok(re);
     }
 
     pub fn get_bool(self) -> ParseResult<bool> {
-        if let Err(e) = self.arg_check(ArgType::Bool) {
-            return Err(e.clone());
-        }
-        let s = self.value;
+        // if let Err(e) = self.arg_check(ArgType::Bool) {
+        //     return Err(e.clone());
+        // }
+        let s = self.subcommand_args;
 
         if s.len() == 1 {
             if let Some(str) = s.first() {
@@ -235,27 +311,34 @@ impl SubcommandArgsValue {
                 }
 
                 return Err(format!(
-                    "参数不正确: 参数的类型是 bool, bool 类型的值可以是: true  false ",
+                    "参数不正确: 参数的类型是 {}, {} 类型的值可以是: {}, {}, 实际接收到的是: {}",
+                    "bool".magenta(),
+                    "bool".magenta(),
+                    true.green(),
+                    false.green(),
+                    lovwercase.green(),
                 ));
             } else {
                 return Err(format!(
-                    "参数不正确: 参数的类型是 bool, bool 类型的值可以是: true  false ",
+                    "参数不正确: 参数的类型是 bool, bool 类型的值可以是: {}, {}",
+                    true.green(),
+                    false.green(),
                 ));
             }
         } else {
             return Err(format!(
-                "参数数量不正确: 需要 1 个参数, 实际接收到了 {} 个参数: {:?}",
-                s.len(),
-                s,
+                "参数数量不正确: 需要 1 个 bool 类型的参数, 实际接收到了 {} 个参数: {:?}",
+                s.len().cyan(),
+                s.green(),
             ));
         }
     }
 
     pub fn get_vec_bool(self) -> ParseResult<Vec<bool>> {
-        if let Err(e) = self.arg_check(ArgType::VecBool) {
-            return Err(e.clone());
-        }
-        let s = self.value;
+        // if let Err(e) = self.arg_check(ArgType::VecBool) {
+        //     return Err(e.clone());
+        // }
+        let s = self.subcommand_args;
         let mut re: Vec<bool> = vec![];
 
         for x in s {
@@ -281,6 +364,26 @@ impl SubcommandArgsValue {
 
         return Ok(re);
     }
+
+    pub fn get_repl(self) -> ParseResult<Option<String>> {
+        let s = self.subcommand_args;
+
+        if s.len() == 0 {
+            return Ok(None);
+        }
+
+        if s.len() == 1 {
+            if let Some(str) = s.first() {
+                return Ok(Some(str.clone()));
+            }
+        }
+
+        return Err(format!(
+            "参数数量不正确: 需要 0 个 或者 1 个 参数, 实际接收到了 {} 个参数: {:?}",
+            s.len().cyan(),
+            s.green(),
+        ));
+    }
 }
 
 #[cfg(test)]
@@ -290,7 +393,8 @@ mod arg_check {
     #[test]
     fn ok_case_bool() {
         {
-            let v = SubcommandArgsValue::new(ArgType::Bool, vec!["false".to_string()]);
+            // let v = SubcommandArgsValue::new(ArgType::Bool, vec!["false".to_string()]);
+            let v = SubcommandArgsValue::new(vec!["false".to_string()]);
             let re = v.get_bool();
 
             // shold be Ok. not Err.
@@ -303,7 +407,8 @@ mod arg_check {
     #[test]
     fn ok_case_empty() {
         {
-            let v = SubcommandArgsValue::new(ArgType::Empty, vec![]);
+            // let v = SubcommandArgsValue::new(ArgType::Empty, vec![]);
+            let v = SubcommandArgsValue::new(vec![]);
             let re = v.get_empty();
 
             // shold be Ok. not Err.
@@ -316,7 +421,7 @@ mod arg_check {
     #[test]
     fn ok_case_number() {
         {
-            let v = SubcommandArgsValue::new(ArgType::Number, vec!["2314324".to_string()]);
+            let v = SubcommandArgsValue::new(vec!["2314324".to_string()]);
             let re = v.get_number();
 
             // shold be Ok. not Err.
@@ -329,7 +434,7 @@ mod arg_check {
     #[test]
     fn ok_case_string() {
         {
-            let v = SubcommandArgsValue::new(ArgType::String, vec!["2314324".to_string()]);
+            let v = SubcommandArgsValue::new(vec!["2314324".to_string()]);
             let re = v.get_string();
 
             // shold be Ok. not Err.
@@ -341,7 +446,7 @@ mod arg_check {
     #[test]
     fn ok_case_path() {
         {
-            let v = SubcommandArgsValue::new(ArgType::Path, vec!["./path".to_string()]);
+            let v = SubcommandArgsValue::new(vec!["./path".to_string()]);
             let re = v.get_path();
 
             // shold be Ok. not Err.
@@ -353,10 +458,7 @@ mod arg_check {
     #[test]
     fn ok_case_vec_path() {
         {
-            let v = SubcommandArgsValue::new(
-                ArgType::VecPath,
-                vec!["./path".to_string(), "asdf.txt".to_string()],
-            );
+            let v = SubcommandArgsValue::new(vec!["./path".to_string(), "asdf.txt".to_string()]);
             let re = v.get_vec_path();
 
             // shold be Ok. not Err.
@@ -368,10 +470,7 @@ mod arg_check {
     #[test]
     fn ok_case_vec_bool() {
         {
-            let v = SubcommandArgsValue::new(
-                ArgType::VecBool,
-                vec!["false".to_string(), "true".to_string()],
-            );
+            let v = SubcommandArgsValue::new(vec!["false".to_string(), "true".to_string()]);
             let re = v.get_vec_bool();
 
             // shold be Ok. not Err.
@@ -383,10 +482,7 @@ mod arg_check {
     #[test]
     fn ok_case_vec_number() {
         {
-            let v = SubcommandArgsValue::new(
-                ArgType::VecNumber,
-                vec!["234532".to_string(), "5436".to_string()],
-            );
+            let v = SubcommandArgsValue::new(vec!["234532".to_string(), "5436".to_string()]);
             let re = v.get_vec_number();
 
             // shold be Ok. not Err.
@@ -399,10 +495,7 @@ mod arg_check {
     #[test]
     fn ok_case_vec_string() {
         {
-            let v = SubcommandArgsValue::new(
-                ArgType::VecString,
-                vec!["234532".to_string(), "5436".to_string()],
-            );
+            let v = SubcommandArgsValue::new(vec!["234532".to_string(), "5436".to_string()]);
             let re = v.get_vec_string();
 
             // shold be Ok. not Err.
@@ -414,7 +507,7 @@ mod arg_check {
 
     #[test]
     fn err_case_empty() {
-        let v = SubcommandArgsValue::new(ArgType::Empty, vec!["false".to_string()]);
+        let v = SubcommandArgsValue::new(vec!["false".to_string()]);
         let re = v.get_bool();
 
         // shold be Err, not ok.
@@ -425,7 +518,7 @@ mod arg_check {
 
     #[test]
     fn err_case_string() {
-        let v = SubcommandArgsValue::new(ArgType::String, vec!["false".to_string()]);
+        let v = SubcommandArgsValue::new(vec!["false".to_string()]);
         let re = v.get_bool();
 
         // shold be Err, not ok.
@@ -436,7 +529,7 @@ mod arg_check {
 
     #[test]
     fn err_case_path() {
-        let v = SubcommandArgsValue::new(ArgType::Path, vec!["false".to_string()]);
+        let v = SubcommandArgsValue::new(vec!["false".to_string()]);
         let re = v.get_bool();
 
         // shold be Err, not ok.
@@ -447,7 +540,7 @@ mod arg_check {
 
     #[test]
     fn err_case_number() {
-        let v = SubcommandArgsValue::new(ArgType::Number, vec!["false".to_string()]);
+        let v = SubcommandArgsValue::new(vec!["false".to_string()]);
         let re = v.get_bool();
 
         // shold be Err, not ok.
@@ -458,7 +551,7 @@ mod arg_check {
 
     #[test]
     fn err_case_vec_bool() {
-        let v = SubcommandArgsValue::new(ArgType::VecBool, vec!["false".to_string()]);
+        let v = SubcommandArgsValue::new(vec!["false".to_string()]);
         let re = v.get_bool();
 
         // shold be Err, not ok.
@@ -469,7 +562,7 @@ mod arg_check {
 
     #[test]
     fn err_case_vec_number() {
-        let v = SubcommandArgsValue::new(ArgType::VecNumber, vec!["false".to_string()]);
+        let v = SubcommandArgsValue::new(vec!["false".to_string()]);
         let re = v.get_bool();
 
         // shold be Err, not ok.
@@ -480,7 +573,7 @@ mod arg_check {
 
     #[test]
     fn err_case_vec_path() {
-        let v = SubcommandArgsValue::new(ArgType::VecPath, vec!["false".to_string()]);
+        let v = SubcommandArgsValue::new(vec!["false".to_string()]);
         let re = v.get_bool();
 
         // shold be Err, not ok.
@@ -491,7 +584,7 @@ mod arg_check {
 
     #[test]
     fn err_case_vec_string() {
-        let v = SubcommandArgsValue::new(ArgType::VecString, vec!["false".to_string()]);
+        let v = SubcommandArgsValue::new(vec!["false".to_string()]);
         let re = v.get_bool();
 
         // shold be Err, not ok.

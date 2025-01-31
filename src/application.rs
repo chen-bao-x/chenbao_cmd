@@ -1,10 +1,20 @@
+use owo_colors::OwoColorize;
+
 use super::*;
 use std::{collections::HashSet, rc::Rc};
 
 #[derive(Clone)]
 pub enum AppDefaultAction {
     PrintHelpMessage,
+
+    /// 如果想读取命令行参数, 请使用:   `let env_arg: Vec<String> = env::args().collect();`
     RunAction(Rc<dyn Fn() -> ()>),
+}
+
+impl Default for AppDefaultAction {
+    fn default() -> Self {
+        Self::PrintHelpMessage
+    }
 }
 
 #[derive(Clone)]
@@ -47,30 +57,9 @@ impl App {
     // -------- Public Part --------
 
     pub fn new(app_name: &str) -> App {
-        use std::env;
-        let env_arg: Vec<String> = env::args().collect();
-
-        // 第 2 个一级后面的所有.
-        let sub_cmd_arg: Vec<String> = if env_arg.len() > 2 {
-            env_arg[2..].to_vec()
-        } else {
-            vec![]
-        };
-
-        return App {
-            about: "",
-            author: "",
-            app_version_message: "0.0.1".to_string(),
-            help_message: "".to_string(),
-
-            // env_arg: env::args().collect(),
-            env_arg: env_arg,
-            sub_command_arg: sub_cmd_arg,
-            _commands: vec![],
-            _app_default_action: AppDefaultAction::PrintHelpMessage,
+        return Self {
             app_name: app_name.to_string(),
-            examples: vec![],
-            exaples: vec![],
+            ..Default::default()
         };
     }
 
@@ -86,9 +75,9 @@ impl App {
         return re;
     }
 
-    pub fn add_app_example(self, example: &str) -> Self {
+    pub fn add_app_example(self, example: Vec<String>) -> Self {
         let mut re = self;
-        re.exaples.push(example.to_string());
+        re.exaples = example;
         return re;
     }
 
@@ -132,15 +121,6 @@ impl App {
         return re;
     }
 
-    /// 是用此程序的一些示例,
-    /// 不提供默认实现.
-    pub fn app_examples(self, arr: Vec<String>) -> Self {
-        let mut re = self;
-
-        re.examples = arr;
-        return re;
-    }
-
     /// 运行 App.
     pub fn run(self) -> DidHandled {
         let asdf = self.env_arg.get(1);
@@ -155,18 +135,19 @@ impl App {
                     let re = self._heldle_app_version();
                     match re {
                         DidHandled::Handled => return re,
-                        DidHandled::Failed(_x) => {
-                            /* continue. */
-
-                            // if is_debug_mode() {
-                            //     println!("{}", _x)
-                            // }
-                        }
+                        DidHandled::Failed(_x) => {}
                     }
                 }
 
                 {
                     let re = self._handle_app_help();
+                    match re {
+                        DidHandled::Handled => return re,
+                        DidHandled::Failed(_x) => { /* continue. */ }
+                    }
+                }
+                {
+                    let re = self._handle_app_example();
                     match re {
                         DidHandled::Handled => return re,
                         DidHandled::Failed(_x) => { /* continue. */ }
@@ -185,88 +166,6 @@ impl App {
                 }
             }
         }
-        // if let Some(command_name) = self.env_arg.get(1) {
-        //     {
-        //         let re = self._heldle_app_version();
-        //         match re {
-        //             DidHandled::Handled => return re,
-        //             DidHandled::Failed(_x) => {
-        //                 /*  do nothing and continue. */
-        //                 // if is_debug_mode() {
-        //                 //     println!("{}", _x)
-        //                 // }
-        //             }
-        //         }
-        //     }
-
-        //     {
-        //         let re = self._handle_app_help();
-        //         match re {
-        //             DidHandled::Handled => return re,
-        //             DidHandled::Failed(_x) => { /*  do nothing and continue. */ }
-        //         }
-        //     }
-
-        //     {
-        //         let re = self._handle_commands(command_name);
-        //         match re {
-        //             DidHandled::Handled => return re,
-        //             DidHandled::Failed(_x) => { /*  do nothing and continue. */ }
-        //         }
-        //     }
-
-        // for x in &self._commands {
-        //     if command_name == x.command_name || command_name == x.short_name {
-        //         let cmd_args = self.command_arg;
-
-        //         println!("self.env_arg.len() {}", self.env_arg.len());
-        //         if let Some(flag) = cmd_args.first() {
-        //             let first_arg = flag;
-
-        //             // println!("first_arg {}",first_arg);
-
-        //             // 有必要提供默认实现么?
-        //             // 先不提供默认实现.
-
-        //             if first_arg == "--help" || first_arg == "-h" {
-        //                 // 打印 command 的帮助信息.
-        //                 x.print_command_help(self.app_name);
-        //                 println!("    x.print_help_message(self.app_name);");
-        //                 // println!("{}", x.help_document);
-        //                 return DidHandled::Handled;
-        //             }
-        //         }
-
-        //         // 检查参数的数量是否是需要的参数数量.
-        //         if let Some((arg_count, f)) = &x.action {
-        //             match arg_count.check(&cmd_args) {
-        //                 DidHandled::Handled => {
-        //                     // 参数的数量符合要求.
-        //                     f(cmd_args);
-
-        //                     return DidHandled::Handled;
-        //                 }
-        //                 DidHandled::Failed(message) => return DidHandled::Failed(message),
-        //             };
-        //         } else {
-        //             return DidHandled::Failed("还没有为此命令设置 action".to_string());
-        //         }
-        //     }
-        // }
-        // } else {
-        //     //只输入了程序名称没有子命令也没有任何 flag
-
-        //     let re = self._handle_app_default_acton();
-        //     match re {
-        //         DidHandled::Handled => return re,
-        //         DidHandled::Failed(_x) => { /*  do nothing and continue. */ }
-        //     }
-        // }
-
-        // 错误处理
-
-        // 一个命令都没匹配到.
-        // return DidHandled::Failed(format!("未知命令: {:?}", self.env_arg));
     }
 
     pub fn print_app_help(&self) {
@@ -282,30 +181,34 @@ impl App {
                 let short_name = if x.short_name == "" {
                     "".to_string()
                 } else {
-                    ", ".to_string() + &x.short_name
+                    x.short_name.to_string()
                 };
+
                 let command_name = &x.command_name;
 
                 // TODO: 为 cmd_name 添加颜色.
-                let cmd_name = command_name.to_string() + &short_name;
+                let cmd_name = format!("{}, {}", command_name.cyan(), short_name.cyan());
 
                 // TODO:  可以考虑使用 pretty Table 来美化输出
                 format!("    {cmd_name}\t\t\t{about}\n", about = x.about,)
             })
             .collect();
 
+        let help = format!("{}, {}", "-h".cyan(), "--help".cyan());
+        let ver = format!("{}, {}", "-v".cyan(), "--version".cyan());
+        let example = format!("{}, {}", "-e".cyan(), "--example".cyan());
+
         // TODO: 让打印的信息更优美.
-        let flag_message =
-             "Flags:\n\n    -h, --help\t\t显示此命令的帮助.\n    -v, --version\t查看此程序的版本.\n    -e, --example\t查看示例.\n";
+        let flag_message = format!("Flags:\n\n    {help}\t\t显示此命令的帮助.\n    {ver}\t查看此程序的版本.\n    {example}\t查看示例.\n" );
 
         let message = format!(
             r#"
 {about}
-author: {author}
-version: {version}
+Author: {author}
+Version: {version}
 
 {flag_message}
-commands:
+Commands:
 
 {all_commands_about}
 "#,
@@ -316,20 +219,35 @@ commands:
         print!("{}", message);
     }
 
-    pub fn print_app_examples(&self) -> String {
+    pub fn print_app_examples(&self) {
         // TODO: 让打印的 Example 更优美.
 
-        let example_messae = self.exaples.iter().fold(String::new(), |a, b| a + b + "\n");
+        if self.exaples.is_empty() {
+            let mut arr: Vec<String> = vec![];
+            for x in &self._commands {
+                arr.push(x.formated_command_example(self.app_name.clone()) + "\n");
+            }
 
-        let example_messae = "".to_string()
-            + &example_messae
-                .lines()
-                .map(|line| format!("{}{}\n    --------\n", "    ", line))
-                .collect::<String>();
+            let message = arr.iter().fold(String::new(), |a, b| {
+                return a + b;
+            });
 
-        println!("\n{}", example_messae);
+            println!("{}", message);
 
-        return example_messae;
+            // return "".to_string();
+        } else {
+            let example_messae = self.exaples.iter().fold(String::new(), |a, b| a + b + "\n");
+
+            let example_messae = "".to_string()
+                + &example_messae
+                    .lines()
+                    .map(|line| format!("{}{}\n\n", "    ", line))
+                    .collect::<String>();
+
+            println!("Example:\n\n{}", example_messae);
+
+            // return example_messae;
+        }
     }
 
     //  ------- Debug Functions -------
@@ -401,6 +319,7 @@ commands:
         }
     }
 
+    pub fn debug_命令人类友好度检查(&self) {}
     // -------- Private Part --------
 
     /// app help 的默认实现;  
@@ -425,7 +344,7 @@ commands:
                 || 需要查询的命令名称 == "--help"
             {
                 // 命令 ‘help' 的帮助文档
-                //TODO:
+
                 println!("命令 ‘help' 的帮助文档");
 
                 return DidHandled::Handled;
@@ -438,7 +357,7 @@ commands:
                     return DidHandled::Handled;
                 }
             }
-            return DidHandled::Failed("查询的命令不存在".to_string());
+            return DidHandled::Failed(format!("查询的命令 {} 不存在", 需要查询的命令名称.cyan()));
         } else {
             // 打印 App 的帮助信息.
             self.print_app_help();
@@ -480,7 +399,7 @@ commands:
 
             return DidHandled::Handled;
         } else {
-            return DidHandled::Failed("不是 version 命令".to_string());
+            return DidHandled::Failed(format!("不是 {} 命令", "version".cyan()));
         }
     }
 
@@ -499,7 +418,7 @@ commands:
                 }
             }
         };
-        return DidHandled::Failed("()".to_string());
+        return DidHandled::Failed("有子命令或者 flag, 不是 app_default_acton".to_string());
     }
 
     fn _handle_commands(&self, command_name: &String) -> DidHandled {
@@ -518,22 +437,134 @@ commands:
 
                         // 处理当前子命令的 example flag.
                         if first_arg == "--example" || first_arg == "-e" {
-                            x.print_command_example();
+                            x.print_command_example(self.app_name.clone());
                             return DidHandled::Handled;
                         }
                     }
                 }
 
-                // 检查参数的数量是否是需要的参数数量.
-                if let Some(f) = &x.action {
-                    f(SubcommandArgsValue::new(
-                        x.need_arg_type.clone(),
-                        cmd_args.clone(),
-                    ));
-                    return DidHandled::Handled;
-                } else {
-                    return DidHandled::Failed("还没有为此命令设置 action".to_string());
+                let v = SubcommandArgsValue::new(cmd_args.clone());
+                match &x.need_arg_type {
+                    ArgType::Empty(_f) => {
+                        _f();
+                        return DidHandled::Handled;
+                    }
+                    ArgType::String(_f) => {
+                        let re = v.get_string();
+                        match re {
+                            Ok(s) => {
+                                _f(s);
+                                return DidHandled::Handled;
+                            }
+                            Err(e) => {
+                                return DidHandled::Failed(e);
+                            }
+                        }
+                    }
+                    ArgType::VecString(_f) => {
+                        let re = v.get_vec_string();
+                        match re {
+                            Ok(s) => {
+                                _f(s);
+                                return DidHandled::Handled;
+                            }
+                            Err(e) => {
+                                return DidHandled::Failed(e);
+                            }
+                        }
+                    }
+                    ArgType::Number(_f) => {
+                        let re = v.get_number();
+                        match re {
+                            Ok(s) => {
+                                _f(s);
+                                return DidHandled::Handled;
+                            }
+                            Err(e) => {
+                                return DidHandled::Failed(e);
+                            }
+                        }
+                    }
+                    ArgType::VecNumber(_f) => {
+                        let re = v.get_vec_number();
+                        match re {
+                            Ok(s) => {
+                                _f(s);
+                                return DidHandled::Handled;
+                            }
+                            Err(e) => {
+                                return DidHandled::Failed(e);
+                            }
+                        }
+                    }
+                    ArgType::Path(_f) => {
+                        let re = v.get_path();
+                        match re {
+                            Ok(s) => {
+                                _f(Rc::new(s));
+                                return DidHandled::Handled;
+                            }
+                            Err(e) => {
+                                return DidHandled::Failed(e);
+                            }
+                        }
+                    }
+                    ArgType::VecPath(_f) => {
+                        let re = v.get_vec_path();
+                        match re {
+                            Ok(s) => {
+                                _f(Rc::new(s));
+                                return DidHandled::Handled;
+                            }
+                            Err(e) => {
+                                return DidHandled::Failed(e);
+                            }
+                        }
+                    }
+                    ArgType::Bool(_f) => {
+                        let re = v.get_bool();
+                        match re {
+                            Ok(s) => {
+                                _f(s);
+                                return DidHandled::Handled;
+                            }
+                            Err(e) => {
+                                return DidHandled::Failed(e);
+                            }
+                        }
+                    }
+                    ArgType::VecBool(_f) => {
+                        let re = v.get_vec_bool();
+                        match re {
+                            Ok(s) => {
+                                _f(s);
+                                return DidHandled::Handled;
+                            }
+                            Err(e) => {
+                                return DidHandled::Failed(e);
+                            }
+                        }
+                    }
+                    ArgType::Repl(_f) => {
+                        let re = v.get_repl();
+                        match re {
+                            Ok(s) => {
+                                _f(s);
+                                return DidHandled::Handled;
+                            }
+                            Err(e) => {
+                                return DidHandled::Failed(e);
+                            }
+                        }
+                    }
                 }
+
+                // if let Some(f) = &x.action {
+                //     f(SubcommandArgsValue::new(cmd_args.clone()));
+                //     return DidHandled::Handled;
+                // } else {
+                //     return DidHandled::Failed("还没有为此命令设置 action".to_string());
+                // }
             } else {
                 continue;
             }
@@ -548,41 +579,59 @@ commands:
     fn _handle_app_example(&self) -> DidHandled {
         let command_name = self.env_arg[1].clone();
 
-        if !(command_name == "help"
-            || command_name == "h"
-            || command_name == "-h"
-            || command_name == "--help")
+        if command_name == "e"
+            || command_name == "example"
+            || command_name == "-e"
+            || command_name == "--example"
         {
-            return DidHandled::Failed("不是程序的 help 命令".to_string());
-        }
+            self.print_app_examples();
 
-        //  "help" 命令 的默认实现, 这里处理的是: 是用 help 命令查询其他命令.
-        // 比如 `app help run` 查询 run 命令的帮助文档. 效果等同于 `app run --help`
-        if let Some(需要示例的命令名称) = self.sub_command_arg.first() {
-            if 需要示例的命令名称 == "example"
-                || 需要示例的命令名称 == "e"
-                || 需要示例的命令名称 == "-e"
-                || 需要示例的命令名称 == "--example"
-            {
-                // 命令 ‘help' 的帮助文档
-                //TODO:
-                println!("命令 example' 的帮助文档");
-
-                return DidHandled::Handled;
-            }
-
-            for x in &self._commands {
-                if 需要示例的命令名称 == &x.command_name || 需要示例的命令名称 == &x.short_name
-                {
-                    x.print_command_help(self.app_name.clone());
-                    return DidHandled::Handled;
-                }
-            }
-            return DidHandled::Failed("查询的命令不存在".to_string());
-        } else {
-            // 打印 App 的帮助信息.
-            self.print_app_help();
             return DidHandled::Handled;
+        } else {
+            return DidHandled::Failed("不是 version 命令".to_string());
+        }
+    }
+}
+
+impl Default for App {
+    fn default() -> Self {
+        use std::env;
+        let env_arg: Vec<String> = env::args().collect();
+        // 第 2 个一级后面的所有.
+        let sub_cmd_arg: Vec<String> = if env_arg.len() > 2 {
+            env_arg[2..].to_vec()
+        } else {
+            vec![]
+        };
+
+        // return App {
+        //     about: "",
+        //     author: "",
+        //     app_version_message: "0.0.1".to_string(),
+        //     help_message: "".to_string(),
+
+        //     // env_arg: env::args().collect(),
+        //     env_arg: env_arg,
+        //     sub_command_arg: sub_cmd_arg,
+        //     _commands: vec![],
+        //     _app_default_action: AppDefaultAction::PrintHelpMessage,
+        //     app_name: app_name.to_string(),
+        //     examples: vec![],
+        //     exaples: vec![],
+        // };
+
+        Self {
+            app_name: Default::default(),
+            about: Default::default(),
+            examples: Default::default(),
+            author: Default::default(),
+            app_version_message: "0.0.1".to_string(),
+            help_message: Default::default(),
+            _commands: Default::default(),
+            env_arg: env_arg,
+            exaples: Default::default(),
+            sub_command_arg: sub_cmd_arg,
+            _app_default_action: Default::default(),
         }
     }
 }
