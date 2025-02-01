@@ -6,3 +6,5 @@ edition = "2021"
 [dependencies]
 owo-colors = "4.1.0"
 prettytable = "0.10.0"
+serde = "1.0.217"
+serde_json = "1.0.138"

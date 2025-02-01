@@ -1,8 +1,16 @@
 mod application;
+use core::num;
+use std::rc::Rc;
+
 pub use application::*;
 
 mod subcommand;
 pub use subcommand::*;
+
+/// Vec<String> to json  
+/// json to Vec<String>  
+mod vec_string;
+pub use vec_string::*;
 
 mod helper;
 pub use helper::*;
@@ -13,9 +21,12 @@ pub use arg_types::*;
 mod examples_types;
 pub use examples_types::*;
 
+/// 问答式命令行交互
+mod repl_questions;
+pub use repl_questions::*;
+
 // mod arg_count;
 // pub use arg_count::*;
-
 
 #[cfg(test)]
 mod tests {
@@ -130,9 +141,7 @@ mod tests {
             .deubg_run(vec!["cmd", "run", "-h"])
             .deubg_run(vec!["cmd", "-h"])
             .deubg_run(vec!["cmd"])
-            .deubg_run(vec!["cmd", "arg_one", "-h"])
-            //
-            ;
+            .deubg_run(vec!["cmd", "arg_one", "-h"]);
     }
 
     #[test]
@@ -147,268 +156,3 @@ mod tests {
         println!("你输入了：{}", input.trim());
     }
 }
-
-// /// 问答式命令行交互
-// #[derive(Debug)]
-// pub struct ReplQA {
-//     pub tips: &'static str,
-
-//     /// need ArgType
-//     pub need_arg_type: ArgType,
-
-//     pub value: Option<SubcommandArgsValue>,
-
-//     pub when_failed: WhenFailed,
-// }
-
-// #[derive(Debug, Clone, Copy)]
-// pub enum WhenFailed {
-//     Terminate,
-//     Continue,
-// }
-
-// impl ReplQA {
-//     pub fn run(&mut self) {
-//         println!("{}\n{}", self.tips, self.need_arg_type.arg_type_tips());
-
-//         let mut input = String::new();
-//         let re = std::io::stdin().read_line(&mut input);
-//         match re {
-//             Ok(_) => {
-//                 let input = input.trim_end_matches('\n');
-
-//                 let args = parse_arg_string(input);
-//                 println!("{:?}", args);
-
-//                 let v = SubcommandArgsValue::new(self.need_arg_type.clone(), args);
-
-//                 match self.need_arg_type {
-//                     ArgType::Empty => {
-//                         let re = v.clone().get_empty();
-
-//                         match re {
-//                             Ok(_) => {
-//                                 self.value = Some(v);
-//                             }
-//                             Err(_e) => {
-//                                 match self.when_failed {
-//                                     WhenFailed::Terminate => {
-//                                         println!("{}", _e);
-
-//                                         exit(0);
-//                                     }
-//                                     WhenFailed::Continue => {
-//                                         self.run();
-//                                     }
-//                                 };
-//                             }
-//                         }
-//                     }
-//                     ArgType::String => {
-//                         let re = v.clone().get_string();
-
-//                         match re {
-//                             Ok(a) => {
-//                                 self.value = Some(v);
-//                             }
-//                             Err(_e) => {
-//                                 match self.when_failed {
-//                                     WhenFailed::Terminate => {
-//                                         println!("{}", _e);
-//                                         exit(0);
-//                                     }
-//                                     WhenFailed::Continue => {
-//                                         self.run();
-//                                     }
-//                                 };
-//                             }
-//                         }
-//                     }
-//                     ArgType::VecString => {
-//                         let re = v.clone().get_vec_string();
-
-//                         match re {
-//                             Ok(a) => {
-//                                 self.value = Some(v);
-//                             }
-//                             Err(_e) => {
-//                                 match self.when_failed {
-//                                     WhenFailed::Terminate => {
-//                                         println!("{}", _e);
-//                                         exit(0);
-//                                     }
-//                                     WhenFailed::Continue => {
-//                                         self.run();
-//                                     }
-//                                 };
-//                             }
-//                         }
-//                     }
-//                     ArgType::Number => {
-//                         let re = v.clone().get_number();
-
-//                         match re {
-//                             Ok(a) => {
-//                                 self.value = Some(v);
-//                             }
-//                             Err(_e) => {
-//                                 match self.when_failed {
-//                                     WhenFailed::Terminate => {
-//                                         println!("{}", _e);
-//                                         exit(0);
-//                                     }
-//                                     WhenFailed::Continue => {
-//                                         self.run();
-//                                     }
-//                                 };
-//                             }
-//                         }
-//                     }
-//                     ArgType::VecNumber => {
-//                         let re = v.clone().get_number();
-
-//                         match re {
-//                             Ok(a) => {
-//                                 self.value = Some(v);
-//                             }
-//                             Err(_e) => {
-//                                 match self.when_failed {
-//                                     WhenFailed::Terminate => {
-//                                         println!("{}", _e);
-//                                         exit(0);
-//                                     }
-//                                     WhenFailed::Continue => {
-//                                         self.run();
-//                                     }
-//                                 };
-//                             }
-//                         }
-//                     }
-//                     ArgType::Path => {
-//                         let re = v.clone().get_path();
-
-//                         match re {
-//                             Ok(a) => {
-//                                 self.value = Some(v);
-//                             }
-//                             Err(_e) => {
-//                                 match self.when_failed {
-//                                     WhenFailed::Terminate => {
-//                                         println!("{}", _e);
-//                                         exit(0);
-//                                     }
-//                                     WhenFailed::Continue => {
-//                                         self.run();
-//                                     }
-//                                 };
-//                             }
-//                         }
-//                     }
-//                     ArgType::VecPath => {
-//                         let re = v.clone().get_vec_path();
-
-//                         match re {
-//                             Ok(a) => {
-//                                 self.value = Some(v);
-//                             }
-//                             Err(_e) => {
-//                                 match self.when_failed {
-//                                     WhenFailed::Terminate => {
-//                                         println!("{}", _e);
-//                                         exit(0);
-//                                     }
-//                                     WhenFailed::Continue => {
-//                                         self.run();
-//                                     }
-//                                 };
-//                             }
-//                         }
-//                     }
-//                     ArgType::Bool => {
-//                         let re = v.clone().get_bool();
-
-//                         match re {
-//                             Ok(a) => {
-//                                 self.value = Some(v);
-//                             }
-//                             Err(_e) => {
-//                                 match self.when_failed {
-//                                     WhenFailed::Terminate => {
-//                                         println!("{}", _e);
-//                                         exit(0);
-//                                     }
-//                                     WhenFailed::Continue => {
-//                                         self.run();
-//                                     }
-//                                 };
-//                             }
-//                         }
-//                     }
-//                     ArgType::VecBool => {
-//                         let re = v.clone().get_vec_bool();
-
-//                         match re {
-//                             Ok(a) => {
-//                                 self.value = Some(v);
-//                             }
-//                             Err(_e) => {
-//                                 match self.when_failed {
-//                                     WhenFailed::Terminate => {
-//                                         println!("{}", _e);
-//                                         exit(0);
-//                                     }
-//                                     WhenFailed::Continue => {
-//                                         self.run();
-//                                     }
-//                                 };
-//                             }
-//                         }
-//                     }
-//                     ArgType::Repl => todo!(),
-//                 };
-//             }
-//             Err(f) => {
-//                 match self.when_failed {
-//                     WhenFailed::Terminate => {
-//                         println!("{}", f);
-//                         exit(0);
-//                     }
-//                     WhenFailed::Continue => {
-//                         self.run();
-//                     }
-//                 };
-//             }
-//         };
-//     }
-
-//     // yes or no QA
-//     // true or false QA
-//     // number QA
-//     // vec<number> QA
-//     // string QA
-//     // Vec<string> QA
-//     // path QA
-//     // Vec<path> QA
-//     // password QA whith confirm
-
-//     // enum single selection QA
-//     // enum multi selection QA
-
-//     // path single selection QA
-//     // path multi selection QA
-
-// }
-
-// #[test]
-// fn adsfsadf() {
-//     let mut repl = ReplQA {
-//         tips: "tips",
-//         need_arg_type: ArgType::VecBool,
-//         value: None,
-//         when_failed: WhenFailed::Continue,
-//     };
-
-//     repl.run();
-
-//     println!("{:?}", repl);
-// }

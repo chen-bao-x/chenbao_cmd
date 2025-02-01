@@ -1,15 +1,13 @@
+use super::*;
+use owo_colors::OwoColorize;
 use std::{
     num::ParseIntError,
     path::{self, Path},
     rc::Rc,
 };
 
-use owo_colors::OwoColorize;
-
 pub type Number = isize;
-
 pub type PathBuf = path::PathBuf;
-
 pub type ParseResultMessage = String;
 pub type ParseResult<T> = Result<T, ParseResultMessage>;
 
@@ -44,7 +42,8 @@ pub enum ArgType {
     /// Vec<bool>
     VecBool(Rc<dyn Fn(Vec<bool>) -> ()>),
 
-    Repl(Rc<dyn Fn(Option<String>) -> ()>),
+    // Repl(Rc<dyn Fn(Option<String>) -> ()>),
+    Repl(Rc<dyn Fn(ReplQuestions) -> ()>),
 }
 
 impl std::fmt::Display for ArgType {
