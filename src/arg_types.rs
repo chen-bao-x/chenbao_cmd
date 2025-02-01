@@ -6,7 +6,7 @@ use std::{
     rc::Rc,
 };
 
-pub type Number = isize;
+pub type Number = i128;
 pub type PathBuf = path::PathBuf;
 pub type ParseResultMessage = String;
 pub type ParseResult<T> = Result<T, ParseResultMessage>;
@@ -234,8 +234,13 @@ impl SubcommandArgsValue {
         let s = self.subcommand_args;
         if s.len() == 1 {
             if let Some(str) = s.first() {
-                let re: isize = str.parse().unwrap();
-                return Ok(re);
+                let re: Result<Number, core::num::ParseIntError> = str.parse();
+                match re {
+                    Ok(n) => return Ok(n),
+                    Err(_e) => {
+                        return Err(format!("{:?}", _e));
+                    }
+                }
             }
         } else {
             return Err(format!(

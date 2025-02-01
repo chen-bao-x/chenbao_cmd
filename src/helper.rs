@@ -1,3 +1,7 @@
+use std::fmt;
+
+use dialoguer::theme::Theme;
+use owo_colors::OwoColorize;
 use prettytable::format::TableFormat;
 
 pub fn is_debug_mode() -> bool {
@@ -17,6 +21,7 @@ where
 // 我希望将这个字符串解析成 Vec<String> vec!["a", "b", "c", "d", "e", "32424", "32543", "a b dsaf"]
 // 帮我实现这个函数
 // Gemini:
+// TODO: 让命令行字符串支持 单引号
 pub fn parse_arg_string(input: &str) -> Vec<String> {
     let mut result = Vec::new();
     let mut current_token = String::new();
@@ -78,4 +83,87 @@ pub fn table_formater() -> TableFormat {
     f.padding(4, 0);
 
     return f;
+}
+
+pub struct ColoredTheme {}
+impl Theme for ColoredTheme {
+    /// Formats a confirm prompt.
+    fn format_confirm_prompt(
+        &self,
+        f: &mut dyn fmt::Write,
+        prompt: &str,
+        default: Option<bool>,
+    ) -> fmt::Result {
+        if !prompt.is_empty() {
+            write!(f, "{} ", &prompt)?;
+        }
+        match default {
+            None => write!(f, "[y/n] ")?,
+            // Some(true) => write!(f, "{}{}", "[Y/n] ", "yes".green())?,
+            // Some(false) => write!(f, "{}{}", "[y/N] ", "no".green())?,
+            Some(true) => write!(f, "[{}/n] ", " Yes ".bright_green())?,
+            Some(false) => write!(f, "[y/{}]", " No ".bright_green())?,
+        }
+        Ok(())
+    }
+
+    /// Formats an input prompt.
+    fn format_input_prompt(
+        &self,
+        f: &mut dyn fmt::Write,
+        prompt: &str,
+        default: Option<&str>,
+    ) -> fmt::Result {
+        match default {
+            Some(default) if prompt.is_empty() => write!(f, "[{}]: \n", default),
+            Some(default) => write!(f, "{} [{}]: ", prompt, default),
+            None => write!(f, "{}: ", prompt),
+        }
+    }
+
+    /// Formats a select prompt item.
+    fn format_select_prompt_item(
+        &self,
+        f: &mut dyn fmt::Write,
+        text: &str,
+        active: bool,
+    ) -> fmt::Result {
+        write!(
+            f,
+            "{} {}",
+            if active { ">" } else { " " },
+            // text.bright_green(),
+            if active {
+                text.bright_green().bold().to_string()
+            } else {
+                text.to_string()
+            }
+        )
+    }
+
+    /// Formats a multi select prompt item.
+    fn format_multi_select_prompt_item(
+        &self,
+        f: &mut dyn fmt::Write,
+        text: &str,
+        checked: bool,
+        active: bool,
+    ) -> fmt::Result {
+        write!(
+            f,
+            "{} {}",
+            match (checked, active) {
+                (true, true) => "> [x]",
+                (true, false) => "  [x]",
+                (false, true) => "> [ ]",
+                (false, false) => "  [ ]",
+            },
+            // text
+            if checked {
+                text.bright_green().to_string()
+            } else {
+                text.to_string()
+            }
+        )
+    }
 }

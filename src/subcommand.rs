@@ -164,7 +164,7 @@ Arguments:
                 return re;
             }
             None => {
-                let arg = self.need_arg_type.value_example().green().to_string();
+                let arg = self.need_arg_type.value_example().bright_green().to_string();
 
                 let r = row![
                     format!(
