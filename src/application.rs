@@ -6,6 +6,7 @@ use std::{collections::HashSet, rc::Rc};
 
 #[derive(Clone)]
 pub enum AppDefaultAction {
+    /// 打印 app 的帮助文档
     PrintHelpMessage,
 
     /// 如果想读取命令行参数, 请使用:   `let env_arg: Vec<String> = env::args().collect();`
@@ -18,6 +19,15 @@ impl Default for AppDefaultAction {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord)]
+pub enum DidHandled {
+    /// 表示匹配到了相关命令并正确执行了相关 action.
+    Handled,
+
+    /// 没匹配到相关命令或者其他错误.
+    Failed(String),
+}
+
 #[derive(Clone)]
 pub struct App {
     /// 此程序的名称
@@ -26,8 +36,6 @@ pub struct App {
     /// 一句话介绍此程序.
     pub about: &'static str,
 
-    pub examples: Vec<String>,
-
     /// 此程序的作者
     pub author: &'static str,
 
@@ -35,17 +43,17 @@ pub struct App {
     pub app_version_message: String,
 
     /// 此程序的帮助文档,
-    ///
     pub help_message: String,
 
-    pub _commands: Vec<Command>,
+    /// 此 app 的所有子命令.
+    pub commands: Vec<SubCommand>,
 
     /// env::args().collect()
     pub env_arg: Vec<String>,
 
     /// 是用此程序的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
-    pub exaples: Vec<String>,
+    pub examples: Option<Examples>,
 
     /// 子命令的 “参数”
     pub sub_command_arg: Vec<String>,
@@ -64,21 +72,15 @@ impl App {
         };
     }
 
-    pub fn app_name(self, app_name: String) -> Self {
-        let mut re = self;
-        re.app_name = app_name;
-        return re;
-    }
-
-    pub fn about(self, about: &'static str) -> Self {
+    pub fn add_about(self, about: &'static str) -> Self {
         let mut re = self;
         re.about = about;
         return re;
     }
 
-    pub fn add_app_example(self, example: Vec<String>) -> Self {
+    pub fn add_app_example(self, example: Option<Examples>) -> Self {
         let mut re = self;
-        re.exaples = example;
+        re.examples = example;
         return re;
     }
 
@@ -89,14 +91,15 @@ impl App {
         return re;
     }
 
-    pub fn author(self, author: &'static str) -> Self {
+    pub fn add_author(self, author: &'static str) -> Self {
         let mut re = self;
         re.author = author;
         return re;
     }
 
     /// 设置只有 程序名, 没有任何子命令也没有任何参数时执行的 action.
-    pub fn app_default_action<F>(self, action: F) -> Self
+    /// 这个函数只会生效 1 次.
+    pub fn add_app_default_action<F>(self, action: F) -> Self
     where
         F: Fn() -> () + 'static,
     {
@@ -105,17 +108,17 @@ impl App {
         return re;
     }
 
-    pub fn add_command(self, command: Command) -> Self {
+    pub fn add_subcommand(self, command: SubCommand) -> Self {
         let mut re = self;
 
-        re._commands.push(command);
+        re.commands.push(command);
 
         return re;
     }
 
     /// 自定义帮助信息.  
     /// 此方法会替换掉由 chenbao_cmd 提供的帮助文档.
-    pub fn help_message(self, message: String) -> Self {
+    pub fn add_help_message(self, message: String) -> Self {
         let mut re = self;
         re.help_message = message;
 
@@ -169,8 +172,11 @@ impl App {
         }
     }
 
+    //  ------- Print -------
+
     pub fn print_app_help(&self) {
-        if self.help_message.trim() != "" { // 有自定义的帮助文档.
+        if self.help_message.trim() != "" {
+            // 有自定义的帮助文档.
             print!("{}", self.help_message);
             return;
         }
@@ -178,23 +184,25 @@ impl App {
         let mut table = table!();
         table.set_format(table_formater());
 
-        for x in &self._commands {
+        for x in &self.commands {
             let short_name = if x.short_name == "" {
                 "".to_string()
             } else {
-                ", ".to_string() + &x.short_name
+                // ", ".to_string() + &x.short_name
+                x.short_name.to_string()
+                // format!("{}{}", ", ", &x.short_name )
             };
 
             let command_name = &x.command_name;
 
             // TODO: 为 cmd_name 添加颜色.
-            let cmd_name = format!("{}{}", command_name.cyan(), short_name.cyan());
+            let cmd_name = format!("{}, {}", command_name.cyan(), short_name.cyan());
 
             table.add_row(row![cmd_name, x.about]);
         }
 
         let all_commands_about: String = table.to_string();
- 
+
         let help = format!("{}, {}", "-h".cyan(), "--help".cyan());
         let ver = format!("{}, {}", "-v".cyan(), "--version".cyan());
         let example = format!("{}, {}", "-e".cyan(), "--example".cyan());
@@ -221,33 +229,24 @@ Commands:
     }
 
     pub fn print_app_examples(&self) {
-        // TODO: 让打印的 Example 更优美.
-
-        if self.exaples.is_empty() {
-            let mut table = table!();
-            table.set_format(table_formater());
-
-            for x in &self._commands {
-                let rows = x.formated_command_example(self.app_name.clone());
-
-                for r in rows {
-                    table.add_row(r);
-                }
+        match &self.examples {
+            Some(_arr) => {
+                println!("{}", _arr);
             }
-            println!("{}", table);
-            // table.printstd();
-        } else {
-            let example_messae = self.exaples.iter().fold(String::new(), |a, b| a + b + "\n");
+            None => {
+                let mut table = table!();
+                table.set_format(table_formater());
 
-            let example_messae = "".to_string()
-                + &example_messae
-                    .lines()
-                    .map(|line| format!("{}{}\n\n", "    ", line))
-                    .collect::<String>();
+                for x in &self.commands {
+                    let rows = x.formated_command_example(self.app_name.clone());
 
-            println!("Example:\n\n{}", example_messae);
-
-            // return example_messae;
+                    for r in rows {
+                        table.add_row(r);
+                    }
+                }
+                println!("{}", table);
+                // table.printstd();
+            }
         }
     }
 
@@ -287,7 +286,7 @@ Commands:
         let mut duplicated_names: HashSet<String> = HashSet::new();
         let mut set: HashSet<String> = HashSet::new();
 
-        for x in &self._commands {
+        for x in &self.commands {
             {
                 let name = x.command_name.clone();
 
@@ -321,6 +320,9 @@ Commands:
     }
 
     pub fn debug_命令人类友好度检查(&self) {}
+}
+
+impl App {
     // -------- Private Part --------
 
     /// app help 的默认实现;  
@@ -351,7 +353,7 @@ Commands:
                 return DidHandled::Handled;
             }
 
-            for x in &self._commands {
+            for x in &self.commands {
                 if 需要查询的命令名称 == &x.command_name || 需要查询的命令名称 == &x.short_name
                 {
                     x.print_command_help(self.app_name.clone());
@@ -423,7 +425,7 @@ Commands:
     }
 
     fn _handle_commands(&self, command_name: &String) -> DidHandled {
-        for x in &self._commands {
+        for x in &self.commands {
             if command_name == &x.command_name || command_name == &x.short_name {
                 let cmd_args = &self.sub_command_arg;
 
@@ -624,13 +626,13 @@ impl Default for App {
         Self {
             app_name: Default::default(),
             about: Default::default(),
-            examples: Default::default(),
+
             author: Default::default(),
             app_version_message: "0.0.1".to_string(),
             help_message: Default::default(),
-            _commands: Default::default(),
+            commands: Default::default(),
             env_arg: env_arg,
-            exaples: Default::default(),
+            examples: None,
             sub_command_arg: sub_cmd_arg,
             _app_default_action: Default::default(),
         }

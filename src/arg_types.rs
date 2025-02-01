@@ -99,7 +99,7 @@ impl ArgType {
                 )
             }
             ArgType::Bool(_) => format!(
-                r#"{s} -- 需要 1 个 Bool 类型的值, {t} 或者 {f}."#,
+                r#"{s} -- 需要 1 个 {s} 类型的值, {t} 或者 {f}."#,
                 s = r#"bool"#.magenta(),
                 t = r#"true"#.green(),
                 f = r#"true"#.green(),
@@ -146,7 +146,7 @@ impl ArgType {
         let re = match self {
             ArgType::Empty(_) => "",
             ArgType::String(_) => r#""thid is an string example.""#,
-            ArgType::VecString(_) => r#""str 1" "str 2" "str 3"#,
+            ArgType::VecString(_) => r#""str 1" "str 2" "str 3""#,
             ArgType::Number(_) => r#"9"#,
             ArgType::VecNumber(_) => r#"5 9 100 12"#,
             ArgType::Path(_) => r#""./path/to/folder/or/file.txt""#,
@@ -341,14 +341,17 @@ impl SubcommandArgsValue {
                 ));
             } else {
                 return Err(format!(
-                    "参数不正确: 参数的类型是 bool, bool 类型的值可以是: {}, {}",
+                    "参数不正确: 参数的类型是 {}, {} 类型的值可以是: {}, {}",
+                    "bool".magenta(),
+                    "bool".magenta(),
                     true.green(),
                     false.green(),
                 ));
             }
         } else {
             return Err(format!(
-                "参数数量不正确: 需要 1 个 bool 类型的参数, 实际接收到了 {} 个参数: {:?}",
+                "参数数量不正确: 需要 1 个 {} 类型的参数, 实际接收到了 {} 个参数: {:?}",
+                "bool".magenta(),
                 s.len().cyan(),
                 s.green(),
             ));

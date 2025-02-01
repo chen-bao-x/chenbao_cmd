@@ -1,4 +1,3 @@
-use owo_colors::OwoColorize;
 use prettytable::format::TableFormat;
 
 pub fn is_debug_mode() -> bool {
@@ -14,9 +13,10 @@ where
     }
 }
 
-// 我又这样的一个字符串: r#" "a" "b" c "d" e 32424 "32543" "a b dsaf""#
+// 我有这样的一个字符串: r#" "a" "b" c "d" e 32424 "32543" "a b dsaf""#
 // 我希望将这个字符串解析成 Vec<String> vec!["a", "b", "c", "d", "e", "32424", "32543", "a b dsaf"]
 // 帮我实现这个函数
+// Gemini:
 pub fn parse_arg_string(input: &str) -> Vec<String> {
     let mut result = Vec::new();
     let mut current_token = String::new();
@@ -53,6 +53,7 @@ pub fn parse_arg_string(input: &str) -> Vec<String> {
 
     result
 }
+
 #[test]
 fn test_parse_string() {
     let input = r#" "a" "b" c "d" e 32424 "32543" "a b dsaf" asdfsaf 767544  "a b c\" d e""#;

@@ -1,12 +1,8 @@
 mod application;
-
 pub use application::*;
 
-mod command;
-pub use command::*;
-
-// mod arg_count;
-// pub use arg_count::*;
+mod subcommand;
+pub use subcommand::*;
 
 mod helper;
 pub use helper::*;
@@ -14,14 +10,12 @@ pub use helper::*;
 mod arg_types;
 pub use arg_types::*;
 
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
-pub enum DidHandled {
-    /// 表示匹配到了相关命令并正确执行了相关 action.
-    Handled,
+mod examples_types;
+pub use examples_types::*;
 
-    /// 没匹配到相关命令或者其他错误.
-    Failed(String),
-}
+// mod arg_count;
+// pub use arg_count::*;
+
 
 #[cfg(test)]
 mod tests {
@@ -36,8 +30,8 @@ mod tests {
         println!("--------hello--------");
 
         let app = App::new("cmd")
-            .about("这个程序主要是为了测试我写的 cmd crate")
-            .author("chen bao")
+            .add_about("这个程序主要是为了测试我写的 cmd crate")
+            .add_author("chen bao")
             .app_version_message("0.0.1".to_string())
             //         .add_app_example(vec![
             // "app example 1".to_string(),
@@ -45,23 +39,23 @@ mod tests {
             // "app example 2".to_string(),
             // "app run 3".to_string(),
             //         ])
-            .add_command(
-                Command::new("run")
+            .add_subcommand(
+                SubCommand::new("run")
                     .about("运行程序")
                     .action(ArgType::Bool(Rc::new(|_x| {
                         print!("command \"run\"{:?}\n", _x);
                     }))),
             )
-            .add_command(
-                Command::new("build")
+            .add_subcommand(
+                SubCommand::new("build")
                     .short_name("b")
                     .about("编译项目")
                     .action(ArgType::Bool(Rc::new(|_x| {
                         print!("command \"run\"{:?}\n", _x);
                     }))),
             )
-            .add_command(
-                Command::new("empty")
+            .add_subcommand(
+                SubCommand::new("empty")
                     .about("用来测试 ArgCount::Zero ")
                     // .add_command_example("app arg_zero  ")
                     // .add_command_example("app arg_zero a")
@@ -71,8 +65,8 @@ mod tests {
                         print!("testing arg_zero");
                     }))),
             )
-            .add_command(
-                Command::new("number")
+            .add_subcommand(
+                SubCommand::new("number")
                     .about("用来测试 ArgCount::Zero ")
                     // .add_command_example("app arg_zero  ")
                     // .add_command_example("app arg_zero a")
@@ -82,8 +76,8 @@ mod tests {
                         print!("testing arg_zero");
                     }))),
             )
-            .add_command(
-                Command::new("vecnumber")
+            .add_subcommand(
+                SubCommand::new("vecnumber")
                     .about("用来测试 ArgCount::Zero ")
                     // .add_command_example("app arg_zero  ")
                     // .add_command_example("app arg_zero a")
@@ -93,8 +87,8 @@ mod tests {
                         print!("testing arg_zero");
                     }))),
             )
-            .add_command(
-                Command::new("vecbool")
+            .add_subcommand(
+                SubCommand::new("vecbool")
                     .about("用来测试 ArgCount::Zero ")
                     // .add_command_example("app arg_zero  ")
                     // .add_command_example("app arg_zero a")
@@ -104,8 +98,8 @@ mod tests {
                         print!("testing arg_zero");
                     }))),
             )
-            .add_command(
-                Command::new("vecstring")
+            .add_subcommand(
+                SubCommand::new("vecstring")
                     .about("用来测试 ArgCount::Zero ")
                     // .add_command_example("app vecstring  ")
                     // .add_command_example("app arg_zero a")
@@ -123,20 +117,20 @@ mod tests {
         }
 
         let _ = app
-            // .deubg_run(vec!["cmd", "-e"])
-            // .deubg_run(vec!["cmd", "help"])
-            // .deubg_run(vec!["cmd", "-h"])
-            // .deubg_run(vec!["cmd", "b"])
-            // .deubg_run(vec!["cmd", "build"])
-            // .deubg_run(vec!["cmd", "build", "-h"])
+            .deubg_run(vec!["cmd", "-e"])
+            .deubg_run(vec!["cmd", "help"])
+            .deubg_run(vec!["cmd", "-h"])
+            .deubg_run(vec!["cmd", "b"])
+            .deubg_run(vec!["cmd", "build"])
+            .deubg_run(vec!["cmd", "build", "-h"])
             .deubg_run(vec!["cmd", "build", "-e"])
-            // .deubg_run(vec!["cmd", "run"])
-            // .deubg_run(vec!["cmd", "run", "3"])
-            // .deubg_run(vec!["cmd", "run", "3", "32"]) // 类型正确, 数量不正确
-            // .deubg_run(vec!["cmd", "run", "-h"])
-            // .deubg_run(vec!["cmd", "-h"])
-            // .deubg_run(vec!["cmd"])
-            // .deubg_run(vec!["cmd", "arg_one", "-h"])
+            .deubg_run(vec!["cmd", "run"])
+            .deubg_run(vec!["cmd", "run", "3"])
+            .deubg_run(vec!["cmd", "run", "3", "32"]) // 类型正确, 数量不正确
+            .deubg_run(vec!["cmd", "run", "-h"])
+            .deubg_run(vec!["cmd", "-h"])
+            .deubg_run(vec!["cmd"])
+            .deubg_run(vec!["cmd", "arg_one", "-h"])
             //
             ;
     }
@@ -154,6 +148,7 @@ mod tests {
     }
 }
 
+// /// 问答式命令行交互
 // #[derive(Debug)]
 // pub struct ReplQA {
 //     pub tips: &'static str,
