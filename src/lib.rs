@@ -156,3 +156,7 @@ mod tests {
         println!("你输入了：{}", input.trim());
     }
 }
+
+fn hesadfsadf() {
+    eprintln!("hello")
+}
