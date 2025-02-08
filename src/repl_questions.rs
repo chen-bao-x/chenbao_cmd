@@ -1,4 +1,4 @@
-use std::{num::ParseIntError, path::Path, vec};
+use std::{fmt::format, num::ParseIntError, path::Path, vec};
 
 use owo_colors::OwoColorize;
 
@@ -407,24 +407,41 @@ impl ReplQuestions {
         if re.is_from_json {
             let val = re.arr.get(re.index);
 
-            if let Some(str) = val {
-                let vec_str_from_str = helper::parse_arg_string(str);
-                *result_value = vec_str_from_str;
+            if let Some(json_str) = val {
+                debug_run(|| {
+                    println!("json_str: {}", json_str);
+                });
+                let result = VecString::json_to_vec(&json_str);
+                match result {
+                    Ok(vec_str_from_str) => {
+                        *result_value = vec_str_from_str;
+                        re.index += 1;
+                        return re;
+                    }
+                    Err(_e) => {
+                        eprintln!("{}", _e.red());
 
-                re.index += 1;
-                return re;
+                        // TODO: remove the panic!.
+                        panic!();
+                    }
+                }
             }
         }
 
         *result_value = Dialog::get_multiple_str(prompt);
 
-        let mut string = String::new();
-        for x in result_value {
-            string.push_str(x);
-        }
+        // let string = format!(r#"\"{:?}\""#, serde_json::to_string(result_value).unwrap());
+        let string = serde_json::to_string(result_value).unwrap();
 
         re.arr.push(string);
         re.index += 1;
+        // debug_run(|| {
+        //     let arr = VecString::json_to_vec(&string).unwrap();
+
+        //     println!("arr == result_value {}", arr == *result_value);
+
+        //     println!("to_json: {}", re.to_json_str());
+        // });
         return re;
     }
 
@@ -502,39 +519,39 @@ impl ReplQuestions {
         return re;
     }
 
-    fn req_multiple_path(self, result_value: &mut Vec<PathBuf>, prompt: &str) -> Self {
-        let mut re = self;
-
-        if re.is_from_json {
-            let val = re.arr.get(re.index);
-            if let Some(str) = val {
-                let paths = helper::parse_arg_string(&str);
-
-                for x in paths {
-                    let p = Path::new(&x).to_path_buf();
-                    result_value.push(p);
-                }
-
-                re.index += 1;
-                return re;
-            }
-        }
-
-        {
-            // get value from REPL.
-
-            let paths = Dialog::get_multiple_str(prompt);
-            for x in &paths {
-                let p = Path::new(&x).to_path_buf();
-                result_value.push(p);
-            }
-
-            let str = paths.join(" ");
-            re.arr.push(str.to_string());
-            re.index = re.arr.len() - 1;
-            return re;
-        }
-    }
+    // fn req_multiple_path(self, result_value: &mut Vec<PathBuf>, prompt: &str) -> Self {
+    //     let mut re = self;
+    //
+    //     if re.is_from_json {
+    //         let val = re.arr.get(re.index);
+    //         if let Some(str) = val {
+    //             let paths = helper::parse_arg_string(&str);
+    //
+    //             for x in paths {
+    //                 let p = Path::new(&x).to_path_buf();
+    //                 result_value.push(p);
+    //             }
+    //
+    //             re.index += 1;
+    //             return re;
+    //         }
+    //     }
+    //
+    //     {
+    //         // get value from REPL.
+    //
+    //         let paths = Dialog::get_multiple_str(prompt);
+    //         for x in &paths {
+    //             let p = Path::new(&x).to_path_buf();
+    //             result_value.push(p);
+    //         }
+    //
+    //         let str = paths.join(" ");
+    //         re.arr.push(str.to_string());
+    //         re.index = re.arr.len() - 1;
+    //         return re;
+    //     }
+    // }
 }
 
 #[cfg(test)]
@@ -598,29 +615,31 @@ mod test_repl_questions {
             assert_eq!(repl.is_from_json, true);
         }
     }
- 
 
     #[test]
     fn test_req_multiple_string() {
+        // 已测试, 可以逆转.
+
+        // {
+        //     let mut x: Vec<String> = vec![];
+
+        //     let repl = ReplQuestions::new(None).req_multiple_string(&mut x, "");
+
+        //     println!("输入的是: {:?}", x);
+        //     assert_eq!(repl.is_from_json, false);
+        // }
+
         {
-            let mut x :Vec<String> = vec![];
-
-            let repl = ReplQuestions::new(None).req_multiple_string(&mut x, "");
-
-            println!("输入的是: {:?}", x);
-            assert_eq!(repl.is_from_json, false);
-        }
-
-        {
-            let mut x :Vec<String> = vec![];
-            let repl = ReplQuestions::new(Some(r#"["hello"]"#.to_string())).req_multiple_string(&mut x, "");
+            let mut x: Vec<String> = vec![];
+            // let repl = ReplQuestions::new(Some(r#"    [ "\"[\"sa dfadsf\",\"sadfadsf\",\"sa dfadsf\"]\""]  "#.to_string()))
+            let repl = ReplQuestions::new(Some(r#" ["[\"asdfasdf\",\"sadfsadf\"]"] "#.to_string()))
+                .req_multiple_string(&mut x, "");
 
             println!("输入的是: {:?}", x);
 
             assert_eq!(repl.is_from_json, true);
         }
     }
- 
 }
 
 // ------- REPL Functions -------
@@ -807,6 +826,7 @@ impl Dialog {
     /// ```
     pub fn editor(prompt: &str) -> Option<String> {
         let re = dialoguer::Editor::new().edit(prompt);
+
         match re {
             Ok(ostr) => return ostr,
             Err(_e) => {
