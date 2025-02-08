@@ -1,5 +1,3 @@
-use owo_colors::OwoColorize;
-
 pub struct VecString();
 impl VecString {
     pub fn json_to_vec(json_string: &str) -> Result<Vec<String>, serde_json::Error> {
@@ -12,17 +10,23 @@ impl VecString {
     }
 }
 
-#[test]
-fn vec_json是否能相互逆转() {
-    let v1 = vec!["hello".to_string(), "world".to_string()];
+#[cfg(test)]
+mod test {
+    use super::*;
+    use owo_colors::OwoColorize;
 
-    let json_str = VecString::vec_to_json(&v1);
+    #[test]
+    fn vec_json是否能相互逆转() {
+        let v1 = vec!["hello".to_string(), "world".to_string()];
 
-    let v2 = VecString::json_to_vec(&json_str).expect("json to VecString 失败");
+        let json_str = VecString::vec_to_json(&v1);
 
-    println!("json_str: {:?}", json_str.cyan());
-    println!("v1: {:?}\nv2: {:?}", v1.cyan(), v2.cyan());
-    println!("v1 == v2  -> {}  ", v1 == v2); // true 可以还原
+        let v2 = VecString::json_to_vec(&json_str).expect("json to VecString 失败");
 
-    assert_eq!(v1, v2);
+        println!("json_str: {:?}", json_str.cyan());
+        println!("v1: {:?}\nv2: {:?}", v1.cyan(), v2.cyan());
+        println!("v1 == v2  -> {}  ", v1 == v2); // true 可以还原
+
+        assert_eq!(v1, v2);
+    }
 }

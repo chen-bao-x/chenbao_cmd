@@ -1,8 +1,6 @@
-use std::{f32::NAN, fmt::format, num::ParseIntError, vec};
+use std::{num::ParseIntError, path::Path, vec};
 
 use owo_colors::OwoColorize;
-use serde::de::value::Error;
-use serde_json::Number;
 
 use super::*;
 
@@ -271,33 +269,33 @@ use super::*;
 //     println!("{:?}", repl);
 // }
 
-fn dsafdsaf(o: Option<String>) {
-    match o {
-        Some(json) => {
-            // 命令行程序的使用者个此命令传入了一个 JSON,
-            // 需要将此 JSON 转换为需要的数据.
-        }
-        None => {
-            // 问答式命令行交互 来获取所需要的 参数们.
-        }
-    };
-}
+// fn dsafdsaf(o: Option<String>) {
+//     match o {
+//         Some(json) => {
+//             // 命令行程序的使用者个此命令传入了一个 JSON,
+//             // 需要将此 JSON 转换为需要的数据.
+//         }
+//         None => {
+//             // 问答式命令行交互 来获取所需要的 参数们.
+//         }
+//     };
+// }
 
-fn asdfasdf() {
-    let mut a = true;
-    ArgType::Bool(Rc::new(|x| {}));
+// fn asdfasdf() {
+//     let mut a = true;
+//     ArgType::Bool(Rc::new(|x| {}));
 
-    asdfsdafasdff(|| {
-        a = false;
-    })
-}
+//     asdfsdafasdff(|| {
+//         a = false;
+//     })
+// }
 
-fn asdfsdafasdff<F>(mut f: F)
-where
-    F: FnMut() -> (),
-{
-    f();
-}
+// fn asdfsdafasdff<F>(mut f: F)
+// where
+//     F: FnMut() -> (),
+// {
+//     f();
+// }
 
 //     // yes or no QA
 //     // true or false QA
@@ -315,6 +313,7 @@ where
 //     // path single selection QA
 //     // path multi selection QA
 
+/// ArgType::Repl(_) 需要用到 ReplQuestions.
 pub struct ReplQuestions {
     /// 从 json_str 转换过来的 Vec<String>.
     /// 也可能是通过 问答式命令行交互 获取到的 Vec<String>.
@@ -330,7 +329,7 @@ pub struct ReplQuestions {
 
 impl ReplQuestions {
     /* private */
-    pub(crate) fn new(input: Option<String>) -> Self {
+    pub fn new(input: Option<String>) -> Self {
         match input {
             Some(s) => Self::new_from_jsonstr(s),
             None => Self {
@@ -341,11 +340,11 @@ impl ReplQuestions {
         }
     }
 
-    pub(crate) fn new_from_jsonstr(str: String) -> Self {
+    pub fn new_from_jsonstr(str: String) -> Self {
         // str -> Vec<String>
 
-        let sdaf = VecString::json_to_vec(&str);
-        match sdaf {
+        let parse_result = VecString::json_to_vec(&str);
+        match parse_result {
             Ok(v) => {
                 return Self {
                     arr: v,
@@ -368,26 +367,36 @@ impl ReplQuestions {
     }
 
     /// 转换为 json 字符串.
-    fn to_json_str(&self) -> String {
+    pub fn to_json_str(&self) -> String {
         return VecString::vec_to_json(&self.arr);
     }
 }
 
 impl ReplQuestions {
-    fn req_string(self, mut result_value: String) -> Self {
+    fn req_string(self, result_value: &mut String, prompt: &str) -> Self {
         let mut re = self;
-        let val = re.arr.get(re.index);
 
-        match val {
-            Some(str) => {
-                // 成功获取到了需要的参数
-                result_value = str.clone();
-            }
-            None => {
-                // not string
+        if re.is_from_json {
+            println!("is_from_json");
+            let val = re.arr.get(re.index);
+            _ = result_value;
+
+            match val {
+                Some(str) => {
+                    // 成功获取到了需要的参数
+                    *result_value = str.clone();
+                    _ = result_value;
+
+                    re.index += 1;
+                    return re;
+                }
+                None => {
+                    // not string
+                }
             }
         }
 
+        *result_value = Dialog::get_string(prompt);
         re.index += 1;
         return re;
     }
@@ -399,7 +408,7 @@ impl ReplQuestions {
             let val = re.arr.get(re.index);
 
             if let Some(str) = val {
-                let vec_str_from_str = Dialog::get_multiple_str(prompt);
+                let vec_str_from_str = helper::parse_arg_string(str);
                 *result_value = vec_str_from_str;
 
                 re.index += 1;
@@ -407,8 +416,14 @@ impl ReplQuestions {
             }
         }
 
-        Dialog::get_multiple_str(prompt);
+        *result_value = Dialog::get_multiple_str(prompt);
 
+        let mut string = String::new();
+        for x in result_value {
+            string.push_str(x);
+        }
+
+        re.arr.push(string);
         re.index += 1;
         return re;
     }
@@ -422,6 +437,7 @@ impl ReplQuestions {
             if let Some(str) = val {
                 let number_from_str: Result<super::arg_types::Number, std::num::ParseIntError> =
                     str.parse();
+
                 if let Ok(x) = number_from_str {
                     // 成功获取到了需要的参数
                     *result_value = x;
@@ -437,29 +453,92 @@ impl ReplQuestions {
         *result_value = Dialog::get_number(prompt);
         re.arr.push(result_value.to_string());
 
-        re.index += 1;
+        re.index += re.arr.len() - 1;
         return re;
-       
     }
 
     // fn req_multiple_number(
     //     self,
     //     result_value: &mut Vec<super::arg_types::Number>,
-    //     tips: &str,
+    //     prompt: &str,
     // ) -> Self {
+
     // }
 
-    // fn req_bool(self, result_value: &mut bool, tips: &str) -> Self {}
+    fn req_bool(self, result_value: &mut bool, prompt: &str) -> Self {
+        let mut re = self;
 
-    // fn req_multiple_bool(self, result_value: &mut Vec<bool>, tips: &str) -> Self {}
+        // get value from REPL.
 
-    // fn req_path(self, result_value: &mut PathBuf, tips: &str) -> Self {}
+        *result_value = Dialog::get_bool(prompt);
 
-    // fn req_multiple_path(self, result_value: &mut Vec<PathBuf>, tips: &str) -> Self {}
+        re.arr.push(result_value.to_string()); // -> "true" or "false"
+
+        re.index += re.arr.len() - 1;
+        return re;
+    }
+
+    // fn req_multiple_bool(self, result_value: &mut Vec<bool>, prompt: &str) -> Self {}
+
+    fn req_path(self, result_value: &mut PathBuf, prompt: &str) -> Self {
+        let mut re = self;
+
+        if re.is_from_json {
+            let val = re.arr.get(re.index);
+            if let Some(str) = val {
+                *result_value = Path::new(&str).to_path_buf();
+                re.index += 1;
+                return re;
+            }
+        }
+
+        // get value from REPL.
+
+        let str = Dialog::get_string(prompt);
+        *result_value = Path::new(&str).to_path_buf();
+
+        re.arr.push(str); // -> "true" or "false"
+        re.index = re.arr.len() - 1;
+        return re;
+    }
+
+    fn req_multiple_path(self, result_value: &mut Vec<PathBuf>, prompt: &str) -> Self {
+        let mut re = self;
+
+        if re.is_from_json {
+            let val = re.arr.get(re.index);
+            if let Some(str) = val {
+                let paths = helper::parse_arg_string(&str);
+
+                for x in paths {
+                    let p = Path::new(&x).to_path_buf();
+                    result_value.push(p);
+                }
+
+                re.index += 1;
+                return re;
+            }
+        }
+
+        {
+            // get value from REPL.
+
+            let paths = Dialog::get_multiple_str(prompt);
+            for x in &paths {
+                let p = Path::new(&x).to_path_buf();
+                result_value.push(p);
+            }
+
+            let str = paths.join(" ");
+            re.arr.push(str.to_string());
+            re.index = re.arr.len() - 1;
+            return re;
+        }
+    }
 }
 
 #[cfg(test)]
-mod test {
+mod test_repl_questions {
     use owo_colors::OwoColorize;
     use std::default;
 
@@ -500,14 +579,48 @@ mod test {
     }
 
     #[test]
-    fn test_req_multiple_string() {
-        let mut x: Vec<String> = vec![];
-        println!("x 的值是: {:?}", x);
+    fn test_req_string() {
+        {
+            let mut x = String::new();
 
-        ReplQuestions::new(None).req_multiple_string(&mut x, "");
+            let repl = ReplQuestions::new(None).req_string(&mut x, "");
 
-        println!("x 的值是: {:?}", x);
+            println!("输入的是: {:?}", x);
+            assert_eq!(repl.is_from_json, false);
+        }
+
+        {
+            let mut x = String::new();
+            let repl = ReplQuestions::new(Some(r#"["hello"]"#.to_string())).req_string(&mut x, "");
+
+            println!("输入的是: {:?}", x);
+
+            assert_eq!(repl.is_from_json, true);
+        }
     }
+ 
+
+    #[test]
+    fn test_req_multiple_string() {
+        {
+            let mut x :Vec<String> = vec![];
+
+            let repl = ReplQuestions::new(None).req_multiple_string(&mut x, "");
+
+            println!("输入的是: {:?}", x);
+            assert_eq!(repl.is_from_json, false);
+        }
+
+        {
+            let mut x :Vec<String> = vec![];
+            let repl = ReplQuestions::new(Some(r#"["hello"]"#.to_string())).req_multiple_string(&mut x, "");
+
+            println!("输入的是: {:?}", x);
+
+            assert_eq!(repl.is_from_json, true);
+        }
+    }
+ 
 }
 
 // ------- REPL Functions -------
@@ -519,10 +632,42 @@ impl Dialog {
     ///    let a = Dialog::get_string("你要吃几个汉堡?").unwrap();
     ///    println!("最终获得的数字是: {}", a);
     /// ```
-    pub fn get_string(prompt: &str) -> Result<String, dialoguer::Error> {
-        dialoguer::Input::<String>::with_theme(&ColoredTheme {})
+    pub fn get_string(prompt: &str) -> String {
+        let re = dialoguer::Input::<String>::with_theme(&ColoredTheme {})
             .with_prompt(prompt)
-            .interact_text()
+            .interact_text();
+
+        match re {
+            Ok(s) => {
+                return s;
+            }
+            Err(_e) => {
+                eprintln!("{}", _e.red());
+                return Dialog::get_string(prompt); // 继续本次问题
+            }
+        }
+    }
+
+    /// ```rust
+    ///     let arr = Dialog::get_multiple_str("hello");
+    ///     println!("{:?}", arr);
+    /// ``````
+    pub fn get_multiple_str(prompt: &str) -> Vec<String> {
+        println!("{}", prompt.bright_green());
+
+        let re = dialoguer::Input::<String>::with_theme(&ColoredTheme {})
+            .with_prompt(prompt)
+            .interact_text();
+
+        match re {
+            Ok(input) => {
+                return parse_arg_string(&input);
+            }
+            Err(_e) => {
+                eprintln!("{}", _e.red());
+                return Dialog::get_multiple_str(prompt); // 继续本次问题
+            }
+        }
     }
 
     /// 示例:
@@ -564,36 +709,28 @@ impl Dialog {
         }
     }
 
-    /// ```rust
-    ///     let arr = Dialog::get_multiple_str("hello");
-    ///     println!("{:?}", arr);
-    /// ``````
-    pub fn get_multiple_str(prompt: &str) -> Vec<String> {
-        println!("{}", prompt.bright_green());
-
-        let mut input = "".to_string();
-        let re = std::io::stdin()
-            .read_line(&mut input)
-            .expect("read_line() 时出错:");
-        let input = input.trim();
-
-        return parse_arg_string(&input);
-    }
-
     /// 示例:
     /// ```rust
     ///     let b = ReplFunctions::repl_req_bool("test_repl_req_bool").expect("获取 bool 是出错");
     ///     println!("最终获得的数字是: {:?}", b);
     /// ```
-    pub fn get_bool(prompt: &str) -> Result<bool, Box<dyn std::error::Error>> {
+    pub fn get_bool(prompt: &str) -> bool {
         println!("{}", prompt.bright_green());
 
-        let confirmed = dialoguer::Confirm::with_theme(&ColoredTheme {})
+        let re = dialoguer::Confirm::with_theme(&ColoredTheme {})
             .with_prompt("Y 键 N 键选择, 回车键确认: ")
             .wait_for_newline(true)
-            .interact()?;
+            .interact();
 
-        Ok(confirmed)
+        match re {
+            Ok(b) => {
+                return b;
+            }
+            Err(_e) => {
+                eprintln!("{}", _e.red());
+                return Dialog::get_bool(prompt); // 继续本次问题
+            }
+        }
     }
 
     /// 示例子:
@@ -603,20 +740,26 @@ impl Dialog {
     ///     let b = Dialog::get_single_selected("prompt", &items);
     ///     println!("最终获得的数字是: {:?}", b);
     /// ```
-    pub fn get_single_selected<T>(prompt: &str, items: &[T]) -> T
+    pub fn get_single_selected<'a, T>(prompt: &str, items: &'a [T]) -> &'a T
     where
         T: ToString + Clone,
     {
         println!("{}", prompt.bright_green());
 
-        let selection = dialoguer::Select::with_theme(&ColoredTheme {})
+        let re = dialoguer::Select::with_theme(&ColoredTheme {})
             .with_prompt("What do you choose?")
             .items(&items)
-            .interact()
-            .unwrap();
-        let asdf = &items[selection];
+            .interact();
 
-        return items[selection].clone();
+        match re {
+            Ok(selection) => {
+                return &(items[selection]);
+            }
+            Err(_e) => {
+                eprintln!("{}", _e.red());
+                return Dialog::get_single_selected(prompt, &items); // 继续本次问题
+            }
+        }
     }
 
     /// 示例:
@@ -631,21 +774,26 @@ impl Dialog {
     {
         println!("{}", prompt.bright_green());
 
-        let selection = dialoguer::MultiSelect::with_theme(&ColoredTheme {})
+        let re = dialoguer::MultiSelect::with_theme(&ColoredTheme {})
             .with_prompt("What do you choose?")
             .items(&items)
-            .interact()
-            .unwrap();
+            .interact();
 
-        println!("You chose:");
+        match re {
+            Ok(selection) => {
+                let mut re: Vec<T> = vec![];
 
-        let mut re: Vec<T> = vec![];
+                for i in selection {
+                    re.push(items[i].clone());
+                }
 
-        for i in selection {
-            re.push(items[i].clone());
+                return re;
+            }
+            Err(_e) => {
+                eprintln!("{}", _e.red());
+                return Dialog::get_multiple_selected(prompt, &items); // 继续本次问题
+            }
         }
-
-        return re;
     }
 
     /// Launches the editor to edit a string.  
@@ -658,18 +806,27 @@ impl Dialog {
     ///    println!("最终获得的数字是: {:?}", b);
     /// ```
     pub fn editor(prompt: &str) -> Option<String> {
-        dialoguer::Editor::new().edit(prompt).unwrap()
+        let re = dialoguer::Editor::new().edit(prompt);
+        match re {
+            Ok(ostr) => return ostr,
+            Err(_e) => {
+                eprintln!("{}", _e.red());
+                return None;
+            }
+        }
     }
 }
 
 #[cfg(test)]
 mod test_repl_functions {
+    use std::iter;
+
     use super::*;
 
     #[test]
     fn test_get_string() {
-        let a = Dialog::get_string("你要吃几个汉堡?").unwrap();
-        println!("最终获得的数字是: {}", a);
+        let a = Dialog::get_string("请输入一个字符串");
+        println!("最终获得的 string 是: {}", a);
     }
 
     #[test]
@@ -679,26 +836,27 @@ mod test_repl_functions {
     }
 
     #[test]
-    fn test_repl_get_str() {
-        let arr = Dialog::get_multiple_str("hello");
+    fn test_repl_get_multiple_string() {
+        let arr = Dialog::get_multiple_str("请输入多个字符串");
         println!("{:?}", arr);
     }
 
     #[test]
     fn test_repl_req_bool() {
-        let b = Dialog::get_bool("test_repl_req_bool").expect("获取 bool 是出错");
+        let b = Dialog::get_bool("test_repl_req_bool");
         println!("最终获得的数字是: {:?}", b);
     }
 
     #[test]
     fn test_repl_req_string() {
-        let b = Dialog::get_string("请输入一个字符串").expect("获取 string 是出错");
+        let b = Dialog::get_string("请输入一个字符串");
         println!("最终获得的数字是: {:?}", b);
     }
 
     #[test]
     fn test_get_single_selected() {
         let items = vec!["foo", "bar", "baz"];
+
         let b = Dialog::get_single_selected("prompt", &items);
         println!("最终获得的数字是: {:?}", b);
     }
