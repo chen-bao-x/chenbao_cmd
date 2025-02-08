@@ -408,9 +408,6 @@ impl ReplQuestions {
             let val = re.arr.get(re.index);
 
             if let Some(json_str) = val {
-                debug_run(|| {
-                    println!("json_str: {}", json_str);
-                });
                 let result = VecString::json_to_vec(&json_str);
                 match result {
                     Ok(vec_str_from_str) => {
@@ -430,18 +427,11 @@ impl ReplQuestions {
 
         *result_value = Dialog::get_multiple_str(prompt);
 
-        // let string = format!(r#"\"{:?}\""#, serde_json::to_string(result_value).unwrap());
         let string = serde_json::to_string(result_value).unwrap();
 
         re.arr.push(string);
         re.index += 1;
-        // debug_run(|| {
-        //     let arr = VecString::json_to_vec(&string).unwrap();
 
-        //     println!("arr == result_value {}", arr == *result_value);
-
-        //     println!("to_json: {}", re.to_json_str());
-        // });
         return re;
     }
 
@@ -484,6 +474,19 @@ impl ReplQuestions {
 
     fn req_bool(self, result_value: &mut bool, prompt: &str) -> Self {
         let mut re = self;
+        if re.is_from_json {
+            let val = re.arr.get(re.index);
+
+            if let Some(str) = val {
+                if str == "true" {
+                    *result_value = true;
+                } else if str == "false" {
+                    *result_value = false;
+                }
+                re.index += 1;
+                return re;
+            }
+        }
 
         // get value from REPL.
 
@@ -512,6 +515,7 @@ impl ReplQuestions {
         // get value from REPL.
 
         let str = Dialog::get_string(prompt);
+
         *result_value = Path::new(&str).to_path_buf();
 
         re.arr.push(str); // -> "true" or "false"
@@ -519,39 +523,18 @@ impl ReplQuestions {
         return re;
     }
 
-    // fn req_multiple_path(self, result_value: &mut Vec<PathBuf>, prompt: &str) -> Self {
-    //     let mut re = self;
-    //
-    //     if re.is_from_json {
-    //         let val = re.arr.get(re.index);
-    //         if let Some(str) = val {
-    //             let paths = helper::parse_arg_string(&str);
-    //
-    //             for x in paths {
-    //                 let p = Path::new(&x).to_path_buf();
-    //                 result_value.push(p);
-    //             }
-    //
-    //             re.index += 1;
-    //             return re;
-    //         }
-    //     }
-    //
-    //     {
-    //         // get value from REPL.
-    //
-    //         let paths = Dialog::get_multiple_str(prompt);
-    //         for x in &paths {
-    //             let p = Path::new(&x).to_path_buf();
-    //             result_value.push(p);
-    //         }
-    //
-    //         let str = paths.join(" ");
-    //         re.arr.push(str.to_string());
-    //         re.index = re.arr.len() - 1;
-    //         return re;
-    //     }
-    // }
+    fn req_multiple_path(self, result_value: &mut Vec<PathBuf>, prompt: &str) -> Self {
+        let mut r: Vec<String> = vec![];
+        let re = self.req_multiple_string(&mut r, prompt);
+
+        *result_value = vec![];
+
+        for x in r {
+            result_value.push(Path::new(&x).to_path_buf());
+        }
+
+        return re;
+    }
 }
 
 #[cfg(test)]
@@ -634,6 +617,87 @@ mod test_repl_questions {
             // let repl = ReplQuestions::new(Some(r#"    [ "\"[\"sa dfadsf\",\"sadfadsf\",\"sa dfadsf\"]\""]  "#.to_string()))
             let repl = ReplQuestions::new(Some(r#" ["[\"asdfasdf\",\"sadfsadf\"]"] "#.to_string()))
                 .req_multiple_string(&mut x, "");
+
+            println!("输入的是: {:?}", x);
+
+            assert_eq!(repl.is_from_json, true);
+        }
+    }
+
+    #[test]
+    fn test_req_bool() {
+        // 已测试, 可以逆转.
+
+        // {
+        //     let mut x: bool = true;
+
+        //     let repl = ReplQuestions::new(None).req_bool(&mut x, "get an bool");
+
+        //     println!("输入的是: {:?}", x);
+
+        //     println!("json_str: {}", repl.to_json_str());
+        //     assert_eq!(repl.is_from_json, false);
+        // }
+
+        {
+            let mut x: bool = true;
+            // let repl = ReplQuestions::new(Some(r#"    [ "\"[\"sa dfadsf\",\"sadfadsf\",\"sa dfadsf\"]\""]  "#.to_string()))
+            let repl = ReplQuestions::new(Some(r#"   ["false"]    "#.to_string()))
+                .req_bool(&mut x, "get an bool");
+
+            println!("输入的是: {:?}", x);
+
+            assert_eq!(repl.is_from_json, true);
+        }
+    }
+
+    #[test]
+    fn tese_req_path() {
+        // 已测试, 可以逆转.
+
+        // {
+        //     let mut x: PathBuf = PathBuf::new();
+
+        //     let repl = ReplQuestions::new(None).req_path(&mut x, "get an path");
+
+        //     println!("输入的是: {:?}", x);
+
+        //     println!("json_str: {}", repl.to_json_str());
+        //     assert_eq!(repl.is_from_json, false);
+        // }
+
+        {
+            let mut x: PathBuf = PathBuf::new();
+
+            let repl = ReplQuestions::new(Some(r#"  ["./hello/sadf.txt"]   "#.to_string()))
+                .req_path(&mut x, "get an bool");
+
+            println!("输入的是: {:?}", x);
+
+            assert_eq!(repl.is_from_json, true);
+        }
+    }
+
+    #[test]
+    fn test_req_multiple_path() {
+        // 已测试, 可以逆转.
+
+        // {
+        //     let mut x: Vec<PathBuf> = vec![];
+
+        //     let repl = ReplQuestions::new(None).req_multiple_path(&mut x, "get mutiple path");
+
+        //     println!("输入的是: {:?}", x);
+
+        //     println!("json_str: {}", repl.to_json_str());
+        //     assert_eq!(repl.is_from_json, false);
+        // }
+
+        {
+            let mut x: Vec<PathBuf> = vec![];
+
+            let repl = ReplQuestions::new(Some(r#" ["[\"a\",\"b.txt\",\"./\"]"]  "#.to_string()))
+                .req_multiple_path(&mut x, "get mutiple path");
 
             println!("输入的是: {:?}", x);
 
@@ -839,7 +903,6 @@ impl Dialog {
 
 #[cfg(test)]
 mod test_repl_functions {
-    use std::iter;
 
     use super::*;
 
