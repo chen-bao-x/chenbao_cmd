@@ -1,4 +1,4 @@
-use prettytable::{row, table, Row, Table};
+use prettytable::{row, table, Table};
 
 use crate::helper;
 
@@ -16,7 +16,7 @@ use crate::helper;
 // ------- Examples -------
 #[derive(Clone, Debug)]
 pub struct Examples {
-    val: Vec<SingleExample>,
+    pub(crate) val: Vec<SingleExample>,
 }
 
 impl std::fmt::Display for Examples {
@@ -68,9 +68,9 @@ impl Examples {
 // ------- SingleExample -------
 
 #[derive(Clone, Debug)]
-struct SingleExample {
-    command: &'static str,
-    description: &'static str,
+pub(crate) struct SingleExample {
+    pub command: &'static str,
+    pub description: &'static str,
 }
 
 impl std::fmt::Display for SingleExample {

@@ -1,8 +1,91 @@
+//! ```rust
+//! let app = App::new("cmd")
+//!      .add_about("这个程序主要是为了测试我写的 cmd crate")
+//!      .add_author("chen bao")
+//!      .app_version_message("0.0.1".to_string())
+//!      .add_subcommand(
+//!          SubCommand::new("run")
+//!              .about("运行程序")
+//!              .action(ArgAction::Bool(Rc::new(|_x| {
+//!                  print!("command \"run\"{:?}\n", _x);
+//!              }))),
+//!      )
+//!      .add_subcommand(
+//!          SubCommand::new("help")
+//!              .about("运行程序")
+//!              .action(ArgAction::Empty(Rc::new(|| {}))),
+//!      )
+//!      .add_subcommand(
+//!          SubCommand::new("build")
+//!              .short_name("b")
+//!              .about("编译项目")
+//!              .action(ArgAction::Bool(Rc::new(|_x| {
+//!                  print!("command \"run\"{:?}\n", _x);
+//!              }))),
+//!      )
+//!      .add_subcommand(
+//!          SubCommand::new("empty")
+//!              .about("用来测试 ArgCount::Zero ")
+//!              .action(ArgAction::Empty(Rc::new(|| {
+//!                  print!("testing arg_zero");
+//!              }))),
+//!      )
+//!      .add_subcommand(
+//!          SubCommand::new("number")
+//!              .about("用来测试 ArgCount::Zero ")
+//!              .action(ArgAction::Number(Rc::new(|_x| {
+//!                  print!("testing arg_zero");
+//!              }))),
+//!      )
+//!      .add_subcommand(
+//!          SubCommand::new("vecnumber")
+//!              .about("用来测试 ArgCount::Zero ")
+//!              .action(ArgAction::NumberMutiple(Rc::new(|_x| {
+//!                  print!("testing arg_zero");
+//!              }))),
+//!      )
+//!      .add_subcommand(
+//!          SubCommand::new("vecbool")
+//!              .about("用来测试 ArgCount::Zero ")
+//!              .action(ArgAction::BoolMutiple(Rc::new(|_x| {
+//!                  print!("testing arg_zero");
+//!              }))),
+//!      )
+//!      .add_subcommand(
+//!          SubCommand::new("vecstring")
+//!              .about("用来测试 ArgCount::Zero ")
+//!              .action(ArgAction::StringMutiple(Rc::new(|_x| {
+//!                  print!("testing arg_zero");
+//!              }))),
+//!      )
+//!      .add_subcommand(
+//!          SubCommand::new("repl")
+//!              .about("用来测试 ArgCount::Repl(_) ")
+//!              .action(ArgAction::Dialog(Rc::new(|r| {
+//!                  let mut 你要吃几个汉堡包: arg_type::Number = 0;
+//!                  let mut 多个_number: arg_type::NumberMutiple = vec![];
+//!                  let mut string: String = String::new();
+//!                  let mut string_multiple: Vec<String> = vec![];
+//!                  let mut req_bool: arg_type::Bool = false;
+//!                  let mut req_bool_multiple: arg_type::BoolMutiple = vec![];
+//!      
+//!                  r.number(&mut 你要吃几个汉堡包, "你要吃几个汉堡包?")
+//!                      .req_multiple_number(&mut 多个_number, "多个 number")
+//!                      .string(&mut string, "string")
+//!                      .string_multiple(&mut string_multiple, "string_multiple")
+//!                      .yes_or_no(&mut req_bool, "bool")
+//!                      .yes_or_no_multiple(&mut req_bool_multiple, "bool mutiple");
+//!                  }))),
+//!         );
+//!
+//!         app.run();
+//! ```
+
 use owo_colors::OwoColorize;
 use prettytable::{row, table};
 
 use super::*;
-use std::{collections::HashSet, default, rc::Rc};
+use std::{collections::HashSet, rc::Rc};
 
 #[derive(Clone)]
 pub enum AppDefaultAction {
@@ -243,7 +326,7 @@ Commands:
             table.set_format(table_formater());
 
             for x in &self.sub_commands {
-                let rows = x.formated_command_example(self.app_name.clone());
+                let rows = x.formated_command_example(&self.app_name);
                 rows.row_iter().for_each(|a| {
                     table.add_row(a.clone());
                 });
@@ -324,7 +407,7 @@ impl App {
             for x in &self.sub_commands {
                 if 需要查询的命令名称 == &x.command_name || 需要查询的命令名称 == &x.short_name
                 {
-                    x.print_command_help(self.app_name.clone());
+                    x.print_command_help(&self.app_name);
                     return DidHandled::Handled;
                 }
             }
@@ -393,145 +476,14 @@ impl App {
             if command_name == &x.command_name || command_name == &x.short_name {
                 let cmd_args = &self.sub_command_arg;
 
-                {
-                    // 处理当前 子命令 的 flag.
-                    if let Some(first_arg) = cmd_args.first() {
-                        // 处理当前子命令的 help flag.
-                        if first_arg == "--help" || first_arg == "-h" {
-                            x.print_command_help(self.app_name.clone());
-                            return DidHandled::Handled;
-                        }
-
-                        // 处理当前子命令的 example flag.
-                        if first_arg == "--example" || first_arg == "-e" {
-                            x.print_command_example(self.app_name.clone());
-                            return DidHandled::Handled;
-                        }
-                    }
-                }
-
-                let v = SubcommandArgsValue::new(cmd_args.clone());
-                match &x.arg_type_with_action {
-                    ArgAction::Empty(_f) => {
-                        _f();
-                        return DidHandled::Handled;
-                    }
-                    ArgAction::String(_f) => {
-                        let re = v.get_string();
-                        match re {
-                            Ok(s) => {
-                                _f(s);
-                                return DidHandled::Handled;
-                            }
-                            Err(e) => {
-                                return DidHandled::Failed(e);
-                            }
-                        }
-                    }
-                    ArgAction::StringMutiple(_f) => {
-                        let re = v.get_vec_string();
-                        match re {
-                            Ok(s) => {
-                                _f(s);
-                                return DidHandled::Handled;
-                            }
-                            Err(e) => {
-                                return DidHandled::Failed(e);
-                            }
-                        }
-                    }
-                    ArgAction::Number(_f) => {
-                        let re = v.get_number();
-                        match re {
-                            Ok(s) => {
-                                _f(s);
-                                return DidHandled::Handled;
-                            }
-                            Err(e) => {
-                                return DidHandled::Failed(e);
-                            }
-                        }
-                    }
-                    ArgAction::NumberMutiple(_f) => {
-                        let re = v.get_vec_number();
-                        match re {
-                            Ok(s) => {
-                                _f(s);
-                                return DidHandled::Handled;
-                            }
-                            Err(e) => {
-                                return DidHandled::Failed(e);
-                            }
-                        }
-                    }
-                    ArgAction::Path(_f) => {
-                        let re = v.get_path();
-                        match re {
-                            Ok(s) => {
-                                _f(Rc::new(s));
-                                return DidHandled::Handled;
-                            }
-                            Err(e) => {
-                                return DidHandled::Failed(e);
-                            }
-                        }
-                    }
-                    ArgAction::PathMutiple(_f) => {
-                        let re = v.get_vec_path();
-                        match re {
-                            Ok(s) => {
-                                _f(Rc::new(s));
-                                return DidHandled::Handled;
-                            }
-                            Err(e) => {
-                                return DidHandled::Failed(e);
-                            }
-                        }
-                    }
-                    ArgAction::Bool(_f) => {
-                        let re = v.get_bool();
-                        match re {
-                            Ok(s) => {
-                                _f(s);
-                                return DidHandled::Handled;
-                            }
-                            Err(e) => {
-                                return DidHandled::Failed(e);
-                            }
-                        }
-                    }
-                    ArgAction::BoolMutiple(_f) => {
-                        let re = v.get_vec_bool();
-                        match re {
-                            Ok(s) => {
-                                _f(s);
-                                return DidHandled::Handled;
-                            }
-                            Err(e) => {
-                                return DidHandled::Failed(e);
-                            }
-                        }
-                    }
-                    ArgAction::Dialog(_f) => {
-                        let re = v.get_repl();
-                        match re {
-                            Ok(s) => {
-                                _f(arg_type::Dialog::new(s.as_deref()));
-                                return DidHandled::Handled;
-                            }
-                            Err(e) => {
-                                return DidHandled::Failed(e);
-                            }
-                        }
-                    }
-                }
+                return x.run(&self.app_name, cmd_args);
             } else {
                 continue;
             }
         }
 
         return DidHandled::Failed(format!(
-            "_handle_commands(&self, command_name: &String) -> DidHandled \n未知命令: {:?}",
+            "_handle_commands(_) -> DidHandled \n未知命令: {:?}",
             self.env_arg
         ));
     }
@@ -569,12 +521,12 @@ impl App {
     }
 
     /// 检查子命令的名字是否重复.
-    pub(crate) fn debug_duplicate_names_check(&self) -> Result<(), HashSet<String>> {
+    pub(crate) fn debug_duplicate_names_check(&self) -> Result<(), HashSet<&String>> {
         // 重复了的子命令名称.
-        let mut duplicated_names: HashSet<String> = HashSet::new();
+        let mut duplicated_names: HashSet<&String> = HashSet::new();
 
         // 子命令的名字合集.
-        let mut set: HashSet<String> = HashSet::new();
+        let mut set: HashSet<&String> = HashSet::new();
 
         let mut default_impls: HashSet<String> = HashSet::new();
         {
@@ -588,10 +540,10 @@ impl App {
         }
         for x in &self.sub_commands {
             {
-                let name = x.command_name.clone();
+                let name = &x.command_name;
 
-                if set.contains(&name) || default_impls.contains(&name) {
-                    duplicated_names.insert(name.clone());
+                if set.contains(&name) || default_impls.contains(name) {
+                    duplicated_names.insert(&name);
 
                     println!(
                         "name:{:?}\nduplicated_names:{:?}\nset: {:?}",
@@ -603,13 +555,13 @@ impl App {
             }
 
             {
-                let short_name = x.short_name.clone();
+                let short_name = &x.short_name;
 
                 if short_name == "" {
                     continue;
                 }
 
-                if (set.contains(&short_name)) || default_impls.contains(&short_name) {
+                if (set.contains(short_name)) || default_impls.contains(short_name) {
                     duplicated_names.insert(short_name);
                 } else {
                     set.insert(short_name);

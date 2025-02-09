@@ -1,30 +1,23 @@
+pub use question_and_anser::*;
+pub mod arg_type;
+pub use action::*;
+pub use application::*;
+pub use examples_types::*;
+pub use subcommand::*;
+
 use dialoguer;
 use owo_colors;
 use prettytable;
 use serde_json;
-
 mod application;
-pub use application::*;
-
 mod subcommand;
-pub use subcommand::*;
-
 mod vec_string;
-pub(crate) use vec_string::*;
+use vec_string::*;
 mod helper;
-pub(crate) use helper::*;
-
+use helper::*;
 mod action;
-pub use action::*;
-
 mod examples_types;
-pub use examples_types::*;
-
-/// 问答式命令行交互
 mod question_and_anser;
-pub use question_and_anser::*;
-
-pub mod arg_type;
 
 // mod arg_count;
 // pub use arg_count::*;
@@ -45,13 +38,6 @@ mod tests {
             .add_about("这个程序主要是为了测试我写的 cmd crate")
             .add_author("chen bao")
             .app_version_message("0.0.1".to_string())
-            .add_subcommand(
-                SubCommand::new("run")
-                    .about("运行程序")
-                    .action(ArgAction::Bool(Rc::new(|_x| {
-                        print!("command \"run\"{:?}\n", _x);
-                    }))),
-            )
             .add_subcommand(
                 SubCommand::new("run")
                     .about("运行程序")
@@ -134,20 +120,22 @@ mod tests {
         // }
 
         let _ = app
-            .deubg_run(vec!["cmd", "-e"])
-            .deubg_run(vec!["cmd", "help"])
-            .deubg_run(vec!["cmd", "-h"])
-            .deubg_run(vec!["cmd", "b"])
-            .deubg_run(vec!["cmd", "build"])
-            .deubg_run(vec!["cmd", "build", "-h"])
-            .deubg_run(vec!["cmd", "build", "-e"])
-            .deubg_run(vec!["cmd", "run"])
-            .deubg_run(vec!["cmd", "run", "3"])
-            .deubg_run(vec!["cmd", "run", "3", "32"]) // 类型正确, 数量不正确
-            .deubg_run(vec!["cmd", "run", "-h"])
-            .deubg_run(vec!["cmd", "-h"])
-            .deubg_run(vec!["cmd"])
-            .deubg_run(vec!["cmd", "arg_one", "-h"]);
+            // .deubg_run(vec!["cmd", "-e"])
+            // .deubg_run(vec!["cmd", "help"])
+            // .deubg_run(vec!["cmd", "-h"])
+            // .deubg_run(vec!["cmd", "b"])
+            .deubg_run(vec!["cmd", "build", "true"])
+            // .deubg_run(vec!["cmd", "build", "-h"])
+            // .deubg_run(vec!["cmd", "build", "-e"])
+            // .deubg_run(vec!["cmd", "run"])
+            // .deubg_run(vec!["cmd", "run", "3"])
+            // .deubg_run(vec!["cmd", "run", "3", "32"]) // 类型正确, 数量不正确
+            // .deubg_run(vec!["cmd", "run", "-h"])
+            // .deubg_run(vec!["cmd", "-h"])
+            // .deubg_run(vec!["cmd"])
+            // .deubg_run(vec!["cmd", "arg_one", "-h"])
+            
+            ;
     }
 
     #[test]

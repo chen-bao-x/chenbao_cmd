@@ -82,10 +82,187 @@ impl SubCommand {
 
         return re;
     }
+
+    pub fn run(&self, app_name: &String, cmd_args: &Vec<String>) -> DidHandled {
+        self.try_run(app_name, cmd_args, true)
+    }
+
+    // /// 检查 example 里面的 command 是否能够被正常解析.
+    // pub fn check(&self, app_name: &String, cmd_args: &Vec<String>) -> DidHandled {
+    //     // for x in &self.exaples.val {
+    //     //     let sadfdsaf = helper::parse_arg_string(x.command);
+    //     // }
+    //     self.try_run(app_name, cmd_args, false)
+    // }
+
+    fn try_run(
+        &self,
+        app_name: &String,
+        cmd_args: &Vec<String>,
+        need_run_action: bool,
+    ) -> DidHandled {
+        {
+            // 处理当前 子命令 的 flag.
+            if let Some(first_arg) = cmd_args.first() {
+                // 处理当前子命令的 help flag.
+                if first_arg == "--help" || first_arg == "-h" {
+                    if need_run_action {
+                        self.print_command_help(app_name);
+                    }
+                    return DidHandled::Handled;
+                }
+
+                // 处理当前子命令的 example flag.
+                if first_arg == "--example" || first_arg == "-e" {
+                    if need_run_action {
+                        self.print_command_example(app_name);
+                    }
+                    return DidHandled::Handled;
+                }
+            }
+        }
+
+        let v = SubcommandArgsValue::new(cmd_args.clone());
+        match &self.arg_type_with_action {
+            ArgAction::Empty(func) => {
+                if need_run_action {
+                    func();
+                }
+                return DidHandled::Handled;
+            }
+            ArgAction::String(func) => {
+                let re = v.get_string();
+                match re {
+                    Ok(s) => {
+                        if need_run_action {
+                            func(s);
+                        }
+                        return DidHandled::Handled;
+                    }
+                    Err(e) => {
+                        return DidHandled::Failed(e);
+                    }
+                }
+            }
+            ArgAction::StringMutiple(func) => {
+                let re = v.get_vec_string();
+                match re {
+                    Ok(s) => {
+                        if need_run_action {
+                            func(s);
+                        }
+
+                        return DidHandled::Handled;
+                    }
+                    Err(e) => {
+                        return DidHandled::Failed(e);
+                    }
+                }
+            }
+            ArgAction::Number(func) => {
+                let re = v.get_number();
+                match re {
+                    Ok(s) => {
+                        if need_run_action {
+                            func(s);
+                        }
+                        return DidHandled::Handled;
+                    }
+                    Err(e) => {
+                        return DidHandled::Failed(e);
+                    }
+                }
+            }
+            ArgAction::NumberMutiple(func) => {
+                let re = v.get_vec_number();
+                match re {
+                    Ok(s) => {
+                        if need_run_action {
+                            func(s);
+                        }
+                        return DidHandled::Handled;
+                    }
+                    Err(e) => {
+                        return DidHandled::Failed(e);
+                    }
+                }
+            }
+            ArgAction::Path(func) => {
+                let re = v.get_path();
+                match re {
+                    Ok(s) => {
+                        if need_run_action {
+                            func(Rc::new(s));
+                        }
+                        return DidHandled::Handled;
+                    }
+                    Err(e) => {
+                        return DidHandled::Failed(e);
+                    }
+                }
+            }
+            ArgAction::PathMutiple(func) => {
+                let re = v.get_vec_path();
+                match re {
+                    Ok(s) => {
+                        if need_run_action {
+                            func(Rc::new(s));
+                        }
+                        return DidHandled::Handled;
+                    }
+                    Err(e) => {
+                        return DidHandled::Failed(e);
+                    }
+                }
+            }
+            ArgAction::Bool(func) => {
+                let re = v.get_bool();
+                match re {
+                    Ok(s) => {
+                        if need_run_action {
+                            func(s);
+                        }
+                        return DidHandled::Handled;
+                    }
+                    Err(e) => {
+                        return DidHandled::Failed(e);
+                    }
+                }
+            }
+            ArgAction::BoolMutiple(func) => {
+                let re = v.get_vec_bool();
+                match re {
+                    Ok(s) => {
+                        if need_run_action {
+                            func(s);
+                        }
+                        return DidHandled::Handled;
+                    }
+                    Err(e) => {
+                        return DidHandled::Failed(e);
+                    }
+                }
+            }
+            ArgAction::Dialog(func) => {
+                let re = v.get_repl();
+                match re {
+                    Ok(s) => {
+                        if need_run_action {
+                            func(arg_type::Dialog::new(s.as_deref()));
+                        }
+                        return DidHandled::Handled;
+                    }
+                    Err(e) => {
+                        return DidHandled::Failed(e);
+                    }
+                }
+            }
+        }
+    }
 }
 
 impl SubCommand {
-    pub fn formated_command_help(&self, app_name: String) -> String {
+    pub fn formated_command_help(&self, app_name: &String) -> String {
         if self.help_document != "" {
             // 自定义了帮助文档的情况;
             return format!("{}", self.help_document);
@@ -134,12 +311,12 @@ Arguments:
         }
     }
 
-    pub fn print_command_help(&self, app_name: String) {
+    pub fn print_command_help(&self, app_name: &String) {
         println!("{}", self.formated_command_help(app_name));
     }
 
     /// 已静格式化好了, 直接放进 Table 打印就行.
-    pub fn formated_command_example(&self, app_name: String) -> Table {
+    pub fn formated_command_example(&self, app_name: &String) -> Table {
         if self.exaples.is_empty() {
             let mut table = table!();
             table.set_format(helper::table_formater());
@@ -150,21 +327,21 @@ Arguments:
                 .bright_green()
                 .to_string();
 
-            let r = row![
+            table.add_row(row![
                 format!(
                     "{app_name} {command_name} {arg}",
                     command_name = self.command_name.cyan(),
                 ),
                 self.about
-            ];
-            table.add_row(r);
+            ]);
+            
             return table;
         } else {
             return self.exaples.pretty_formated();
         }
     }
 
-    pub fn print_command_example(&self, app_name: String) {
+    pub fn print_command_example(&self, app_name: &String) {
         let arr = self.formated_command_example(app_name);
         let mut table = table!();
         table.set_format(table_formater());
