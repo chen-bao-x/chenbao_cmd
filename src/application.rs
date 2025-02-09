@@ -448,11 +448,11 @@ impl App {
 
                 let v = SubcommandArgsValue::new(cmd_args.clone());
                 match &x.need_arg_type {
-                    ArgType::Empty(_f) => {
+                    ArgTypeWithAction::Empty(_f) => {
                         _f();
                         return DidHandled::Handled;
                     }
-                    ArgType::String(_f) => {
+                    ArgTypeWithAction::String(_f) => {
                         let re = v.get_string();
                         match re {
                             Ok(s) => {
@@ -464,7 +464,7 @@ impl App {
                             }
                         }
                     }
-                    ArgType::VecString(_f) => {
+                    ArgTypeWithAction::StringMutiple(_f) => {
                         let re = v.get_vec_string();
                         match re {
                             Ok(s) => {
@@ -476,7 +476,7 @@ impl App {
                             }
                         }
                     }
-                    ArgType::Number(_f) => {
+                    ArgTypeWithAction::Number(_f) => {
                         let re = v.get_number();
                         match re {
                             Ok(s) => {
@@ -488,7 +488,7 @@ impl App {
                             }
                         }
                     }
-                    ArgType::VecNumber(_f) => {
+                    ArgTypeWithAction::NumberMutiple(_f) => {
                         let re = v.get_vec_number();
                         match re {
                             Ok(s) => {
@@ -500,7 +500,7 @@ impl App {
                             }
                         }
                     }
-                    ArgType::Path(_f) => {
+                    ArgTypeWithAction::Path(_f) => {
                         let re = v.get_path();
                         match re {
                             Ok(s) => {
@@ -512,7 +512,7 @@ impl App {
                             }
                         }
                     }
-                    ArgType::VecPath(_f) => {
+                    ArgTypeWithAction::PathMutiple(_f) => {
                         let re = v.get_vec_path();
                         match re {
                             Ok(s) => {
@@ -524,7 +524,7 @@ impl App {
                             }
                         }
                     }
-                    ArgType::Bool(_f) => {
+                    ArgTypeWithAction::Bool(_f) => {
                         let re = v.get_bool();
                         match re {
                             Ok(s) => {
@@ -536,7 +536,7 @@ impl App {
                             }
                         }
                     }
-                    ArgType::VecBool(_f) => {
+                    ArgTypeWithAction::BoolMutiple(_f) => {
                         let re = v.get_vec_bool();
                         match re {
                             Ok(s) => {
@@ -548,7 +548,7 @@ impl App {
                             }
                         }
                     }
-                    ArgType::Repl(_f) => {
+                    ArgTypeWithAction::Repl(_f) => {
                         let re = v.get_repl();
                         match re {
                             Ok(s) => {

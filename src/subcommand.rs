@@ -26,7 +26,7 @@ pub struct SubCommand {
 
     /// 子命令需要的参数的类型.
     /// 在打印子命令的帮助文档时需要用到此属性.
-    pub need_arg_type: ArgType,
+    pub need_arg_type: ArgTypeWithAction,
     // /// command action with command_arg
     // pub action: Option<CommandAction>,
 }
@@ -47,7 +47,7 @@ impl SubCommand {
             // arg_count: ArgCount::Zero,
             short_name: "".to_string(),
             exaples: None,
-            need_arg_type: ArgType::Empty(Rc::new(|| {})),
+            need_arg_type: ArgTypeWithAction::Empty(Rc::new(|| {})),
         };
     }
 
@@ -90,7 +90,7 @@ impl SubCommand {
     //     return re;
     // }
     /// set `Command.action`
-    pub fn action(self, need_arg_type: ArgType) -> Self {
+    pub fn action(self, need_arg_type: ArgTypeWithAction) -> Self {
         let mut re = self;
         re.need_arg_type = need_arg_type;
 
@@ -107,16 +107,16 @@ impl SubCommand {
             let arg_message: String = self.need_arg_type.arg_message();
 
             let arg_in_usage = match self.need_arg_type {
-                ArgType::Empty(_) => "",
-                ArgType::String(_) => r#""string""#,
-                ArgType::VecString(_) => r#""string...""#,
-                ArgType::Number(_) => r#"Number"#,
-                ArgType::VecNumber(_) => r#"Number..."#,
-                ArgType::Path(_) => r#""path""#,
-                ArgType::VecPath(_) => r#""path"..."#,
-                ArgType::Bool(_) => r#"bool"#,
-                ArgType::VecBool(_) => r#"bool..."#,
-                ArgType::Repl(_) => "",
+                ArgTypeWithAction::Empty(_) => "",
+                ArgTypeWithAction::String(_) => r#""string""#,
+                ArgTypeWithAction::StringMutiple(_) => r#""string...""#,
+                ArgTypeWithAction::Number(_) => r#"Number"#,
+                ArgTypeWithAction::NumberMutiple(_) => r#"Number..."#,
+                ArgTypeWithAction::Path(_) => r#""path""#,
+                ArgTypeWithAction::PathMutiple(_) => r#""path"..."#,
+                ArgTypeWithAction::Bool(_) => r#"bool"#,
+                ArgTypeWithAction::BoolMutiple(_) => r#"bool..."#,
+                ArgTypeWithAction::Repl(_) => "",
             };
             let arg_in_usage = arg_in_usage.magenta();
 

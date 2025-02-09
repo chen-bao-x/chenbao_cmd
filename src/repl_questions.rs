@@ -1,301 +1,7 @@
-use std::{fmt::format, num::ParseIntError, path::Path, vec};
-
 use owo_colors::OwoColorize;
+use std::{fs::read_link, num::ParseIntError, path::Path, vec};
 
 use super::*;
-
-// /// 问答式命令行交互
-// #[derive(Debug)]
-// pub struct ReplQA {
-//     pub tips: &'static str,
-
-//     /// need ArgType
-//     pub need_arg_type: ArgType,
-
-//     pub value: Option<SubcommandArgsValue>,
-
-//     pub when_failed: WhenFailed,
-// }
-
-// #[derive(Debug, Clone, Copy)]
-// pub enum WhenFailed {
-//     Terminate,
-//     Continue,
-// }
-
-// impl ReplQA {
-//     pub fn run(&mut self) {
-//         println!("{}\n{}", self.tips, self.need_arg_type.arg_type_tips());
-
-//         let mut input = String::new();
-//         let re = std::io::stdin().read_line(&mut input);
-//         match re {
-//             Ok(_) => {
-//                 let input = input.trim_end_matches('\n');
-
-//                 let args = parse_arg_string(input);
-//                 println!("{:?}", args);
-
-//                 let v = SubcommandArgsValue::new(self.need_arg_type.clone(), args);
-
-//                 match self.need_arg_type {
-//                     ArgType::Empty => {
-//                         let re = v.clone().get_empty();
-
-//                         match re {
-//                             Ok(_) => {
-//                                 self.value = Some(v);
-//                             }
-//                             Err(_e) => {
-//                                 match self.when_failed {
-//                                     WhenFailed::Terminate => {
-//                                         println!("{}", _e);
-
-//                                         exit(0);
-//                                     }
-//                                     WhenFailed::Continue => {
-//                                         self.run();
-//                                     }
-//                                 };
-//                             }
-//                         }
-//                     }
-//                     ArgType::String => {
-//                         let re = v.clone().get_string();
-
-//                         match re {
-//                             Ok(a) => {
-//                                 self.value = Some(v);
-//                             }
-//                             Err(_e) => {
-//                                 match self.when_failed {
-//                                     WhenFailed::Terminate => {
-//                                         println!("{}", _e);
-//                                         exit(0);
-//                                     }
-//                                     WhenFailed::Continue => {
-//                                         self.run();
-//                                     }
-//                                 };
-//                             }
-//                         }
-//                     }
-//                     ArgType::VecString => {
-//                         let re = v.clone().get_vec_string();
-
-//                         match re {
-//                             Ok(a) => {
-//                                 self.value = Some(v);
-//                             }
-//                             Err(_e) => {
-//                                 match self.when_failed {
-//                                     WhenFailed::Terminate => {
-//                                         println!("{}", _e);
-//                                         exit(0);
-//                                     }
-//                                     WhenFailed::Continue => {
-//                                         self.run();
-//                                     }
-//                                 };
-//                             }
-//                         }
-//                     }
-//                     ArgType::Number => {
-//                         let re = v.clone().get_number();
-
-//                         match re {
-//                             Ok(a) => {
-//                                 self.value = Some(v);
-//                             }
-//                             Err(_e) => {
-//                                 match self.when_failed {
-//                                     WhenFailed::Terminate => {
-//                                         println!("{}", _e);
-//                                         exit(0);
-//                                     }
-//                                     WhenFailed::Continue => {
-//                                         self.run();
-//                                     }
-//                                 };
-//                             }
-//                         }
-//                     }
-//                     ArgType::VecNumber => {
-//                         let re = v.clone().get_number();
-
-//                         match re {
-//                             Ok(a) => {
-//                                 self.value = Some(v);
-//                             }
-//                             Err(_e) => {
-//                                 match self.when_failed {
-//                                     WhenFailed::Terminate => {
-//                                         println!("{}", _e);
-//                                         exit(0);
-//                                     }
-//                                     WhenFailed::Continue => {
-//                                         self.run();
-//                                     }
-//                                 };
-//                             }
-//                         }
-//                     }
-//                     ArgType::Path => {
-//                         let re = v.clone().get_path();
-
-//                         match re {
-//                             Ok(a) => {
-//                                 self.value = Some(v);
-//                             }
-//                             Err(_e) => {
-//                                 match self.when_failed {
-//                                     WhenFailed::Terminate => {
-//                                         println!("{}", _e);
-//                                         exit(0);
-//                                     }
-//                                     WhenFailed::Continue => {
-//                                         self.run();
-//                                     }
-//                                 };
-//                             }
-//                         }
-//                     }
-//                     ArgType::VecPath => {
-//                         let re = v.clone().get_vec_path();
-
-//                         match re {
-//                             Ok(a) => {
-//                                 self.value = Some(v);
-//                             }
-//                             Err(_e) => {
-//                                 match self.when_failed {
-//                                     WhenFailed::Terminate => {
-//                                         println!("{}", _e);
-//                                         exit(0);
-//                                     }
-//                                     WhenFailed::Continue => {
-//                                         self.run();
-//                                     }
-//                                 };
-//                             }
-//                         }
-//                     }
-//                     ArgType::Bool => {
-//                         let re = v.clone().get_bool();
-
-//                         match re {
-//                             Ok(a) => {
-//                                 self.value = Some(v);
-//                             }
-//                             Err(_e) => {
-//                                 match self.when_failed {
-//                                     WhenFailed::Terminate => {
-//                                         println!("{}", _e);
-//                                         exit(0);
-//                                     }
-//                                     WhenFailed::Continue => {
-//                                         self.run();
-//                                     }
-//                                 };
-//                             }
-//                         }
-//                     }
-//                     ArgType::VecBool => {
-//                         let re = v.clone().get_vec_bool();
-
-//                         match re {
-//                             Ok(a) => {
-//                                 self.value = Some(v);
-//                             }
-//                             Err(_e) => {
-//                                 match self.when_failed {
-//                                     WhenFailed::Terminate => {
-//                                         println!("{}", _e);
-//                                         exit(0);
-//                                     }
-//                                     WhenFailed::Continue => {
-//                                         self.run();
-//                                     }
-//                                 };
-//                             }
-//                         }
-//                     }
-//                     ArgType::Repl => todo!(),
-//                 };
-//             }
-//             Err(f) => {
-//                 match self.when_failed {
-//                     WhenFailed::Terminate => {
-//                         println!("{}", f);
-//                         exit(0);
-//                     }
-//                     WhenFailed::Continue => {
-//                         self.run();
-//                     }
-//                 };
-//             }
-//         };
-//     }
-
-//     // yes or no QA
-//     // true or false QA
-//     // number QA
-//     // vec<number> QA
-//     // string QA
-//     // Vec<string> QA
-//     // path QA
-//     // Vec<path> QA
-//     // password QA whith confirm
-
-//     // enum single selection QA
-//     // enum multi selection QA
-
-//     // path single selection QA
-//     // path multi selection QA
-
-// }
-
-// #[test]
-// fn adsfsadf() {
-//     let mut repl = ReplQA {
-//         tips: "tips",
-//         need_arg_type: ArgType::VecBool,
-//         value: None,
-//         when_failed: WhenFailed::Continue,
-//     };
-
-//     repl.run();
-
-//     println!("{:?}", repl);
-// }
-
-// fn dsafdsaf(o: Option<String>) {
-//     match o {
-//         Some(json) => {
-//             // 命令行程序的使用者个此命令传入了一个 JSON,
-//             // 需要将此 JSON 转换为需要的数据.
-//         }
-//         None => {
-//             // 问答式命令行交互 来获取所需要的 参数们.
-//         }
-//     };
-// }
-
-// fn asdfasdf() {
-//     let mut a = true;
-//     ArgType::Bool(Rc::new(|x| {}));
-
-//     asdfsdafasdff(|| {
-//         a = false;
-//     })
-// }
-
-// fn asdfsdafasdff<F>(mut f: F)
-// where
-//     F: FnMut() -> (),
-// {
-//     f();
-// }
 
 //     // yes or no QA
 //     // true or false QA
@@ -317,7 +23,7 @@ use super::*;
 pub struct ReplQuestions {
     /// 从 json_str 转换过来的 Vec<String>.
     /// 也可能是通过 问答式命令行交互 获取到的 Vec<String>.
-    arr: Vec<String>,
+    arguments: Vec<String>,
 
     /// 当 Self 是从 json_str 转换过来的 Vec<String> 时,
     /// 这个用户标记读取到了哪一个参数.
@@ -333,7 +39,7 @@ impl ReplQuestions {
         match input {
             Some(s) => Self::new_from_jsonstr(s),
             None => Self {
-                arr: vec![],
+                arguments: vec![],
                 index: 0,
                 is_from_json: false,
             },
@@ -347,7 +53,7 @@ impl ReplQuestions {
         match parse_result {
             Ok(v) => {
                 return Self {
-                    arr: v,
+                    arguments: v,
                     index: 0,
                     is_from_json: true,
                 };
@@ -358,7 +64,7 @@ impl ReplQuestions {
                 });
 
                 return Self {
-                    arr: vec![],
+                    arguments: vec![],
                     index: 0,
                     is_from_json: false,
                 };
@@ -368,7 +74,7 @@ impl ReplQuestions {
 
     /// 转换为 json 字符串.
     pub fn to_json_str(&self) -> String {
-        return VecString::vec_to_json(&self.arr);
+        return VecString::vec_to_json(&self.arguments);
     }
 }
 
@@ -378,7 +84,7 @@ impl ReplQuestions {
 
         if re.is_from_json {
             println!("is_from_json");
-            let val = re.arr.get(re.index);
+            let val = re.arguments.get(re.index);
             _ = result_value;
 
             match val {
@@ -405,7 +111,7 @@ impl ReplQuestions {
         let mut re = self;
 
         if re.is_from_json {
-            let val = re.arr.get(re.index);
+            let val = re.arguments.get(re.index);
 
             if let Some(json_str) = val {
                 let result = VecString::json_to_vec(&json_str);
@@ -425,11 +131,12 @@ impl ReplQuestions {
             }
         }
 
-        *result_value = Dialog::get_multiple_str(prompt);
+        *result_value = Dialog::get_string_multiple(prompt);
 
+        // serde_json::to_string(_) 这个函数转换出来的 json——string 是带有转义符号 '\' 的.
         let string = serde_json::to_string(result_value).unwrap();
 
-        re.arr.push(string);
+        re.arguments.push(string);
         re.index += 1;
 
         return re;
@@ -439,7 +146,7 @@ impl ReplQuestions {
         let mut re = self;
 
         if re.is_from_json {
-            let val = re.arr.get(re.index);
+            let val = re.arguments.get(re.index);
 
             if let Some(str) = val {
                 let number_from_str: Result<super::arg_types::Number, std::num::ParseIntError> =
@@ -458,9 +165,9 @@ impl ReplQuestions {
         // get value from REPL.
 
         *result_value = Dialog::get_number(prompt);
-        re.arr.push(result_value.to_string());
+        re.arguments.push(result_value.to_string());
 
-        re.index += re.arr.len() - 1;
+        re.index += re.arguments.len() - 1;
         return re;
     }
 
@@ -475,7 +182,7 @@ impl ReplQuestions {
     fn req_bool(self, result_value: &mut bool, prompt: &str) -> Self {
         let mut re = self;
         if re.is_from_json {
-            let val = re.arr.get(re.index);
+            let val = re.arguments.get(re.index);
 
             if let Some(str) = val {
                 if str == "true" {
@@ -492,19 +199,43 @@ impl ReplQuestions {
 
         *result_value = Dialog::get_bool(prompt);
 
-        re.arr.push(result_value.to_string()); // -> "true" or "false"
+        re.arguments.push(result_value.to_string()); // -> "true" or "false"
 
-        re.index += re.arr.len() - 1;
+        re.index += re.arguments.len() - 1;
         return re;
     }
 
-    // fn req_multiple_bool(self, result_value: &mut Vec<bool>, prompt: &str) -> Self {}
+    fn req_bool_multiple(self, result_value: &mut Vec<bool>, prompt: &str) -> Self {
+        let mut multiple_string: Vec<String> = vec![];
+        let re = self.req_multiple_string(&mut multiple_string, prompt);
+
+        {
+            /* 为 result_value 赋值. */
+
+            *result_value = vec![];
+            for str in multiple_string {
+                if str == "true" {
+                    result_value.push(true);
+                } else if str == "false" {
+                    result_value.push(false);
+                } else {
+                    eprintln!("需要的是多个 bool 类型的值, 示例: true false true");
+
+                    let mut asdf = re;
+                    asdf.arguments.pop();
+                    return asdf.req_bool_multiple(result_value, prompt);
+                }
+            }
+        }
+
+        return re;
+    }
 
     fn req_path(self, result_value: &mut PathBuf, prompt: &str) -> Self {
         let mut re = self;
 
         if re.is_from_json {
-            let val = re.arr.get(re.index);
+            let val = re.arguments.get(re.index);
             if let Some(str) = val {
                 *result_value = Path::new(&str).to_path_buf();
                 re.index += 1;
@@ -518,8 +249,8 @@ impl ReplQuestions {
 
         *result_value = Path::new(&str).to_path_buf();
 
-        re.arr.push(str); // -> "true" or "false"
-        re.index = re.arr.len() - 1;
+        re.arguments.push(str); // -> "true" or "false"
+        re.index = re.arguments.len() - 1;
         return re;
     }
 
@@ -527,12 +258,38 @@ impl ReplQuestions {
         let mut r: Vec<String> = vec![];
         let re = self.req_multiple_string(&mut r, prompt);
 
-        *result_value = vec![];
+        {
+            /* 为 result_value 赋值. */
 
-        for x in r {
-            result_value.push(Path::new(&x).to_path_buf());
+            *result_value = vec![];
+            for x in r {
+                result_value.push(Path::new(&x).to_path_buf());
+            }
         }
 
+        return re;
+    }
+
+    fn req_single_select(self, result_value: &mut String, items: Vec<&str>, prompt: &str) -> Self {
+        let mut re = self;
+
+        if re.is_from_json {
+            let val = re.arguments.get(re.index);
+            if let Some(str) = val {
+                *result_value = str.to_string();
+                re.index += 1;
+                return re;
+            }
+        }
+
+        // get value from REPL.
+
+        let mut str = Dialog::get_single_selected(prompt, &items);
+
+        *result_value = str.to_string();
+
+        re.arguments.push(str.to_string());
+        re.index = re.arguments.len() - 1;
         return re;
     }
 }
@@ -540,7 +297,7 @@ impl ReplQuestions {
 #[cfg(test)]
 mod test_repl_questions {
     use owo_colors::OwoColorize;
-    use std::default;
+    use std::{default, iter};
 
     use super::*;
 
@@ -553,8 +310,12 @@ mod test_repl_questions {
         let r2 = ReplQuestions::new_from_jsonstr(r#"["100"]"#.to_string())
             .req_number(&mut x, "你想买几个汉堡?");
         println!("x 的值是: {}", x);
-        println!("r: {:?}\nr2: {:?}", r.arr.clone(), r2.arr.clone());
-        assert_eq!(r.arr, r2.arr);
+        println!(
+            "r: {:?}\nr2: {:?}",
+            r.arguments.clone(),
+            r2.arguments.clone()
+        );
+        assert_eq!(r.arguments, r2.arguments);
     }
 
     #[test]
@@ -704,6 +465,66 @@ mod test_repl_questions {
             assert_eq!(repl.is_from_json, true);
         }
     }
+
+    #[test]
+    fn test_req_multiple_bool() {
+        // 已测试, 可以逆转.
+
+        {
+            let mut x: Vec<bool> = vec![];
+
+            let repl = ReplQuestions::new(None).req_bool_multiple(&mut x, "get mutiple bool");
+
+            println!("输入的是: {:?}", x);
+
+            println!("json_str: {}", repl.to_json_str());
+            assert_eq!(repl.is_from_json, false);
+        }
+
+        {
+            let mut x: Vec<bool> = vec![];
+
+            let repl = ReplQuestions::new(Some(r#" ["[\"true\",\"false\"]"]  "#.to_string()))
+                .req_bool_multiple(&mut x, "get mutiple path");
+
+            println!("输入的是: {:?}", x);
+
+            assert_eq!(repl.is_from_json, true);
+        }
+    }
+
+    #[test]
+    fn test_req_selected() {
+        // 已测试, 可以逆转.
+
+        // {
+        //     let mut x: String = "".to_string();
+        //     let iterms = vec!["one", "two"];
+
+        //     let repl =
+        //         ReplQuestions::new(None).req_single_select(&mut x, iterms, "get mutiple bool");
+
+        //     println!("输入的是: {:?}", x);
+
+        //     println!("json_str: {}", repl.to_json_str());
+        //     assert_eq!(repl.is_from_json, false);
+        // }
+
+        {
+            let mut x: String = "".to_string();
+            let iterms = vec!["one", "two"];
+
+            let repl = ReplQuestions::new(Some(r#" ["two"] "#.to_string())).req_single_select(
+                &mut x,
+                iterms,
+                "get mutiple path",
+            );
+
+            println!("输入的是: {:?}", x);
+
+            assert_eq!(repl.is_from_json, true);
+        }
+    }
 }
 
 // ------- REPL Functions -------
@@ -735,7 +556,7 @@ impl Dialog {
     ///     let arr = Dialog::get_multiple_str("hello");
     ///     println!("{:?}", arr);
     /// ``````
-    pub fn get_multiple_str(prompt: &str) -> Vec<String> {
+    pub fn get_string_multiple(prompt: &str) -> Vec<String> {
         println!("{}", prompt.bright_green());
 
         let re = dialoguer::Input::<String>::with_theme(&ColoredTheme {})
@@ -748,7 +569,7 @@ impl Dialog {
             }
             Err(_e) => {
                 eprintln!("{}", _e.red());
-                return Dialog::get_multiple_str(prompt); // 继续本次问题
+                return Dialog::get_string_multiple(prompt); // 继续本次问题
             }
         }
     }
@@ -832,6 +653,7 @@ impl Dialog {
         let re = dialoguer::Select::with_theme(&ColoredTheme {})
             .with_prompt("What do you choose?")
             .items(&items)
+            .default(0)
             .interact();
 
         match re {
@@ -920,7 +742,7 @@ mod test_repl_functions {
 
     #[test]
     fn test_repl_get_multiple_string() {
-        let arr = Dialog::get_multiple_str("请输入多个字符串");
+        let arr = Dialog::get_string_multiple("请输入多个字符串");
         println!("{:?}", arr);
     }
 

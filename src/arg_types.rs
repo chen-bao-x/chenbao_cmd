@@ -8,6 +8,7 @@ use std::{
 
 pub type Number = i128;
 pub type PathBuf = path::PathBuf;
+
 pub type ParseResultMessage = String;
 pub type ParseResult<T> = Result<T, ParseResultMessage>;
 
@@ -22,89 +23,96 @@ impl Empty {
 }
 
 #[derive(Clone)]
-pub enum ArgType {
+pub enum ArgTypeWithAction {
     Empty(Rc<dyn Fn() -> ()>),
 
     /// String
     String(Rc<dyn Fn(String) -> ()>),
+
     /// Vec<String>
-    VecString(Rc<dyn Fn(Vec<String>) -> ()>),
+    StringMutiple(Rc<dyn Fn(Vec<String>) -> ()>),
+
     /// isize
     Number(Rc<dyn Fn(Number) -> ()>),
+
     /// Vec<isize>
-    VecNumber(Rc<dyn Fn(Vec<Number>) -> ()>),
+    NumberMutiple(Rc<dyn Fn(Vec<Number>) -> ()>),
+
     /// Path
     Path(Rc<dyn Fn(Rc<PathBuf>) -> ()>),
+
     /// Vec<Path>
-    VecPath(Rc<dyn Fn(Rc<Vec<PathBuf>>) -> ()>),
+    PathMutiple(Rc<dyn Fn(Rc<Vec<PathBuf>>) -> ()>),
+
     /// bool
     Bool(Rc<dyn Fn(bool) -> ()>),
+
     /// Vec<bool>
-    VecBool(Rc<dyn Fn(Vec<bool>) -> ()>),
+    BoolMutiple(Rc<dyn Fn(Vec<bool>) -> ()>),
 
     // Repl(Rc<dyn Fn(Option<String>) -> ()>),
     Repl(Rc<dyn Fn(ReplQuestions) -> ()>),
 }
 
-impl std::fmt::Display for ArgType {
+impl std::fmt::Display for ArgTypeWithAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ArgType::Empty(_) => write!(f, "{}", "ArgType::Empty"),
-            ArgType::String(_) => write!(f, "{}", "ArgType::String"),
-            ArgType::VecString(_) => write!(f, "{}", "ArgType::VecString"),
-            ArgType::Number(_) => write!(f, "{}", "ArgType::Number"),
-            ArgType::VecNumber(_) => write!(f, "{}", "ArgType::VecNumber"),
-            ArgType::Path(_) => write!(f, "{}", "ArgType::Path"),
-            ArgType::VecPath(_) => write!(f, "{}", "ArgType::VecPath"),
-            ArgType::Bool(_) => write!(f, "{}", "ArgType::Bool"),
-            ArgType::VecBool(_) => write!(f, "{}", "ArgType::VecBool"),
-            ArgType::Repl(_) => write!(f, "{}", "ArgType::Repl"),
+            ArgTypeWithAction::Empty(_) => write!(f, "{}", "ArgType::Empty"),
+            ArgTypeWithAction::String(_) => write!(f, "{}", "ArgType::String"),
+            ArgTypeWithAction::StringMutiple(_) => write!(f, "{}", "ArgType::VecString"),
+            ArgTypeWithAction::Number(_) => write!(f, "{}", "ArgType::Number"),
+            ArgTypeWithAction::NumberMutiple(_) => write!(f, "{}", "ArgType::VecNumber"),
+            ArgTypeWithAction::Path(_) => write!(f, "{}", "ArgType::Path"),
+            ArgTypeWithAction::PathMutiple(_) => write!(f, "{}", "ArgType::VecPath"),
+            ArgTypeWithAction::Bool(_) => write!(f, "{}", "ArgType::Bool"),
+            ArgTypeWithAction::BoolMutiple(_) => write!(f, "{}", "ArgType::VecBool"),
+            ArgTypeWithAction::Repl(_) => write!(f, "{}", "ArgType::Repl"),
         }
     }
 }
 
-impl ArgType {
+impl ArgTypeWithAction {
     pub fn arg_message(&self) -> String {
         let arg_tips = match self {
-            ArgType::Empty(_) => "".to_string(),
-            ArgType::String(_) => format!(
+            ArgTypeWithAction::Empty(_) => "".to_string(),
+            ArgTypeWithAction::String(_) => format!(
                 r#"{s} -- 需要 1 个 {z}"#,
                 s = r#""string""#.magenta(),
                 z = r#""字符串""#.green(),
             ),
-            ArgType::VecString(_) => format!(
+            ArgTypeWithAction::StringMutiple(_) => format!(
                 r#"{s} -- 需要 多个 {z}"#,
                 s = r#"["string"...]"#.magenta(),
                 z = r#""字符串""#.green(),
             ),
-            ArgType::Number(_) => format!(
+            ArgTypeWithAction::Number(_) => format!(
                 r#"{s} -- 需要 1 个 Number, 示例: {z}"#,
                 s = r#"Number"#.magenta(),
                 z = r#"100"#.green(),
             ),
-            ArgType::VecNumber(_) => {
+            ArgTypeWithAction::NumberMutiple(_) => {
                 format!(
                     r#"{s} -- 需要 多个 Number, 每个 Number 用 [空格] 分开, 示例: {z}"#,
                     s = r#"[Number...]"#.magenta(),
                     z = r#"0 1 2 5 123 100"#.green(),
                 )
             }
-            ArgType::Path(_) => format!(r#"Path -- 需要 1 个 "Path""#),
-            ArgType::VecPath(_) => {
+            ArgTypeWithAction::Path(_) => format!(r#"Path -- 需要 1 个 "Path""#),
+            ArgTypeWithAction::PathMutiple(_) => {
                 format!(
                     r#"{s} -- 需要 多个 "Path",  每个 Path 用 [空格] 分开, 示例: {z}"#,
                     s = r#"[Path...]"#.magenta(),
                     z = r#"0 1 2 5 123 100"#.green(),
                 )
             }
-            ArgType::Bool(_) => format!(
+            ArgTypeWithAction::Bool(_) => format!(
                 r#"{s} -- 需要 1 个 {s} 类型的值, {t} 或者 {f}."#,
                 s = r#"bool"#.magenta(),
                 t = r#"true"#.green(),
                 f = r#"true"#.green(),
             ),
-            ArgType::Repl(_) => "".to_string(),
-            ArgType::VecBool(_) => {
+            ArgTypeWithAction::Repl(_) => "".to_string(),
+            ArgTypeWithAction::BoolMutiple(_) => {
                 format!(
                     r#"{s} -- 需要 多个 {b} 类型的值, {t} 或者 {f}, 每个 {b} 用 [空格] 分开."#,
                     s = r#"[Bool...]"#.magenta(),
@@ -120,22 +128,26 @@ impl ArgType {
 
     pub fn arg_type_tips(&self) -> String {
         let sdafdsaf: &str = match self {
-            ArgType::Empty(_) => "",
-            ArgType::String(_) => r#"参数类型: string, 示例: "string" -- 需要 1 个 "string""#,
-            ArgType::VecString(_) => {
+            ArgTypeWithAction::Empty(_) => "",
+            ArgTypeWithAction::String(_) => {
+                r#"参数类型: string, 示例: "string" -- 需要 1 个 "string""#
+            }
+            ArgTypeWithAction::StringMutiple(_) => {
                 r#"参数类型: ["string"...]], 示例: "str 1" "string 2" string_three "#
             }
-            ArgType::Number(_) => r#"参数类型: number, 示例: 999"#,
-            ArgType::VecNumber(_) => {
+            ArgTypeWithAction::Number(_) => r#"参数类型: number, 示例: 999"#,
+            ArgTypeWithAction::NumberMutiple(_) => {
                 r#"参数类型: [number...], 示例: 1 2 3 100 555 -- 需要 多个 Number, 每个 Number 用 [空格] 分开."#
             }
-            ArgType::Path(_) => r#"参数类型: path, 示例: /path/to/file.txt"#,
-            ArgType::VecPath(_) => {
+            ArgTypeWithAction::Path(_) => r#"参数类型: path, 示例: /path/to/file.txt"#,
+            ArgTypeWithAction::PathMutiple(_) => {
                 r#"参数类型: [path...], 示例: "/path/to/folder/" "./path/to/file.txt" "filename.txt""#
             }
-            ArgType::Bool(_) => r#"参数类型: bool, 示例: "true""#,
-            ArgType::VecBool(_) => r#"参数类型: [bool...], 示例: true false true false"#,
-            ArgType::Repl(_) => "",
+            ArgTypeWithAction::Bool(_) => r#"参数类型: bool, 示例: "true""#,
+            ArgTypeWithAction::BoolMutiple(_) => {
+                r#"参数类型: [bool...], 示例: true false true false"#
+            }
+            ArgTypeWithAction::Repl(_) => "",
         };
 
         return sdafdsaf.to_string();
@@ -143,16 +155,16 @@ impl ArgType {
 
     pub fn value_example(&self) -> String {
         let re = match self {
-            ArgType::Empty(_) => "",
-            ArgType::String(_) => r#""thid is an string example.""#,
-            ArgType::VecString(_) => r#""str 1" "str 2" "str 3""#,
-            ArgType::Number(_) => r#"9"#,
-            ArgType::VecNumber(_) => r#"5 9 100 12"#,
-            ArgType::Path(_) => r#""./path/to/folder/or/file.txt""#,
-            ArgType::VecPath(_) => r#""./path 1" "/path/2/" "./" "path3.txt""#,
-            ArgType::Bool(_) => r#"true"#,
-            ArgType::VecBool(_) => r#"true false"#,
-            ArgType::Repl(_) => "",
+            ArgTypeWithAction::Empty(_) => "",
+            ArgTypeWithAction::String(_) => r#""thid is an string example.""#,
+            ArgTypeWithAction::StringMutiple(_) => r#""str 1" "str 2" "str 3""#,
+            ArgTypeWithAction::Number(_) => r#"9"#,
+            ArgTypeWithAction::NumberMutiple(_) => r#"5 9 100 12"#,
+            ArgTypeWithAction::Path(_) => r#""./path/to/folder/or/file.txt""#,
+            ArgTypeWithAction::PathMutiple(_) => r#""./path 1" "/path/2/" "./" "path3.txt""#,
+            ArgTypeWithAction::Bool(_) => r#"true"#,
+            ArgTypeWithAction::BoolMutiple(_) => r#"true false"#,
+            ArgTypeWithAction::Repl(_) => "",
         };
 
         return re.to_string();

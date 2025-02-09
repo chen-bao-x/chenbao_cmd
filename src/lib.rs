@@ -56,7 +56,7 @@ mod tests {
             .add_subcommand(
                 SubCommand::new("run")
                     .about("运行程序")
-                    .action(ArgType::Bool(Rc::new(|_x| {
+                    .action(ArgTypeWithAction::Bool(Rc::new(|_x| {
                         print!("command \"run\"{:?}\n", _x);
                     }))),
             )
@@ -64,7 +64,7 @@ mod tests {
                 SubCommand::new("build")
                     .short_name("b")
                     .about("编译项目")
-                    .action(ArgType::Bool(Rc::new(|_x| {
+                    .action(ArgTypeWithAction::Bool(Rc::new(|_x| {
                         print!("command \"run\"{:?}\n", _x);
                     }))),
             )
@@ -75,7 +75,7 @@ mod tests {
                     // .add_command_example("app arg_zero a")
                     // .add_command_example("app arg_zero \"b\"")
                     // .add_command_example("app arg_zero a b c")
-                    .action(ArgType::Empty(Rc::new(|| {
+                    .action(ArgTypeWithAction::Empty(Rc::new(|| {
                         print!("testing arg_zero");
                     }))),
             )
@@ -86,7 +86,7 @@ mod tests {
                     // .add_command_example("app arg_zero a")
                     // .add_command_example("app arg_zero \"b\"")
                     // .add_command_example("app arg_zero a b c")
-                    .action(ArgType::Number(Rc::new(|_x| {
+                    .action(ArgTypeWithAction::Number(Rc::new(|_x| {
                         print!("testing arg_zero");
                     }))),
             )
@@ -97,7 +97,7 @@ mod tests {
                     // .add_command_example("app arg_zero a")
                     // .add_command_example("app arg_zero \"b\"")
                     // .add_command_example("app arg_zero a b c")
-                    .action(ArgType::VecNumber(Rc::new(|_x| {
+                    .action(ArgTypeWithAction::NumberMutiple(Rc::new(|_x| {
                         print!("testing arg_zero");
                     }))),
             )
@@ -108,7 +108,7 @@ mod tests {
                     // .add_command_example("app arg_zero a")
                     // .add_command_example("app arg_zero \"b\"")
                     // .add_command_example("app arg_zero a b c")
-                    .action(ArgType::VecBool(Rc::new(|_x| {
+                    .action(ArgTypeWithAction::BoolMutiple(Rc::new(|_x| {
                         print!("testing arg_zero");
                     }))),
             )
@@ -119,7 +119,7 @@ mod tests {
                     // .add_command_example("app arg_zero a")
                     // .add_command_example("app arg_zero \"b\"")
                     // .add_command_example("app arg_zero a b c")
-                    .action(ArgType::VecString(Rc::new(|_x| {
+                    .action(ArgTypeWithAction::StringMutiple(Rc::new(|_x| {
                         print!("testing arg_zero");
                     }))),
             );
