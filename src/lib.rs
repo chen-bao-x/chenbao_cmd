@@ -35,9 +35,9 @@ mod tests {
         println!("--------hello--------");
 
         let app = App::new("cmd")
-            .add_about("这个程序主要是为了测试我写的 cmd crate")
-            .add_author("chen bao")
-            .app_version_message("0.0.1".to_string())
+            .about("这个程序主要是为了测试我写的 cmd crate")
+            .author("chen bao")
+            .version_message("0.0.1".to_string())
             .add_subcommand(
                 SubCommand::new("run")
                     .about("运行程序")
@@ -93,6 +93,7 @@ mod tests {
                         print!("testing arg_zero");
                     }))),
             )
+
             .add_subcommand(
                 SubCommand::new("repl")
                     .about("用来测试 ArgCount::Repl(_) ")

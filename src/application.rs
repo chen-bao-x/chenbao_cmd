@@ -148,7 +148,9 @@ pub struct App {
 }
 
 impl App {
-    // -------- Public Part --------
+    // ============================
+    // =        Public Part       =
+    // ============================
 
     pub fn new(app_name: &str) -> App {
         return Self {
@@ -157,7 +159,7 @@ impl App {
         };
     }
 
-    pub fn add_about(self, about: &'static str) -> Self {
+    pub fn about(self, about: &'static str) -> Self {
         let mut re = self;
         re.about = about;
         return re;
@@ -171,22 +173,21 @@ impl App {
         return re;
     }
 
-    /// 当用户查询此程序的 version 信息时显示的信息;
-    pub fn app_version_message(self, version: String) -> Self {
+    /// 当用户查询此程序的 --version 信息时显示的信息;
+    pub fn version_message(self, version: String) -> Self {
         let mut re = self;
         re.app_version_message = version;
         return re;
     }
 
-    pub fn add_author(self, author: &'static str) -> Self {
+    pub fn author(self, author: &'static str) -> Self {
         let mut re = self;
         re.author = author;
         return re;
     }
 
     /// 设置只有 程序名, 没有任何子命令也没有任何参数时执行的 action.
-    /// 这个函数只会生效 1 次.
-    pub fn add_app_default_action<F>(self, action: F) -> Self
+    pub fn app_default_action<F>(self, action: F) -> Self
     where
         F: Fn() -> () + 'static,
     {
@@ -205,7 +206,7 @@ impl App {
 
     /// 自定义帮助信息.  
     /// 此方法会替换掉由 chenbao_cmd 提供的帮助文档.
-    pub fn add_help_message(self, message: String) -> Self {
+    pub fn help_message(self, message: String) -> Self {
         let mut re = self;
         re.help_message = message;
 
@@ -347,38 +348,6 @@ Commands:
             println!("{}", table);
         }
     }
-
-    //  ------- Debug Functions -------
-
-    /// 在 debug 模式下强制使用 debug_run(env_args: Vec<&str>) 函数中的 env_args.
-    /// 此函数会忽略程序真正的 env_args.
-    pub fn deubg_run(self, env_args: Vec<&str>) -> Self {
-        println!("------- test_run: {:?} -------", env_args);
-
-        let mut re = self.clone();
-        let env_arg: Vec<String> = env_args.iter().map(|x| x.to_string()).collect();
-
-        // 第 2 个一级后面的所有.
-        let sub_cmd_arg: Vec<String> = if env_arg.len() > 2 {
-            env_arg[2..].to_vec()
-        } else {
-            vec![]
-        };
-
-        re.sub_command_arg = sub_cmd_arg;
-        re.env_arg = env_arg;
-
-        let did_handled = re.run();
-
-        match did_handled {
-            DidHandled::Handled => { /* runs perfact. */ }
-            DidHandled::Failed(err_message) => {
-                print!("{}\n", err_message);
-            }
-        }
-
-        return self;
-    }
 }
 
 impl App {
@@ -506,6 +475,38 @@ impl App {
 }
 
 impl App {
+    //  ------- Debug Functions -------
+
+    /// 在 debug 模式下强制使用 debug_run(env_args: Vec<&str>) 函数中的 env_args.
+    /// 此函数会忽略程序真正的 env_args.
+    pub fn deubg_run(self, env_args: Vec<&str>) -> Self {
+        println!("------- test_run: {:?} -------", env_args);
+
+        let mut re = self.clone();
+        let env_arg: Vec<String> = env_args.iter().map(|x| x.to_string()).collect();
+
+        // 第 2 个一级后面的所有.
+        let sub_cmd_arg: Vec<String> = if env_arg.len() > 2 {
+            env_arg[2..].to_vec()
+        } else {
+            vec![]
+        };
+
+        re.sub_command_arg = sub_cmd_arg;
+        re.env_arg = env_arg;
+
+        let did_handled = re.run();
+
+        match did_handled {
+            DidHandled::Handled => { /* runs perfact. */ }
+            DidHandled::Failed(err_message) => {
+                print!("{}\n", err_message);
+            }
+        }
+
+        return self;
+    }
+
     /// 检查子命令示example是否能正确的被解析
     /// 检查子命令的名字是否重复.
     /// 命令人类友好度检查
