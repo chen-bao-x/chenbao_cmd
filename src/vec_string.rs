@@ -1,10 +1,10 @@
-pub struct VecString();
+pub(crate)  struct VecString();
 impl VecString {
-    pub fn json_to_vec(json_string: &str) -> Result<Vec<String>, serde_json::Error> {
+    pub(crate) fn json_to_vec(json_string: &str) -> Result<Vec<String>, serde_json::Error> {
         return serde_json::from_str(json_string);
     }
 
-    pub fn vec_to_json(vec: &Vec<String>) -> String {
+    pub(crate) fn vec_to_json(vec: &Vec<String>) -> String {
         let json_value = serde_json::json!(vec);
         return json_value.to_string();
     }

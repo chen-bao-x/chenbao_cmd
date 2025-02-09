@@ -1,118 +1,104 @@
-use super::*;
+use super::arg_type;
 use owo_colors::OwoColorize;
-use std::{
-    num::ParseIntError,
-    path::{self, Path},
-    rc::Rc,
-};
+use std::{num::ParseIntError, path::Path, rc::Rc};
 
-pub type Number = i128;
-pub type PathBuf = path::PathBuf;
+// pub type Number = i128;
+// pub type PathBuf = path::PathBuf;
 
 pub type ParseResultMessage = String;
 pub type ParseResult<T> = Result<T, ParseResultMessage>;
 
-/// 用来表示这个 subcommand 不需要参数.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Empty {}
-
-impl Empty {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
 #[derive(Clone)]
-pub enum ArgTypeWithAction {
+pub enum ArgAction {
     Empty(Rc<dyn Fn() -> ()>),
 
     /// String
     String(Rc<dyn Fn(String) -> ()>),
 
     /// Vec<String>
-    StringMutiple(Rc<dyn Fn(Vec<String>) -> ()>),
+    StringMutiple(Rc<dyn Fn(arg_type::StringMutiple) -> ()>),
 
     /// isize
-    Number(Rc<dyn Fn(Number) -> ()>),
+    Number(Rc<dyn Fn(arg_type::Number) -> ()>),
 
     /// Vec<isize>
-    NumberMutiple(Rc<dyn Fn(Vec<Number>) -> ()>),
+    NumberMutiple(Rc<dyn Fn(arg_type::NumberMutiple) -> ()>),
 
     /// Path
-    Path(Rc<dyn Fn(Rc<PathBuf>) -> ()>),
+    Path(Rc<dyn Fn(Rc<arg_type::Path>) -> ()>),
 
     /// Vec<Path>
-    PathMutiple(Rc<dyn Fn(Rc<Vec<PathBuf>>) -> ()>),
+    PathMutiple(Rc<dyn Fn(Rc<arg_type::PathMutiple>) -> ()>),
 
     /// bool
-    Bool(Rc<dyn Fn(bool) -> ()>),
+    Bool(Rc<dyn Fn(arg_type::Bool) -> ()>),
 
     /// Vec<bool>
-    BoolMutiple(Rc<dyn Fn(Vec<bool>) -> ()>),
+    BoolMutiple(Rc<dyn Fn(arg_type::BoolMutiple) -> ()>),
 
     // Repl(Rc<dyn Fn(Option<String>) -> ()>),
-    Repl(Rc<dyn Fn(ReplQuestions) -> ()>),
+    Dialog(Rc<dyn Fn(arg_type::Dialog) -> ()>),
 }
 
-impl std::fmt::Display for ArgTypeWithAction {
+impl std::fmt::Display for ArgAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ArgTypeWithAction::Empty(_) => write!(f, "{}", "ArgType::Empty"),
-            ArgTypeWithAction::String(_) => write!(f, "{}", "ArgType::String"),
-            ArgTypeWithAction::StringMutiple(_) => write!(f, "{}", "ArgType::VecString"),
-            ArgTypeWithAction::Number(_) => write!(f, "{}", "ArgType::Number"),
-            ArgTypeWithAction::NumberMutiple(_) => write!(f, "{}", "ArgType::VecNumber"),
-            ArgTypeWithAction::Path(_) => write!(f, "{}", "ArgType::Path"),
-            ArgTypeWithAction::PathMutiple(_) => write!(f, "{}", "ArgType::VecPath"),
-            ArgTypeWithAction::Bool(_) => write!(f, "{}", "ArgType::Bool"),
-            ArgTypeWithAction::BoolMutiple(_) => write!(f, "{}", "ArgType::VecBool"),
-            ArgTypeWithAction::Repl(_) => write!(f, "{}", "ArgType::Repl"),
+            ArgAction::Empty(_) => write!(f, "{}", "ArgType::Empty"),
+            ArgAction::String(_) => write!(f, "{}", "ArgType::String"),
+            ArgAction::StringMutiple(_) => write!(f, "{}", "ArgType::VecString"),
+            ArgAction::Number(_) => write!(f, "{}", "ArgType::Number"),
+            ArgAction::NumberMutiple(_) => write!(f, "{}", "ArgType::VecNumber"),
+            ArgAction::Path(_) => write!(f, "{}", "ArgType::Path"),
+            ArgAction::PathMutiple(_) => write!(f, "{}", "ArgType::VecPath"),
+            ArgAction::Bool(_) => write!(f, "{}", "ArgType::Bool"),
+            ArgAction::BoolMutiple(_) => write!(f, "{}", "ArgType::VecBool"),
+            ArgAction::Dialog(_) => write!(f, "{}", "ArgType::Repl"),
         }
     }
 }
 
-impl ArgTypeWithAction {
+impl ArgAction {
     pub fn arg_message(&self) -> String {
         let arg_tips = match self {
-            ArgTypeWithAction::Empty(_) => "".to_string(),
-            ArgTypeWithAction::String(_) => format!(
+            ArgAction::Empty(_) => "".to_string(),
+            ArgAction::String(_) => format!(
                 r#"{s} -- 需要 1 个 {z}"#,
                 s = r#""string""#.magenta(),
                 z = r#""字符串""#.green(),
             ),
-            ArgTypeWithAction::StringMutiple(_) => format!(
+            ArgAction::StringMutiple(_) => format!(
                 r#"{s} -- 需要 多个 {z}"#,
                 s = r#"["string"...]"#.magenta(),
                 z = r#""字符串""#.green(),
             ),
-            ArgTypeWithAction::Number(_) => format!(
+            ArgAction::Number(_) => format!(
                 r#"{s} -- 需要 1 个 Number, 示例: {z}"#,
                 s = r#"Number"#.magenta(),
                 z = r#"100"#.green(),
             ),
-            ArgTypeWithAction::NumberMutiple(_) => {
+            ArgAction::NumberMutiple(_) => {
                 format!(
                     r#"{s} -- 需要 多个 Number, 每个 Number 用 [空格] 分开, 示例: {z}"#,
                     s = r#"[Number...]"#.magenta(),
                     z = r#"0 1 2 5 123 100"#.green(),
                 )
             }
-            ArgTypeWithAction::Path(_) => format!(r#"Path -- 需要 1 个 "Path""#),
-            ArgTypeWithAction::PathMutiple(_) => {
+            ArgAction::Path(_) => format!(r#"Path -- 需要 1 个 "Path""#),
+            ArgAction::PathMutiple(_) => {
                 format!(
                     r#"{s} -- 需要 多个 "Path",  每个 Path 用 [空格] 分开, 示例: {z}"#,
                     s = r#"[Path...]"#.magenta(),
                     z = r#"0 1 2 5 123 100"#.green(),
                 )
             }
-            ArgTypeWithAction::Bool(_) => format!(
+            ArgAction::Bool(_) => format!(
                 r#"{s} -- 需要 1 个 {s} 类型的值, {t} 或者 {f}."#,
                 s = r#"bool"#.magenta(),
                 t = r#"true"#.green(),
                 f = r#"true"#.green(),
             ),
-            ArgTypeWithAction::Repl(_) => "".to_string(),
-            ArgTypeWithAction::BoolMutiple(_) => {
+            ArgAction::Dialog(_) => "".to_string(),
+            ArgAction::BoolMutiple(_) => {
                 format!(
                     r#"{s} -- 需要 多个 {b} 类型的值, {t} 或者 {f}, 每个 {b} 用 [空格] 分开."#,
                     s = r#"[Bool...]"#.magenta(),
@@ -128,26 +114,22 @@ impl ArgTypeWithAction {
 
     pub fn arg_type_tips(&self) -> String {
         let sdafdsaf: &str = match self {
-            ArgTypeWithAction::Empty(_) => "",
-            ArgTypeWithAction::String(_) => {
-                r#"参数类型: string, 示例: "string" -- 需要 1 个 "string""#
-            }
-            ArgTypeWithAction::StringMutiple(_) => {
+            ArgAction::Empty(_) => "",
+            ArgAction::String(_) => r#"参数类型: string, 示例: "string" -- 需要 1 个 "string""#,
+            ArgAction::StringMutiple(_) => {
                 r#"参数类型: ["string"...]], 示例: "str 1" "string 2" string_three "#
             }
-            ArgTypeWithAction::Number(_) => r#"参数类型: number, 示例: 999"#,
-            ArgTypeWithAction::NumberMutiple(_) => {
+            ArgAction::Number(_) => r#"参数类型: number, 示例: 999"#,
+            ArgAction::NumberMutiple(_) => {
                 r#"参数类型: [number...], 示例: 1 2 3 100 555 -- 需要 多个 Number, 每个 Number 用 [空格] 分开."#
             }
-            ArgTypeWithAction::Path(_) => r#"参数类型: path, 示例: /path/to/file.txt"#,
-            ArgTypeWithAction::PathMutiple(_) => {
+            ArgAction::Path(_) => r#"参数类型: path, 示例: /path/to/file.txt"#,
+            ArgAction::PathMutiple(_) => {
                 r#"参数类型: [path...], 示例: "/path/to/folder/" "./path/to/file.txt" "filename.txt""#
             }
-            ArgTypeWithAction::Bool(_) => r#"参数类型: bool, 示例: "true""#,
-            ArgTypeWithAction::BoolMutiple(_) => {
-                r#"参数类型: [bool...], 示例: true false true false"#
-            }
-            ArgTypeWithAction::Repl(_) => "",
+            ArgAction::Bool(_) => r#"参数类型: bool, 示例: "true""#,
+            ArgAction::BoolMutiple(_) => r#"参数类型: [bool...], 示例: true false true false"#,
+            ArgAction::Dialog(_) => "",
         };
 
         return sdafdsaf.to_string();
@@ -155,16 +137,16 @@ impl ArgTypeWithAction {
 
     pub fn value_example(&self) -> String {
         let re = match self {
-            ArgTypeWithAction::Empty(_) => "",
-            ArgTypeWithAction::String(_) => r#""thid is an string example.""#,
-            ArgTypeWithAction::StringMutiple(_) => r#""str 1" "str 2" "str 3""#,
-            ArgTypeWithAction::Number(_) => r#"9"#,
-            ArgTypeWithAction::NumberMutiple(_) => r#"5 9 100 12"#,
-            ArgTypeWithAction::Path(_) => r#""./path/to/folder/or/file.txt""#,
-            ArgTypeWithAction::PathMutiple(_) => r#""./path 1" "/path/2/" "./" "path3.txt""#,
-            ArgTypeWithAction::Bool(_) => r#"true"#,
-            ArgTypeWithAction::BoolMutiple(_) => r#"true false"#,
-            ArgTypeWithAction::Repl(_) => "",
+            ArgAction::Empty(_) => "",
+            ArgAction::String(_) => r#""thid is an string example.""#,
+            ArgAction::StringMutiple(_) => r#""str 1" "str 2" "str 3""#,
+            ArgAction::Number(_) => r#"9"#,
+            ArgAction::NumberMutiple(_) => r#"5 9 100 12"#,
+            ArgAction::Path(_) => r#""./path/to/folder/or/file.txt""#,
+            ArgAction::PathMutiple(_) => r#""./path 1" "/path/2/" "./" "path3.txt""#,
+            ArgAction::Bool(_) => r#"true"#,
+            ArgAction::BoolMutiple(_) => r#"true false"#,
+            ArgAction::Dialog(_) => "",
         };
 
         return re.to_string();
@@ -190,33 +172,11 @@ impl SubcommandArgsValue {
         }
     }
 
-    // pub fn arg_check(&self, geting_argtype: ArgType) -> Result<(), String> {
-    //     return Ok(());
-
-    // // 检查需要的参数类型和实际获取的参数类型是否一致.
-    // if self.need_arg_type == geting_argtype {
-    //     return Ok(());
-    // }
-
-    // return Err(format!(
-    //     "你告诉这个命令行程序的用户这个子命令需要 {} 类型的参数, 而你却在获取 {} 类型的参数",
-    //     self.need_arg_type, geting_argtype
-    // ));
-    // }
-
-    pub fn get_empty(self) -> ParseResult<Empty> {
-        // if let Err(e) = self.arg_check(ArgType::Empty) {
-        //     return Err(e);
-        // }
-
-        return Ok(Empty::new());
+    pub fn get_empty(self) -> ParseResult<arg_type::Empty> {
+        return Ok(arg_type::Empty::new());
     }
 
     pub fn get_string(self) -> ParseResult<String> {
-        // if let Err(e) = self.arg_check(ArgType::String) {
-        //     return Err(e.clone());
-        // }
-
         let s = self.subcommand_args;
 
         if s.len() == 1 {
@@ -232,21 +192,14 @@ impl SubcommandArgsValue {
     }
 
     pub fn get_vec_string(self) -> ParseResult<Vec<String>> {
-        // if let Err(e) = self.arg_check(ArgType::VecString) {
-        //     return Err(e.clone());
-        // }
         return Ok(self.subcommand_args);
     }
 
-    pub fn get_number(self) -> ParseResult<Number> {
-        // if let Err(e) = self.arg_check(ArgType::Number) {
-        //     return Err(e.clone());
-        // }
-
+    pub fn get_number(self) -> ParseResult<arg_type::Number> {
         let s = self.subcommand_args;
         if s.len() == 1 {
             if let Some(str) = s.first() {
-                let re: Result<Number, core::num::ParseIntError> = str.parse();
+                let re: Result<arg_type::Number, core::num::ParseIntError> = str.parse();
                 match re {
                     Ok(n) => return Ok(n),
                     Err(_e) => {
@@ -264,22 +217,18 @@ impl SubcommandArgsValue {
         return Err("()".to_string());
     }
 
-    pub fn get_vec_number(self) -> ParseResult<Vec<Number>> {
-        // if let Err(e) = self.arg_check(ArgType::VecNumber) {
-        //     return Err(e.clone());
-        // }
+    pub fn get_vec_number(self) -> ParseResult<arg_type::NumberMutiple> {
         let s = self.subcommand_args;
 
-        let mut re: Vec<Number> = vec![];
+        let mut re: Vec<arg_type::Number> = vec![];
 
         for x in s {
-            let u: Result<Number, ParseIntError> = x.parse();
+            let u: Result<arg_type::Number, ParseIntError> = x.parse();
             match u {
                 Ok(n) => {
                     re.push(n);
                 }
                 Err(_err) => {
-                    // todo!(); // 将 Optinal 类型修改为 Result 类型.
                     return Err(format!("{}", _err));
                 }
             }
@@ -288,10 +237,8 @@ impl SubcommandArgsValue {
         return Ok(re);
     }
 
-    pub fn get_path(self) -> ParseResult<PathBuf> {
-        // if let Err(e) = self.arg_check(ArgType::Path) {
-        //     return Err(e.clone());
-        // }
+    pub fn get_path(self) -> ParseResult<arg_type::Path> {
+    
         let s = self.subcommand_args;
 
         if s.len() == 1 {
@@ -310,13 +257,11 @@ impl SubcommandArgsValue {
         return Err("()".to_string());
     }
 
-    pub fn get_vec_path(self) -> ParseResult<Vec<PathBuf>> {
-        // if let Err(e) = self.arg_check(ArgType::VecPath) {
-        //     return Err(e.clone());
-        // }
+    pub fn get_vec_path(self) -> ParseResult<arg_type::PathMutiple> {
+     
         let s = self.subcommand_args;
 
-        let mut re: Vec<PathBuf> = vec![];
+        let mut re: arg_type::PathMutiple = vec![];
 
         for x in s {
             let path_buf = Path::new(&x).to_owned();
@@ -327,9 +272,7 @@ impl SubcommandArgsValue {
     }
 
     pub fn get_bool(self) -> ParseResult<bool> {
-        // if let Err(e) = self.arg_check(ArgType::Bool) {
-        //     return Err(e.clone());
-        // }
+     
         let s = self.subcommand_args;
 
         if s.len() == 1 {
@@ -375,9 +318,7 @@ impl SubcommandArgsValue {
     }
 
     pub fn get_vec_bool(self) -> ParseResult<Vec<bool>> {
-        // if let Err(e) = self.arg_check(ArgType::VecBool) {
-        //     return Err(e.clone());
-        // }
+     
         let s = self.subcommand_args;
         let mut re: Vec<bool> = vec![];
 

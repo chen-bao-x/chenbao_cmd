@@ -1,7 +1,7 @@
 use super::*;
 use owo_colors::OwoColorize;
-use prettytable::{row, table, Row};
-use std::rc::Rc;
+use prettytable::{row, table};
+use std::{rc::Rc, vec};
 
 // subcommand
 #[derive(Clone)]
@@ -18,20 +18,16 @@ pub struct SubCommand {
 
     /// 是用此命令的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
-    pub exaples: Option<Examples>,
+    pub exaples: Examples,
 
     /// 自定义的帮助文档.
     /// 当用户使用 help 命令查询此命令时显示的帮助文档.
     pub help_document: String,
 
-    /// 子命令需要的参数的类型.
+    /// 子命令需要的参数的类型以及该子命令的 action.
     /// 在打印子命令的帮助文档时需要用到此属性.
-    pub need_arg_type: ArgTypeWithAction,
-    // /// command action with command_arg
-    // pub action: Option<CommandAction>,
+    pub arg_type_with_action: ArgAction,
 }
-
-pub type CommandAction = Rc<dyn Fn(SubcommandArgsValue) -> ()>;
 
 impl SubCommand {
     pub fn new(name: &str) -> Self {
@@ -43,11 +39,9 @@ impl SubCommand {
             command_name: name.to_string(),
             about: "".to_string(),
             help_document: "".to_string(),
-            // action: None,
-            // arg_count: ArgCount::Zero,
             short_name: "".to_string(),
-            exaples: None,
-            need_arg_type: ArgTypeWithAction::Empty(Rc::new(|| {})),
+            exaples: Examples::new(),
+            arg_type_with_action: ArgAction::Empty(Rc::new(|| {})),
         };
     }
 
@@ -65,9 +59,10 @@ impl SubCommand {
         return re;
     }
 
-    pub fn add_command_example(self, example: Option<Examples>) -> Self {
+    pub fn add_sub_command_example(self, command: &'static str, description: &'static str) -> Self {
         let mut re = self;
-        re.exaples = example;
+        re.exaples.add_single_example(command, description);
+
         return re;
     }
 
@@ -78,25 +73,16 @@ impl SubCommand {
         return re;
     }
 
-    // /// set `Command.action`
-    // pub fn action<F>(self, need_arg_type: ArgType, action: F) -> Self
-    // where
-    //     F: Fn(SubcommandArgsValue) -> () + 'static,
-    // {
-    //     let mut re = self;
-    //     re.need_arg_type = need_arg_type;
-    //     re.action = Some(Rc::new(action));
-
-    //     return re;
-    // }
     /// set `Command.action`
-    pub fn action(self, need_arg_type: ArgTypeWithAction) -> Self {
+    pub fn action(self, need_arg_type: ArgAction) -> Self {
         let mut re = self;
-        re.need_arg_type = need_arg_type;
+        re.arg_type_with_action = need_arg_type;
 
         return re;
     }
+}
 
+impl SubCommand {
     pub fn formated_command_help(&self, app_name: String) -> String {
         if self.help_document != "" {
             // 自定义了帮助文档的情况;
@@ -104,23 +90,21 @@ impl SubCommand {
         } else {
             // 自动生成这个 Command 的帮助文档
 
-            let arg_message: String = self.need_arg_type.arg_message();
+            let arg_message: String = self.arg_type_with_action.arg_message();
 
-            let arg_in_usage = match self.need_arg_type {
-                ArgTypeWithAction::Empty(_) => "",
-                ArgTypeWithAction::String(_) => r#""string""#,
-                ArgTypeWithAction::StringMutiple(_) => r#""string...""#,
-                ArgTypeWithAction::Number(_) => r#"Number"#,
-                ArgTypeWithAction::NumberMutiple(_) => r#"Number..."#,
-                ArgTypeWithAction::Path(_) => r#""path""#,
-                ArgTypeWithAction::PathMutiple(_) => r#""path"..."#,
-                ArgTypeWithAction::Bool(_) => r#"bool"#,
-                ArgTypeWithAction::BoolMutiple(_) => r#"bool..."#,
-                ArgTypeWithAction::Repl(_) => "",
+            let arg_in_usage = match self.arg_type_with_action {
+                ArgAction::Empty(_) => "",
+                ArgAction::String(_) => r#""string""#,
+                ArgAction::StringMutiple(_) => r#""string...""#,
+                ArgAction::Number(_) => r#"Number"#,
+                ArgAction::NumberMutiple(_) => r#"Number..."#,
+                ArgAction::Path(_) => r#""path""#,
+                ArgAction::PathMutiple(_) => r#""path"..."#,
+                ArgAction::Bool(_) => r#"bool"#,
+                ArgAction::BoolMutiple(_) => r#"bool..."#,
+                ArgAction::Dialog(_) => "",
             };
             let arg_in_usage = arg_in_usage.magenta();
-
-            // let examples_message = self.print_command_example();
 
             let help = format!("{}, {}", "-h".cyan(), "--help".cyan());
             let example = format!("{}, {}", "-e".cyan(), "--example".cyan());
@@ -154,28 +138,24 @@ Arguments:
 
     /// 已静格式化好了, 直接放进 Table 打印就行.
     pub fn formated_command_example(&self, app_name: String) -> Vec<prettytable::Row> {
-        match &self.exaples {
-            Some(s) => {
-                println!("{}", s);
+        if self.exaples.is_empty() {
+            let arg = self
+                .arg_type_with_action
+                .value_example()
+                .bright_green()
+                .to_string();
 
-                let mut re: Vec<Row> = vec![];
-                re.push(row![s]);
+            let r = row![
+                format!(
+                    "{app_name} {command_name} {arg}",
+                    command_name = self.command_name.cyan(),
+                ),
+                self.about
+            ];
 
-                return re;
-            }
-            None => {
-                let arg = self.need_arg_type.value_example().bright_green().to_string();
-
-                let r = row![
-                    format!(
-                        "{app_name} {command_name} {arg}",
-                        command_name = self.command_name.cyan(),
-                    ),
-                    self.about
-                ];
-
-                return vec![r];
-            }
+            return vec![r];
+        } else {
+            return self.exaples.pretty_formated();
         }
     }
 

@@ -1,3 +1,5 @@
+use prettytable::{row, Row};
+
 ///
 /// List the files in the current directory, sorted by size:
 ///     ls | sort-by size
@@ -26,6 +28,10 @@ impl Examples {
         Self { val: vec![] }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.val.is_empty()
+    }
+
     pub fn formated(&self) -> String {
         let mut re: String = String::new();
 
@@ -36,25 +42,32 @@ impl Examples {
         return re;
     }
 
-    pub fn add_single_example(self, command: String, description: String) -> Self {
-        let mut re = self;
+    pub fn pretty_formated(&self) -> Vec<prettytable::Row> {
+        let mut re: Vec<Row> = vec![];
 
+        for x in &self.val {
+            re.push(row![x.formated()]);
+        }
+
+        return re;
+    }
+
+    pub fn add_single_example(&mut self, command: &'static str, description: &'static str) {
         let e = SingleExample {
             command,
             description,
         };
 
-        re.val.push(e);
-        return re;
+        self.val.push(e);
     }
 }
 
 // ------- SingleExample -------
 
 #[derive(Clone, Debug)]
-pub struct SingleExample {
-    command: String,
-    description: String,
+struct SingleExample  {
+    command: &'static str,
+    description: &'static str,
 }
 
 impl std::fmt::Display for SingleExample {
@@ -78,19 +91,19 @@ impl SingleExample {
 
 #[test]
 fn sdafasdf() {
-    let arr: Examples = Examples::new()
-        .add_single_example(
-            "ls | sort-by size".to_string(),
-            "List the files in the current directory, sorted by size:".to_string(),
-        )
-        .add_single_example(
-            "sys host | get hostname".to_string(),
-            "Get the current system host name:".to_string(),
-        )
-        .add_single_example(
-            "Get the processes on your system actively using CPU:".to_string(),
-            "ps | where cpu > 0".to_string(),
-        );
+    let mut arr: Examples = Examples::new();
+    arr.add_single_example(
+        "ls | sort-by size",
+        "List the files in the current directory, sorted by size:",
+    );
+    arr.add_single_example(
+        "sys host | get hostname",
+        "Get the current system host name:",
+    );
+    arr.add_single_example(
+        "Get the processes on your system actively using CPU:",
+        "ps | where cpu > 0",
+    );
 
     println!("{}", arr);
 }

@@ -4,11 +4,11 @@ use dialoguer::theme::Theme;
 use owo_colors::OwoColorize;
 use prettytable::format::TableFormat;
 
-pub fn is_debug_mode() -> bool {
+pub(crate) fn is_debug_mode() -> bool {
     return cfg!(debug_assertions);
 }
 
-pub fn debug_run<F>(f: F)
+pub(crate) fn debug_run<F>(f: F)
 where
     F: Fn() -> (),
 {
@@ -22,7 +22,7 @@ where
 // 帮我实现这个函数
 // Gemini:
 // TODO: 让命令行字符串支持 单引号
-pub fn parse_arg_string(input: &str) -> Vec<String> {
+pub(crate) fn parse_arg_string(input: &str) -> Vec<String> {
     let mut result = Vec::new();
     let mut current_token = String::new();
     let mut in_quotes = false;
@@ -77,7 +77,7 @@ fn test_parse_string() {
 // sub_cmd_color    cyan
 // type_color       magenta
 
-pub fn table_formater() -> TableFormat {
+pub(crate) fn table_formater() -> TableFormat {
     let mut f = TableFormat::new();
     f.column_separator(' ');
     f.padding(4, 0);
@@ -85,7 +85,7 @@ pub fn table_formater() -> TableFormat {
     return f;
 }
 
-pub struct ColoredTheme {}
+pub(crate) struct ColoredTheme {}
 impl Theme for ColoredTheme {
     /// Formats a confirm prompt.
     fn format_confirm_prompt(

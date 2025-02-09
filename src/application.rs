@@ -10,7 +10,7 @@ pub enum AppDefaultAction {
     PrintHelpMessage,
 
     /// 如果想读取命令行参数, 请使用:   `let env_arg: Vec<String> = env::args().collect();`
-    RunAction(Rc<dyn Fn() -> ()>),
+    CustomAction(Rc<dyn Fn() -> ()>),
 }
 
 impl Default for AppDefaultAction {
@@ -30,7 +30,8 @@ pub enum DidHandled {
 
 #[derive(Clone)]
 pub struct App {
-    /// 此程序的名称
+    /// 此程序的名称;  
+    /// 所有自动生成的帮助文档和示例都会使用到 {app_name}
     pub app_name: String,
 
     /// 一句话介绍此程序.
@@ -46,12 +47,12 @@ pub struct App {
     pub help_message: String,
 
     /// 此 app 的所有子命令.
-    pub commands: Vec<SubCommand>,
+    pub sub_commands: Vec<SubCommand>,
 
-    /// env::args().collect()
+    /// let env_arg: Vec<String> = std::env::args().collect()
     pub env_arg: Vec<String>,
 
-    /// 是用此程序的一些示范和例子.
+    /// 使用此程序的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
     pub examples: Option<Examples>,
 
@@ -59,7 +60,8 @@ pub struct App {
     pub sub_command_arg: Vec<String>,
 
     /// 只输入了程序名称没有子命令也没有任何 flag 时之行的 action.
-    pub _app_default_action: AppDefaultAction,
+    /// 默认是 AppDefaultAction::PrintHelpMessage;
+    pub app_default_action: AppDefaultAction,
 }
 
 impl App {
@@ -104,14 +106,14 @@ impl App {
         F: Fn() -> () + 'static,
     {
         let mut re = self;
-        re._app_default_action = AppDefaultAction::RunAction(Rc::new(action));
+        re.app_default_action = AppDefaultAction::CustomAction(Rc::new(action));
         return re;
     }
 
     pub fn add_subcommand(self, command: SubCommand) -> Self {
         let mut re = self;
 
-        re.commands.push(command);
+        re.sub_commands.push(command);
 
         return re;
     }
@@ -127,8 +129,10 @@ impl App {
 
     /// 运行 App.
     pub fn run(self) -> DidHandled {
-        let asdf = self.env_arg.get(1);
-        match asdf {
+        // TODO: 检查子命令名称重复
+
+        let option_string = self.env_arg.get(1);
+        match option_string {
             None => {
                 //只输入了程序名称没有子命令也没有任何 flag
 
@@ -150,6 +154,7 @@ impl App {
                         DidHandled::Failed(_x) => { /* continue. */ }
                     }
                 }
+
                 {
                     let re = self._handle_app_example();
                     match re {
@@ -184,7 +189,7 @@ impl App {
         let mut table = table!();
         table.set_format(table_formater());
 
-        for x in &self.commands {
+        for x in &self.sub_commands {
             let short_name = if x.short_name == "" {
                 "".to_string()
             } else {
@@ -237,7 +242,7 @@ Commands:
                 let mut table = table!();
                 table.set_format(table_formater());
 
-                for x in &self.commands {
+                for x in &self.sub_commands {
                     let rows = x.formated_command_example(self.app_name.clone());
 
                     for r in rows {
@@ -286,7 +291,7 @@ Commands:
         let mut duplicated_names: HashSet<String> = HashSet::new();
         let mut set: HashSet<String> = HashSet::new();
 
-        for x in &self.commands {
+        for x in &self.sub_commands {
             {
                 let name = x.command_name.clone();
 
@@ -353,7 +358,7 @@ impl App {
                 return DidHandled::Handled;
             }
 
-            for x in &self.commands {
+            for x in &self.sub_commands {
                 if 需要查询的命令名称 == &x.command_name || 需要查询的命令名称 == &x.short_name
                 {
                     x.print_command_help(self.app_name.clone());
@@ -409,12 +414,12 @@ impl App {
     /// 处理只输入了程序名称没有子命令也没有任何 flag 的情况.
     fn _handle_app_default_acton(&self) -> DidHandled {
         if self.env_arg.len() == 1 {
-            match &self._app_default_action {
+            match &self.app_default_action {
                 AppDefaultAction::PrintHelpMessage => {
                     (&self).print_app_help();
                     return DidHandled::Handled;
                 }
-                AppDefaultAction::RunAction(f) => {
+                AppDefaultAction::CustomAction(f) => {
                     f();
 
                     return DidHandled::Handled;
@@ -425,7 +430,7 @@ impl App {
     }
 
     fn _handle_commands(&self, command_name: &String) -> DidHandled {
-        for x in &self.commands {
+        for x in &self.sub_commands {
             if command_name == &x.command_name || command_name == &x.short_name {
                 let cmd_args = &self.sub_command_arg;
 
@@ -447,12 +452,12 @@ impl App {
                 }
 
                 let v = SubcommandArgsValue::new(cmd_args.clone());
-                match &x.need_arg_type {
-                    ArgTypeWithAction::Empty(_f) => {
+                match &x.arg_type_with_action {
+                    ArgAction::Empty(_f) => {
                         _f();
                         return DidHandled::Handled;
                     }
-                    ArgTypeWithAction::String(_f) => {
+                    ArgAction::String(_f) => {
                         let re = v.get_string();
                         match re {
                             Ok(s) => {
@@ -464,7 +469,7 @@ impl App {
                             }
                         }
                     }
-                    ArgTypeWithAction::StringMutiple(_f) => {
+                    ArgAction::StringMutiple(_f) => {
                         let re = v.get_vec_string();
                         match re {
                             Ok(s) => {
@@ -476,7 +481,7 @@ impl App {
                             }
                         }
                     }
-                    ArgTypeWithAction::Number(_f) => {
+                    ArgAction::Number(_f) => {
                         let re = v.get_number();
                         match re {
                             Ok(s) => {
@@ -488,7 +493,7 @@ impl App {
                             }
                         }
                     }
-                    ArgTypeWithAction::NumberMutiple(_f) => {
+                    ArgAction::NumberMutiple(_f) => {
                         let re = v.get_vec_number();
                         match re {
                             Ok(s) => {
@@ -500,7 +505,7 @@ impl App {
                             }
                         }
                     }
-                    ArgTypeWithAction::Path(_f) => {
+                    ArgAction::Path(_f) => {
                         let re = v.get_path();
                         match re {
                             Ok(s) => {
@@ -512,7 +517,7 @@ impl App {
                             }
                         }
                     }
-                    ArgTypeWithAction::PathMutiple(_f) => {
+                    ArgAction::PathMutiple(_f) => {
                         let re = v.get_vec_path();
                         match re {
                             Ok(s) => {
@@ -524,7 +529,7 @@ impl App {
                             }
                         }
                     }
-                    ArgTypeWithAction::Bool(_f) => {
+                    ArgAction::Bool(_f) => {
                         let re = v.get_bool();
                         match re {
                             Ok(s) => {
@@ -536,7 +541,7 @@ impl App {
                             }
                         }
                     }
-                    ArgTypeWithAction::BoolMutiple(_f) => {
+                    ArgAction::BoolMutiple(_f) => {
                         let re = v.get_vec_bool();
                         match re {
                             Ok(s) => {
@@ -548,11 +553,11 @@ impl App {
                             }
                         }
                     }
-                    ArgTypeWithAction::Repl(_f) => {
+                    ArgAction::Dialog(_f) => {
                         let re = v.get_repl();
                         match re {
                             Ok(s) => {
-                                _f(ReplQuestions::new(s.as_deref()));
+                                _f(arg_type::Dialog::new(s.as_deref()));
                                 return DidHandled::Handled;
                             }
                             Err(e) => {
@@ -561,13 +566,6 @@ impl App {
                         }
                     }
                 }
-
-                // if let Some(f) = &x.action {
-                //     f(SubcommandArgsValue::new(cmd_args.clone()));
-                //     return DidHandled::Handled;
-                // } else {
-                //     return DidHandled::Failed("还没有为此命令设置 action".to_string());
-                // }
             } else {
                 continue;
             }
@@ -598,8 +596,8 @@ impl App {
 
 impl Default for App {
     fn default() -> Self {
-        use std::env;
-        let env_arg: Vec<String> = env::args().collect();
+        let env_arg: Vec<String> = std::env::args().collect();
+
         // 第 2 个一级后面的所有.
         let sub_cmd_arg: Vec<String> = if env_arg.len() > 2 {
             env_arg[2..].to_vec()
@@ -607,34 +605,17 @@ impl Default for App {
             vec![]
         };
 
-        // return App {
-        //     about: "",
-        //     author: "",
-        //     app_version_message: "0.0.1".to_string(),
-        //     help_message: "".to_string(),
-
-        //     // env_arg: env::args().collect(),
-        //     env_arg: env_arg,
-        //     sub_command_arg: sub_cmd_arg,
-        //     _commands: vec![],
-        //     _app_default_action: AppDefaultAction::PrintHelpMessage,
-        //     app_name: app_name.to_string(),
-        //     examples: vec![],
-        //     exaples: vec![],
-        // };
-
         Self {
             app_name: Default::default(),
             about: Default::default(),
-
             author: Default::default(),
             app_version_message: "0.0.1".to_string(),
             help_message: Default::default(),
-            commands: Default::default(),
+            sub_commands: Default::default(),
             env_arg: env_arg,
             examples: None,
             sub_command_arg: sub_cmd_arg,
-            _app_default_action: Default::default(),
+            app_default_action: Default::default(),
         }
     }
 }

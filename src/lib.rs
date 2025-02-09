@@ -1,8 +1,7 @@
-pub use dialoguer;
-pub use owo_colors;
-pub use prettytable;
-pub use serde;
-pub use serde_json;
+use dialoguer;
+use owo_colors;
+use prettytable;
+use serde_json;
 
 mod application;
 pub use application::*;
@@ -10,23 +9,22 @@ pub use application::*;
 mod subcommand;
 pub use subcommand::*;
 
-/// Vec<String> to json  
-/// json to Vec<String>  
 mod vec_string;
-pub use vec_string::*;
-
+pub(crate) use vec_string::*;
 mod helper;
-pub use helper::*;
+pub(crate) use helper::*;
 
-mod arg_types;
-pub use arg_types::*;
+mod action;
+pub use action::*;
 
 mod examples_types;
 pub use examples_types::*;
 
 /// 问答式命令行交互
-mod repl_questions;
-pub use repl_questions::*;
+mod question_and_anser;
+pub use question_and_anser::*;
+
+pub mod arg_type;
 
 // mod arg_count;
 // pub use arg_count::*;
@@ -34,7 +32,7 @@ pub use repl_questions::*;
 #[cfg(test)]
 mod tests {
 
-    use std::rc::Rc;
+    use std::{rc::Rc, vec};
 
     use super::*;
 
@@ -56,7 +54,7 @@ mod tests {
             .add_subcommand(
                 SubCommand::new("run")
                     .about("运行程序")
-                    .action(ArgTypeWithAction::Bool(Rc::new(|_x| {
+                    .action(ArgAction::Bool(Rc::new(|_x| {
                         print!("command \"run\"{:?}\n", _x);
                     }))),
             )
@@ -64,7 +62,7 @@ mod tests {
                 SubCommand::new("build")
                     .short_name("b")
                     .about("编译项目")
-                    .action(ArgTypeWithAction::Bool(Rc::new(|_x| {
+                    .action(ArgAction::Bool(Rc::new(|_x| {
                         print!("command \"run\"{:?}\n", _x);
                     }))),
             )
@@ -75,7 +73,7 @@ mod tests {
                     // .add_command_example("app arg_zero a")
                     // .add_command_example("app arg_zero \"b\"")
                     // .add_command_example("app arg_zero a b c")
-                    .action(ArgTypeWithAction::Empty(Rc::new(|| {
+                    .action(ArgAction::Empty(Rc::new(|| {
                         print!("testing arg_zero");
                     }))),
             )
@@ -86,7 +84,7 @@ mod tests {
                     // .add_command_example("app arg_zero a")
                     // .add_command_example("app arg_zero \"b\"")
                     // .add_command_example("app arg_zero a b c")
-                    .action(ArgTypeWithAction::Number(Rc::new(|_x| {
+                    .action(ArgAction::Number(Rc::new(|_x| {
                         print!("testing arg_zero");
                     }))),
             )
@@ -97,7 +95,7 @@ mod tests {
                     // .add_command_example("app arg_zero a")
                     // .add_command_example("app arg_zero \"b\"")
                     // .add_command_example("app arg_zero a b c")
-                    .action(ArgTypeWithAction::NumberMutiple(Rc::new(|_x| {
+                    .action(ArgAction::NumberMutiple(Rc::new(|_x| {
                         print!("testing arg_zero");
                     }))),
             )
@@ -108,7 +106,7 @@ mod tests {
                     // .add_command_example("app arg_zero a")
                     // .add_command_example("app arg_zero \"b\"")
                     // .add_command_example("app arg_zero a b c")
-                    .action(ArgTypeWithAction::BoolMutiple(Rc::new(|_x| {
+                    .action(ArgAction::BoolMutiple(Rc::new(|_x| {
                         print!("testing arg_zero");
                     }))),
             )
@@ -119,8 +117,27 @@ mod tests {
                     // .add_command_example("app arg_zero a")
                     // .add_command_example("app arg_zero \"b\"")
                     // .add_command_example("app arg_zero a b c")
-                    .action(ArgTypeWithAction::StringMutiple(Rc::new(|_x| {
+                    .action(ArgAction::StringMutiple(Rc::new(|_x| {
                         print!("testing arg_zero");
+                    }))),
+            )
+            .add_subcommand(
+                SubCommand::new("repl")
+                    .about("用来测试 ArgCount::Repl(_) ")
+                    .action(ArgAction::Dialog(Rc::new(|r| {
+                        let mut 你要吃几个汉堡包: arg_type::Number = 0;
+                        let mut 多个_number: arg_type::NumberMutiple = vec![];
+                        let mut string: String = String::new();
+                        let mut string_multiple: Vec<String> = vec![];
+                        let mut req_bool: arg_type::Bool = false;
+                        let mut req_bool_multiple: arg_type::BoolMutiple = vec![];
+
+                        r.number(&mut 你要吃几个汉堡包, "你要吃几个汉堡包?")
+                            .req_multiple_number(&mut 多个_number, "多个 number")
+                            .string(&mut string, "string")
+                            .string_multiple(&mut string_multiple, "string_multiple")
+                            .yes_or_no(&mut req_bool, "bool")
+                            .yes_or_no_multiple(&mut req_bool_multiple, "bool mutiple");
                     }))),
             );
 
