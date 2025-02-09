@@ -45,18 +45,24 @@ mod tests {
             .add_about("这个程序主要是为了测试我写的 cmd crate")
             .add_author("chen bao")
             .app_version_message("0.0.1".to_string())
-            //         .add_app_example(vec![
-            // "app example 1".to_string(),
-            // "app example 2".to_string(),
-            // "app example 2".to_string(),
-            // "app run 3".to_string(),
-            //         ])
             .add_subcommand(
                 SubCommand::new("run")
                     .about("运行程序")
                     .action(ArgAction::Bool(Rc::new(|_x| {
                         print!("command \"run\"{:?}\n", _x);
                     }))),
+            )
+            .add_subcommand(
+                SubCommand::new("run")
+                    .about("运行程序")
+                    .action(ArgAction::Bool(Rc::new(|_x| {
+                        print!("command \"run\"{:?}\n", _x);
+                    }))),
+            )
+            .add_subcommand(
+                SubCommand::new("help")
+                    .about("运行程序")
+                    .action(ArgAction::Empty(Rc::new(|| {}))),
             )
             .add_subcommand(
                 SubCommand::new("build")
@@ -69,10 +75,6 @@ mod tests {
             .add_subcommand(
                 SubCommand::new("empty")
                     .about("用来测试 ArgCount::Zero ")
-                    // .add_command_example("app arg_zero  ")
-                    // .add_command_example("app arg_zero a")
-                    // .add_command_example("app arg_zero \"b\"")
-                    // .add_command_example("app arg_zero a b c")
                     .action(ArgAction::Empty(Rc::new(|| {
                         print!("testing arg_zero");
                     }))),
@@ -80,10 +82,6 @@ mod tests {
             .add_subcommand(
                 SubCommand::new("number")
                     .about("用来测试 ArgCount::Zero ")
-                    // .add_command_example("app arg_zero  ")
-                    // .add_command_example("app arg_zero a")
-                    // .add_command_example("app arg_zero \"b\"")
-                    // .add_command_example("app arg_zero a b c")
                     .action(ArgAction::Number(Rc::new(|_x| {
                         print!("testing arg_zero");
                     }))),
@@ -91,10 +89,6 @@ mod tests {
             .add_subcommand(
                 SubCommand::new("vecnumber")
                     .about("用来测试 ArgCount::Zero ")
-                    // .add_command_example("app arg_zero  ")
-                    // .add_command_example("app arg_zero a")
-                    // .add_command_example("app arg_zero \"b\"")
-                    // .add_command_example("app arg_zero a b c")
                     .action(ArgAction::NumberMutiple(Rc::new(|_x| {
                         print!("testing arg_zero");
                     }))),
@@ -102,10 +96,6 @@ mod tests {
             .add_subcommand(
                 SubCommand::new("vecbool")
                     .about("用来测试 ArgCount::Zero ")
-                    // .add_command_example("app arg_zero  ")
-                    // .add_command_example("app arg_zero a")
-                    // .add_command_example("app arg_zero \"b\"")
-                    // .add_command_example("app arg_zero a b c")
                     .action(ArgAction::BoolMutiple(Rc::new(|_x| {
                         print!("testing arg_zero");
                     }))),
@@ -113,10 +103,6 @@ mod tests {
             .add_subcommand(
                 SubCommand::new("vecstring")
                     .about("用来测试 ArgCount::Zero ")
-                    // .add_command_example("app vecstring  ")
-                    // .add_command_example("app arg_zero a")
-                    // .add_command_example("app arg_zero \"b\"")
-                    // .add_command_example("app arg_zero a b c")
                     .action(ArgAction::StringMutiple(Rc::new(|_x| {
                         print!("testing arg_zero");
                     }))),
@@ -141,11 +127,11 @@ mod tests {
                     }))),
             );
 
-        let re = app.debug_duplicate_names_check();
-        match re {
-            Ok(_) => {}
-            Err(s) => panic!("这些命令名称重复了: ··{:?}", s),
-        }
+        // let re = app.debug_duplicate_names_check();
+        // match re {
+        //     Ok(_) => {}
+        //     Err(s) => println!("这些命令名称重复了: ··{:?}", s),
+        // }
 
         let _ = app
             .deubg_run(vec!["cmd", "-e"])

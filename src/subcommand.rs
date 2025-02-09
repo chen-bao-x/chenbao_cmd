@@ -60,6 +60,8 @@ impl SubCommand {
     }
 
     pub fn add_sub_command_example(self, command: &'static str, description: &'static str) -> Self {
+        // TODO: 检查 `command: &'static str` 是否是可执行的 command.
+
         let mut re = self;
         re.exaples.add_single_example(command, description);
 

@@ -2,7 +2,7 @@ use owo_colors::OwoColorize;
 use prettytable::{row, table};
 
 use super::*;
-use std::{collections::HashSet, rc::Rc};
+use std::{collections::HashSet, default, rc::Rc};
 
 #[derive(Clone)]
 pub enum AppDefaultAction {
@@ -129,7 +129,9 @@ impl App {
 
     /// 运行 App.
     pub fn run(self) -> DidHandled {
-        // TODO: 检查子命令名称重复
+        debug_run(|| {
+            self.debug_check();
+        });
 
         let option_string = self.env_arg.get(1);
         match option_string {
@@ -287,29 +289,64 @@ Commands:
         return self;
     }
 
+    /// 检查子命令示example是否能正确的被解析
+    /// 检查子命令的名字是否重复.
+    /// 命令人类友好度检查
+    fn debug_check(&self) {
+        let re = self.debug_duplicate_names_check();
+        if let Err(duplicate_names) = re {
+            println!("{}", "有子命令的名称重复了:".bold());
+
+            duplicate_names.iter().for_each(|x| {
+                println!("{}", x);
+            });
+        }
+    }
+
+    /// 检查子命令的名字是否重复.
     pub fn debug_duplicate_names_check(&self) -> Result<(), HashSet<String>> {
+        // 重复了的子命令名称.
         let mut duplicated_names: HashSet<String> = HashSet::new();
+
+        // 子命令的名字合集.
         let mut set: HashSet<String> = HashSet::new();
 
+        let mut default_impls: HashSet<String> = HashSet::new();
+        {
+            // 这几个是 chenbao_cmd  自带的默认实现的 子命令和 flag, 不能被自定义.
+            default_impls.insert("-h".to_string());
+            default_impls.insert("--help".to_string());
+            default_impls.insert("-v".to_string());
+            default_impls.insert("--version".to_string());
+            default_impls.insert("-e".to_string());
+            default_impls.insert("--example".to_string());
+        }
         for x in &self.sub_commands {
             {
                 let name = x.command_name.clone();
 
-                if set.contains(&name) {
+                if set.contains(&name) || default_impls.contains(&name) {
+                    duplicated_names.insert(name.clone());
+
                     println!(
                         "name:{:?}\nduplicated_names:{:?}\nset: {:?}",
-                        name.clone(),
+                        name,
                         duplicated_names,
                         set
                     );
-                    duplicated_names.insert(name);
                 } else {
                     set.insert(name);
                 }
             }
+
             {
                 let short_name = x.short_name.clone();
-                if set.contains(&short_name) && short_name != "" {
+
+                if short_name == "" {
+                    continue;
+                }
+
+                if (set.contains(&short_name)) || default_impls.contains(&short_name) {
                     duplicated_names.insert(short_name);
                 } else {
                     set.insert(short_name);
@@ -324,6 +361,8 @@ Commands:
         }
     }
 
+    pub fn debug_检查子命令示example是否能正确的被解析() {}
+
     pub fn debug_命令人类友好度检查(&self) {}
 }
 
@@ -335,22 +374,14 @@ impl App {
     fn _handle_app_help(&self) -> DidHandled {
         let command_name = self.env_arg[1].clone();
 
-        if !(command_name == "help"
-            || command_name == "h"
-            || command_name == "-h"
-            || command_name == "--help")
-        {
+        if !(command_name == "-h" || command_name == "--help") {
             return DidHandled::Failed("不是程序的 help 命令".to_string());
         }
 
         //  "help" 命令 的默认实现, 这里处理的是: 是用 help 命令查询其他命令.
         // 比如 `app help run` 查询 run 命令的帮助文档. 效果等同于 `app run --help`
         if let Some(需要查询的命令名称) = self.sub_command_arg.first() {
-            if 需要查询的命令名称 == "help"
-                || 需要查询的命令名称 == "h"
-                || 需要查询的命令名称 == "-h"
-                || 需要查询的命令名称 == "--help"
-            {
+            if 需要查询的命令名称 == "-h" || 需要查询的命令名称 == "--help" {
                 // 命令 ‘help' 的帮助文档
 
                 println!("命令 ‘help' 的帮助文档");
@@ -379,11 +410,7 @@ impl App {
         // -h --help -v -version
         let command_name = self.env_arg[1].clone();
 
-        if command_name == "v"
-            || command_name == "version"
-            || command_name == "-v"
-            || command_name == "--version"
-        {
+        if command_name == "-v" || command_name == "--version" {
             println!("{}", self.app_version_message);
 
             return DidHandled::Handled;

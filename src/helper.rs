@@ -8,6 +8,7 @@ pub(crate) fn is_debug_mode() -> bool {
     return cfg!(debug_assertions);
 }
 
+/// 只会在 DEBUG 模式下运之行 f 函数.
 pub(crate) fn debug_run<F>(f: F)
 where
     F: Fn() -> (),
