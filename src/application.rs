@@ -54,7 +54,7 @@ pub struct App {
 
     /// 使用此程序的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
-    pub examples: Option<Examples>,
+    pub examples: Examples,
 
     /// 子命令的 “参数”
     pub sub_command_arg: Vec<String>,
@@ -80,9 +80,11 @@ impl App {
         return re;
     }
 
-    pub fn add_app_example(self, example: Option<Examples>) -> Self {
+    pub fn add_app_example(self, command: &'static str, description: &'static str) -> Self {
         let mut re = self;
-        re.examples = example;
+
+        re.examples.add_single_example(command, description);
+
         return re;
     }
 
@@ -236,24 +238,30 @@ Commands:
     }
 
     pub fn print_app_examples(&self) {
-        match &self.examples {
-            Some(_arr) => {
-                println!("{}", _arr);
-            }
-            None => {
-                let mut table = table!();
-                table.set_format(table_formater());
+        if self.examples.is_empty() {
+            let mut table = table!();
+            table.set_format(table_formater());
 
-                for x in &self.sub_commands {
-                    let rows = x.formated_command_example(self.app_name.clone());
-
-                    for r in rows {
-                        table.add_row(r);
-                    }
-                }
-                println!("{}", table);
-                // table.printstd();
+            for x in &self.sub_commands {
+                let rows = x.formated_command_example(self.app_name.clone());
+                rows.row_iter().for_each(|a| {
+                    table.add_row(a.clone());
+                });
+                // for r in rows {
+                //     table.add_row(r);
+                // }
             }
+            println!("{}", table);
+            // table.printstd();
+        } else {
+            let mut table = table!();
+            table.set_format(helper::table_formater());
+
+            self.examples.pretty_formated().row_iter().for_each(|a| {
+                table.add_row(a.clone());
+            });
+
+            println!("{}", table);
         }
     }
 
@@ -288,82 +296,6 @@ Commands:
 
         return self;
     }
-
-    /// 检查子命令示example是否能正确的被解析
-    /// 检查子命令的名字是否重复.
-    /// 命令人类友好度检查
-    fn debug_check(&self) {
-        let re = self.debug_duplicate_names_check();
-        if let Err(duplicate_names) = re {
-            println!("{}", "有子命令的名称重复了:".bold());
-
-            duplicate_names.iter().for_each(|x| {
-                println!("{}", x);
-            });
-        }
-    }
-
-    /// 检查子命令的名字是否重复.
-    pub fn debug_duplicate_names_check(&self) -> Result<(), HashSet<String>> {
-        // 重复了的子命令名称.
-        let mut duplicated_names: HashSet<String> = HashSet::new();
-
-        // 子命令的名字合集.
-        let mut set: HashSet<String> = HashSet::new();
-
-        let mut default_impls: HashSet<String> = HashSet::new();
-        {
-            // 这几个是 chenbao_cmd  自带的默认实现的 子命令和 flag, 不能被自定义.
-            default_impls.insert("-h".to_string());
-            default_impls.insert("--help".to_string());
-            default_impls.insert("-v".to_string());
-            default_impls.insert("--version".to_string());
-            default_impls.insert("-e".to_string());
-            default_impls.insert("--example".to_string());
-        }
-        for x in &self.sub_commands {
-            {
-                let name = x.command_name.clone();
-
-                if set.contains(&name) || default_impls.contains(&name) {
-                    duplicated_names.insert(name.clone());
-
-                    println!(
-                        "name:{:?}\nduplicated_names:{:?}\nset: {:?}",
-                        name,
-                        duplicated_names,
-                        set
-                    );
-                } else {
-                    set.insert(name);
-                }
-            }
-
-            {
-                let short_name = x.short_name.clone();
-
-                if short_name == "" {
-                    continue;
-                }
-
-                if (set.contains(&short_name)) || default_impls.contains(&short_name) {
-                    duplicated_names.insert(short_name);
-                } else {
-                    set.insert(short_name);
-                }
-            }
-        }
-
-        if duplicated_names.is_empty() {
-            return Ok(());
-        } else {
-            return Err(duplicated_names);
-        }
-    }
-
-    pub fn debug_检查子命令示example是否能正确的被解析() {}
-
-    pub fn debug_命令人类友好度检查(&self) {}
 }
 
 impl App {
@@ -462,7 +394,7 @@ impl App {
                 let cmd_args = &self.sub_command_arg;
 
                 {
-                    // 处理当前子命令的 flag.
+                    // 处理当前 子命令 的 flag.
                     if let Some(first_arg) = cmd_args.first() {
                         // 处理当前子命令的 help flag.
                         if first_arg == "--help" || first_arg == "-h" {
@@ -621,6 +553,81 @@ impl App {
     }
 }
 
+impl App {
+    /// 检查子命令示example是否能正确的被解析
+    /// 检查子命令的名字是否重复.
+    /// 命令人类友好度检查
+    pub(crate) fn debug_check(&self) {
+        let re = self.debug_duplicate_names_check();
+        if let Err(duplicate_names) = re {
+            println!("{}", "有子命令的名称重复了:".bold());
+
+            duplicate_names.iter().for_each(|x| {
+                println!("{}", x);
+            });
+        }
+    }
+
+    /// 检查子命令的名字是否重复.
+    pub(crate) fn debug_duplicate_names_check(&self) -> Result<(), HashSet<String>> {
+        // 重复了的子命令名称.
+        let mut duplicated_names: HashSet<String> = HashSet::new();
+
+        // 子命令的名字合集.
+        let mut set: HashSet<String> = HashSet::new();
+
+        let mut default_impls: HashSet<String> = HashSet::new();
+        {
+            // 这几个是 chenbao_cmd  自带的默认实现的 子命令和 flag, 不能被自定义.
+            default_impls.insert("-h".to_string());
+            default_impls.insert("--help".to_string());
+            default_impls.insert("-v".to_string());
+            default_impls.insert("--version".to_string());
+            default_impls.insert("-e".to_string());
+            default_impls.insert("--example".to_string());
+        }
+        for x in &self.sub_commands {
+            {
+                let name = x.command_name.clone();
+
+                if set.contains(&name) || default_impls.contains(&name) {
+                    duplicated_names.insert(name.clone());
+
+                    println!(
+                        "name:{:?}\nduplicated_names:{:?}\nset: {:?}",
+                        name, duplicated_names, set
+                    );
+                } else {
+                    set.insert(name);
+                }
+            }
+
+            {
+                let short_name = x.short_name.clone();
+
+                if short_name == "" {
+                    continue;
+                }
+
+                if (set.contains(&short_name)) || default_impls.contains(&short_name) {
+                    duplicated_names.insert(short_name);
+                } else {
+                    set.insert(short_name);
+                }
+            }
+        }
+
+        if duplicated_names.is_empty() {
+            return Ok(());
+        } else {
+            return Err(duplicated_names);
+        }
+    }
+
+    // pub(crate) fn debug_检查子命令示example是否能正确的被解析() {}
+
+    // pub(crate) fn debug_命令人类友好度检查(&self) {}
+}
 impl Default for App {
     fn default() -> Self {
         let env_arg: Vec<String> = std::env::args().collect();
@@ -640,7 +647,7 @@ impl Default for App {
             help_message: Default::default(),
             sub_commands: Default::default(),
             env_arg: env_arg,
-            examples: None,
+            examples: Examples::new(),
             sub_command_arg: sub_cmd_arg,
             app_default_action: Default::default(),
         }

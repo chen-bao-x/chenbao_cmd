@@ -1,6 +1,6 @@
 use super::*;
 use owo_colors::OwoColorize;
-use prettytable::{row, table};
+use prettytable::{row, table, Table};
 use std::{rc::Rc, vec};
 
 // subcommand
@@ -139,8 +139,11 @@ Arguments:
     }
 
     /// 已静格式化好了, 直接放进 Table 打印就行.
-    pub fn formated_command_example(&self, app_name: String) -> Vec<prettytable::Row> {
+    pub fn formated_command_example(&self, app_name: String) -> Table {
         if self.exaples.is_empty() {
+            let mut table = table!();
+            table.set_format(helper::table_formater());
+
             let arg = self
                 .arg_type_with_action
                 .value_example()
@@ -154,8 +157,8 @@ Arguments:
                 ),
                 self.about
             ];
-
-            return vec![r];
+            table.add_row(r);
+            return table;
         } else {
             return self.exaples.pretty_formated();
         }
@@ -165,9 +168,10 @@ Arguments:
         let arr = self.formated_command_example(app_name);
         let mut table = table!();
         table.set_format(table_formater());
-        for x in arr {
-            table.add_row(x);
-        }
+
+        arr.row_iter().for_each(|x| {
+            table.add_row(x.clone());
+        });
 
         println!("{}", table);
     }

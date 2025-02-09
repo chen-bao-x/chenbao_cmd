@@ -1,4 +1,6 @@
-use prettytable::{row, Row};
+use prettytable::{row, table, Row, Table};
+
+use crate::helper;
 
 ///
 /// List the files in the current directory, sorted by size:
@@ -42,14 +44,15 @@ impl Examples {
         return re;
     }
 
-    pub fn pretty_formated(&self) -> Vec<prettytable::Row> {
-        let mut re: Vec<Row> = vec![];
+    pub fn pretty_formated(&self) -> Table {
+        let mut table = table!();
+        table.set_format(helper::table_formater());
 
         for x in &self.val {
-            re.push(row![x.formated()]);
+            table.add_row(row![x.formated()]);
         }
 
-        return re;
+        return table;
     }
 
     pub fn add_single_example(&mut self, command: &'static str, description: &'static str) {
@@ -65,7 +68,7 @@ impl Examples {
 // ------- SingleExample -------
 
 #[derive(Clone, Debug)]
-struct SingleExample  {
+struct SingleExample {
     command: &'static str,
     description: &'static str,
 }
