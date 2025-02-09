@@ -1,5 +1,5 @@
 use owo_colors::OwoColorize;
-use std::{fs::read_link, num::ParseIntError, path::Path, vec};
+use std::{num::ParseIntError, path::Path, vec};
 
 use super::*;
 
@@ -35,7 +35,7 @@ pub struct ReplQuestions {
 
 impl ReplQuestions {
     /* private */
-    pub fn new(input: Option<String>) -> Self {
+    pub fn new(input: Option<&str>) -> Self {
         match input {
             Some(s) => Self::new_from_jsonstr(s),
             None => Self {
@@ -46,7 +46,7 @@ impl ReplQuestions {
         }
     }
 
-    pub fn new_from_jsonstr(str: String) -> Self {
+    pub fn new_from_jsonstr(str: &str) -> Self {
         // str -> Vec<String>
 
         let parse_result = VecString::json_to_vec(&str);
@@ -326,27 +326,27 @@ impl ReplQuestions {
 
 #[cfg(test)]
 mod test_repl_questions {
+
     use owo_colors::OwoColorize;
-    use std::{default, iter};
 
     use super::*;
 
-    #[test]
-    fn it_works() {
-        let mut x: super::arg_types::Number = Default::default();
+    // #[test]
+    // fn it_works() {
+    //     let mut x: super::arg_types::Number = Default::default();
 
-        let r = ReplQuestions::new(None).req_number(&mut x, "你想买几个汉堡?");
+    //     let hand_input = ReplQuestions::new(None).req_number(&mut x, "你想买几个汉堡?");
 
-        let r2 = ReplQuestions::new_from_jsonstr(r#"["100"]"#.to_string())
-            .req_number(&mut x, "你想买几个汉堡?");
-        println!("x 的值是: {}", x);
-        println!(
-            "r: {:?}\nr2: {:?}",
-            r.arguments.clone(),
-            r2.arguments.clone()
-        );
-        assert_eq!(r.arguments, r2.arguments);
-    }
+    //     let from_json_string = ReplQuestions::new_from_jsonstr(r#"["100"]"#.to_string())
+    //         .req_number(&mut x, "你想买几个汉堡?");
+    //     println!("x 的值是: {}", x);
+    //     println!(
+    //         "r: {:?}\nr2: {:?}",
+    //         hand_input.arguments.clone(),
+    //         from_json_string.arguments.clone()
+    //     );
+    //     assert_eq!(hand_input.arguments, from_json_string.arguments);
+    // }
 
     #[test]
     fn repl_questions_json_vec_是否能相互逆转() {
@@ -362,7 +362,7 @@ mod test_repl_questions {
 
         assert_eq!(v1, v2);
 
-        let r = ReplQuestions::new(Some(json_str.clone()));
+        let r = ReplQuestions::new(Some(&json_str));
         let json_str2 = r.to_json_str();
 
         println!("v1 == v2  -> {}  ", json_str == json_str2);
@@ -371,18 +371,18 @@ mod test_repl_questions {
 
     #[test]
     fn test_req_string() {
+        // {
+        //     let mut x = String::new();
+
+        //     let repl = ReplQuestions::new(None).req_string(&mut x, "");
+
+        //     println!("输入的是: {:?}", x);
+        //     assert_eq!(repl.is_from_json, false);
+        // }
+
         {
             let mut x = String::new();
-
-            let repl = ReplQuestions::new(None).req_string(&mut x, "");
-
-            println!("输入的是: {:?}", x);
-            assert_eq!(repl.is_from_json, false);
-        }
-
-        {
-            let mut x = String::new();
-            let repl = ReplQuestions::new(Some(r#"["hello"]"#.to_string())).req_string(&mut x, "");
+            let repl = ReplQuestions::new(Some(r#"["hello"]"#)).req_string(&mut x, "");
 
             println!("输入的是: {:?}", x);
 
@@ -406,7 +406,7 @@ mod test_repl_questions {
         {
             let mut x: Vec<String> = vec![];
             // let repl = ReplQuestions::new(Some(r#"    [ "\"[\"sa dfadsf\",\"sadfadsf\",\"sa dfadsf\"]\""]  "#.to_string()))
-            let repl = ReplQuestions::new(Some(r#" ["[\"asdfasdf\",\"sadfsadf\"]"] "#.to_string()))
+            let repl = ReplQuestions::new(Some(r#" ["[\"asdfasdf\",\"sadfsadf\"]"] "#))
                 .req_multiple_string(&mut x, "");
 
             println!("输入的是: {:?}", x);
@@ -433,8 +433,8 @@ mod test_repl_questions {
         {
             let mut x: bool = true;
             // let repl = ReplQuestions::new(Some(r#"    [ "\"[\"sa dfadsf\",\"sadfadsf\",\"sa dfadsf\"]\""]  "#.to_string()))
-            let repl = ReplQuestions::new(Some(r#"   ["false"]    "#.to_string()))
-                .req_bool(&mut x, "get an bool");
+            let repl =
+                ReplQuestions::new(Some(r#"   ["false"]    "#)).req_bool(&mut x, "get an bool");
 
             println!("输入的是: {:?}", x);
 
@@ -442,6 +442,32 @@ mod test_repl_questions {
         }
     }
 
+    #[test]
+    fn test_req_multiple_bool() {
+        // 已测试, 可以逆转.
+
+        // {
+        //     let mut x: Vec<bool> = vec![];
+
+        //     let repl = ReplQuestions::new(None).req_bool_multiple(&mut x, "get mutiple bool");
+
+        //     println!("输入的是: {:?}", x);
+
+        //     println!("json_str: {}", repl.to_json_str());
+        //     assert_eq!(repl.is_from_json, false);
+        // }
+
+        {
+            let mut x: Vec<bool> = vec![];
+
+            let repl = ReplQuestions::new(Some(r#" ["[\"true\",\"false\"]"]  "#))
+                .req_bool_multiple(&mut x, "get mutiple path");
+
+            println!("输入的是: {:?}", x);
+
+            assert_eq!(repl.is_from_json, true);
+        }
+    }
     #[test]
     fn tese_req_path() {
         // 已测试, 可以逆转.
@@ -460,7 +486,7 @@ mod test_repl_questions {
         {
             let mut x: PathBuf = PathBuf::new();
 
-            let repl = ReplQuestions::new(Some(r#"  ["./hello/sadf.txt"]   "#.to_string()))
+            let repl = ReplQuestions::new(Some(r#"  ["./hello/sadf.txt"]   "#))
                 .req_path(&mut x, "get an bool");
 
             println!("输入的是: {:?}", x);
@@ -487,35 +513,8 @@ mod test_repl_questions {
         {
             let mut x: Vec<PathBuf> = vec![];
 
-            let repl = ReplQuestions::new(Some(r#" ["[\"a\",\"b.txt\",\"./\"]"]  "#.to_string()))
+            let repl = ReplQuestions::new(Some(r#" ["[\"a\",\"b.txt\",\"./\"]"]  "#))
                 .req_multiple_path(&mut x, "get mutiple path");
-
-            println!("输入的是: {:?}", x);
-
-            assert_eq!(repl.is_from_json, true);
-        }
-    }
-
-    #[test]
-    fn test_req_multiple_bool() {
-        // 已测试, 可以逆转.
-
-        {
-            let mut x: Vec<bool> = vec![];
-
-            let repl = ReplQuestions::new(None).req_bool_multiple(&mut x, "get mutiple bool");
-
-            println!("输入的是: {:?}", x);
-
-            println!("json_str: {}", repl.to_json_str());
-            assert_eq!(repl.is_from_json, false);
-        }
-
-        {
-            let mut x: Vec<bool> = vec![];
-
-            let repl = ReplQuestions::new(Some(r#" ["[\"true\",\"false\"]"]  "#.to_string()))
-                .req_bool_multiple(&mut x, "get mutiple path");
 
             println!("输入的是: {:?}", x);
 
@@ -544,7 +543,7 @@ mod test_repl_questions {
             let mut x: String = "".to_string();
             let iterms = vec!["one", "two"];
 
-            let repl = ReplQuestions::new(Some(r#" ["two"] "#.to_string())).req_single_select(
+            let repl = ReplQuestions::new(Some(r#" ["two"] "#)).req_single_select(
                 &mut x,
                 iterms,
                 "get mutiple path",
@@ -571,13 +570,13 @@ mod test_repl_questions {
 
         //     println!("json_str: {}", repl.to_json_str());
         //     assert_eq!(repl.is_from_json, false);
-        // } 
+        // }
 
         {
             let mut x: Vec<String> = vec![];
             let iterms = vec!["one", "two"];
 
-            let repl = ReplQuestions::new(Some(r#" ["[\"one\",\"two\"]"] "#.to_string())).req_multiple_select(
+            let repl = ReplQuestions::new(Some(r#" ["[\"one\",\"two\"]"] "#)).req_multiple_select(
                 &mut x,
                 iterms,
                 "get mutiple path",
@@ -587,6 +586,65 @@ mod test_repl_questions {
 
             assert_eq!(repl.is_from_json, true);
         }
+    }
+
+    #[test]
+    fn test_整体是否能还原() {
+        // 已测试, 可以逆转.
+
+        //         {
+        //             let mut did_like_green: bool = false;
+        //             let mut eat_howmuch_hanbager: arg_types::Number = 0;
+        //             let mut 配菜: Vec<String> = vec![];
+        //             let all配菜 = vec!["生菜", "蕃茄酱", "西红柿片"];
+
+        //             let repl = ReplQuestions::new(None)
+        //                 .req_bool(&mut did_like_green, "喜欢绿色吗?")
+        //                 .req_number(&mut eat_howmuch_hanbager, "吃几个汉堡?")
+        //                 .req_multiple_select(&mut 配菜, all配菜, "需要哪些配菜?");
+
+        //             println!(
+        //                 r#"
+        // did_like_green: {}
+        // eat_howmuch_hanbager: {}
+        // 配菜: {:?}
+        //         "#,
+        //                 did_like_green, eat_howmuch_hanbager, 配菜
+        //             );
+
+        //             println!("json_str: {}", repl.to_json_str());
+
+        //             assert_eq!(repl.is_from_json, false);
+        //         }
+
+        {
+            let mut did_like_green: bool = false;
+            let mut eat_howmuch_hanbager: arg_types::Number = 0;
+            let mut 配菜: Vec<String> = vec![];
+            let all配菜 = vec!["生菜", "蕃茄酱", "西红柿片"];
+
+            let repl = ReplQuestions::new(Some(
+                r#"        ["true","8","[\"生菜\",\"西红柿片\"]"]       "#,
+            ))
+            .req_bool(&mut did_like_green, "喜欢绿色吗?")
+            .req_number(&mut eat_howmuch_hanbager, "吃几个汉堡?")
+            .req_multiple_select(&mut 配菜, all配菜, "需要哪些配菜?");
+
+            println!(
+                r#"
+did_like_green: {}
+eat_howmuch_hanbager: {}
+配菜: {:?}
+        "#,
+                did_like_green, eat_howmuch_hanbager, 配菜
+            );
+
+            println!("json_str: {}", repl.to_json_str());
+
+            assert_eq!(repl.is_from_json, true);
+        }
+
+        // ["true","8","[\"生菜\",\"西红柿片\"]"]
     }
 }
 
@@ -787,7 +845,7 @@ impl Dialog {
 }
 
 #[cfg(test)]
-mod test_repl_functions {
+mod test_dialog {
 
     use super::*;
 

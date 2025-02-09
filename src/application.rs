@@ -552,7 +552,7 @@ impl App {
                         let re = v.get_repl();
                         match re {
                             Ok(s) => {
-                                _f(ReplQuestions::new(s));
+                                _f(ReplQuestions::new(s.as_deref()));
                                 return DidHandled::Handled;
                             }
                             Err(e) => {
