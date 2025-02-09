@@ -270,6 +270,36 @@ impl ReplQuestions {
         return re;
     }
 
+    fn req_multiple_select(
+        self,
+        result_value: &mut Vec<String>,
+        items: Vec<&str>,
+        prompt: &str,
+    ) -> Self {
+        let mut re = self;
+
+        if re.is_from_json {
+            let val = re.arguments.get(re.index);
+            if let Some(str) = val {
+                *result_value = VecString::json_to_vec(&str).unwrap();
+                re.index += 1;
+                return re;
+            }
+        }
+
+        // get value from REPL.
+
+        let mut str = Dialog::get_multiple_selected(prompt, &items);
+
+        *result_value = str.iter().map(|x| x.to_string()).collect();
+
+        let json_string = serde_json::to_string(&str).unwrap();
+
+        re.arguments.push(json_string);
+        re.index = re.arguments.len() - 1;
+        return re;
+    }
+
     fn req_single_select(self, result_value: &mut String, items: Vec<&str>, prompt: &str) -> Self {
         let mut re = self;
 
@@ -515,6 +545,39 @@ mod test_repl_questions {
             let iterms = vec!["one", "two"];
 
             let repl = ReplQuestions::new(Some(r#" ["two"] "#.to_string())).req_single_select(
+                &mut x,
+                iterms,
+                "get mutiple path",
+            );
+
+            println!("输入的是: {:?}", x);
+
+            assert_eq!(repl.is_from_json, true);
+        }
+    }
+
+    #[test]
+    fn test_req_multiple_select() {
+        // 已测试, 可以逆转.
+
+        // {
+        //     let mut x: Vec<String> = vec![];
+        //     let iterms = vec!["one", "two"];
+
+        //     let repl =
+        //         ReplQuestions::new(None).req_multiple_select(&mut x, iterms, "get mutiple bool");
+
+        //     println!("输入的是: {:?}", x);
+
+        //     println!("json_str: {}", repl.to_json_str());
+        //     assert_eq!(repl.is_from_json, false);
+        // } 
+
+        {
+            let mut x: Vec<String> = vec![];
+            let iterms = vec!["one", "two"];
+
+            let repl = ReplQuestions::new(Some(r#" ["[\"one\",\"two\"]"] "#.to_string())).req_multiple_select(
                 &mut x,
                 iterms,
                 "get mutiple path",
