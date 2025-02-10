@@ -86,6 +86,35 @@ pub(crate) fn table_formater() -> TableFormat {
     return f;
 }
 
+pub(crate) trait StyledString {
+    fn styled_sub_command(&self) -> String;
+    fn styled_arg_type(&self) -> String;
+    fn styled_arg(&self) -> String;
+
+    fn styled_repl_prompt(&self) -> String;
+    fn styled_repl_input(&self) -> String;
+}
+
+impl<T: ToString> StyledString for T {
+    fn styled_sub_command(&self) -> String {
+        self.to_string().cyan().to_string()
+    }
+    fn styled_arg_type(&self) -> String {
+        self.to_string().magenta().to_string()
+    }
+    fn styled_arg(&self) -> String {
+        self.to_string().green().to_string()
+    }
+
+    fn styled_repl_prompt(&self) -> String {
+        self.to_string().bold().to_string()
+    }
+
+    fn styled_repl_input(&self) -> String {
+        self.to_string().green().to_string()
+    }
+}
+
 pub(crate) struct ColoredTheme {}
 impl Theme for ColoredTheme {
     /// Formats a confirm prompt.
@@ -135,7 +164,7 @@ impl Theme for ColoredTheme {
             if active { ">" } else { " " },
             // text.bright_green(),
             if active {
-                text.bright_green().bold().to_string()
+                text.bright_magenta().to_string()
             } else {
                 text.to_string()
             }
@@ -161,7 +190,7 @@ impl Theme for ColoredTheme {
             },
             // text
             if checked {
-                text.bright_green().to_string()
+                text.bright_magenta().to_string()
             } else {
                 text.to_string()
             }

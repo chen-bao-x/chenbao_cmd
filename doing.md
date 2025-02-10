@@ -3,7 +3,7 @@
 ## feature:
 
 [x] 为 子命令 自动生成一些 example.
-[ ] Q&A style repl for rule   资料: https://yexiyue.github.io/dialogue-macro/guide/password.html
+[x] Q&A style repl for rule   资料: https://yexiyue.github.io/dialogue-macro/guide/password.html
 
 ## know issue:
 

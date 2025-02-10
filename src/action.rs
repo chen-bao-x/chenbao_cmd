@@ -1,4 +1,5 @@
 use super::arg_type;
+use crate::helper::*;
 use owo_colors::OwoColorize;
 use std::{num::ParseIntError, path::Path, rc::Rc};
 
@@ -58,60 +59,73 @@ impl std::fmt::Display for ArgAction {
 }
 
 impl ArgAction {
+    /// 当音帮助文档时的 arguments 参数说明.
     pub fn arg_message(&self) -> String {
         let arg_tips = match self {
             ArgAction::Empty(_) => "".to_string(),
             ArgAction::String(_) => format!(
-                r#"{s} -- 需要 1 个 {z}"#,
-                s = r#""string""#.magenta(),
-                z = r#""字符串""#.green(),
+                r#"{s} -- 需要 1 个 {g}, 示例: {z}"#,
+                s = r#""string""#.styled_arg_type(),
+                g = r#""string""#.styled_arg_type(),
+                z = r#""input an string""#.styled_arg(),
             ),
             ArgAction::StringMutiple(_) => format!(
-                r#"{s} -- 需要 多个 {z}"#,
-                s = r#"["string"...]"#.magenta(),
-                z = r#""字符串""#.green(),
+                r#"{s} -- 需要 多个 {z}, 示例: {example}"#,
+                s = r#"["string"...]"#.styled_arg_type(),
+                z = r#""string""#.styled_arg(),
+                example = r#""input an string" "string 2" "string 3" "#.styled_arg(),
             ),
             ArgAction::Number(_) => format!(
                 r#"{s} -- 需要 1 个 Number, 示例: {z}"#,
-                s = r#"Number"#.magenta(),
-                z = r#"100"#.green(),
+                s = r#"Number"#.styled_arg_type(),
+                z = r#"100"#.styled_arg(),
             ),
             ArgAction::NumberMutiple(_) => {
                 format!(
                     r#"{s} -- 需要 多个 Number, 每个 Number 用 [空格] 分开, 示例: {z}"#,
-                    s = r#"[Number...]"#.magenta(),
-                    z = r#"0 1 2 5 123 100"#.green(),
+                    s = r#"[Number...]"#.styled_arg_type(),
+                    z = r#"0 1 2 5 123 100"#.styled_arg(),
                 )
             }
-            ArgAction::Path(_) => format!(r#"Path -- 需要 1 个 "Path""#),
+            ArgAction::Path(_) => {
+                return format!(
+                    r#"{s} -- 需要 1 个 {s}, 示例: {z}"#,
+                    s = r#"Path"#.styled_arg_type(),
+                    z = r#""./folder/hello.txt""#.styled_arg(),
+                );
+            }
             ArgAction::PathMutiple(_) => {
                 format!(
                     r#"{s} -- 需要 多个 "Path",  每个 Path 用 [空格] 分开, 示例: {z}"#,
-                    s = r#"[Path...]"#.magenta(),
-                    z = r#"0 1 2 5 123 100"#.green(),
+                    s = r#"[Path...]"#.styled_arg_type(),
+                    z = r#"0 1 2 5 123 100"#.styled_arg(),
                 )
             }
             ArgAction::Bool(_) => format!(
-                r#"{s} -- 需要 1 个 {s} 类型的值, {t} 或者 {f}."#,
-                s = r#"bool"#.magenta(),
-                t = r#"true"#.green(),
-                f = r#"true"#.green(),
+                r#"{s} -- 需要 1 个 {s} 类型的值, {t} 或者 {f}, 示例: {z}"#,
+                s = r#"bool"#.styled_arg_type(),
+                t = r#"true"#.styled_arg(),
+                f = r#"true"#.styled_arg(),
+                z = r#"true"#.styled_arg(),
             ),
-            ArgAction::Dialog(_) => "".to_string(),
+
             ArgAction::BoolMutiple(_) => {
                 format!(
-                    r#"{s} -- 需要 多个 {b} 类型的值, {t} 或者 {f}, 每个 {b} 用 [空格] 分开."#,
-                    s = r#"[Bool...]"#.magenta(),
-                    b = r#"bool"#.magenta(),
-                    t = r#"true"#.green(),
-                    f = r#"true"#.green(),
+                    r#"{s} -- 需要 多个 {b} 类型的值, {t} 或者 {f}, 每个 {b} 用 [空格] 分开, 示例: {z}"#,
+                    s = r#"[Bool...]"#.styled_arg_type(),
+                    b = r#"bool"#.styled_arg_type(),
+                    t = r#"true"#.styled_arg(),
+                    f = r#"true"#.styled_arg(),
+                    z = r#"true false true false"#.styled_arg(),
                 )
             }
+            ArgAction::Dialog(_) => "".to_string(),
         };
 
         return format!("    {}", arg_tips);
     }
 
+    /// 遇到参数类型错误时告诉用户如何输入正确的参数.
     pub fn arg_type_tips(&self) -> String {
         let sdafdsaf: &str = match self {
             ArgAction::Empty(_) => "",
@@ -173,7 +187,14 @@ impl SubcommandArgsValue {
     }
 
     pub fn get_empty(self) -> ParseResult<arg_type::Empty> {
-        return Ok(arg_type::Empty::new());
+        if self.subcommand_args.is_empty() {
+            return Ok(arg_type::Empty::new());
+        }
+        return Err(format!(
+            "参数数量不正确: 此子命令不需要参数, 实际接收到了 {} 个参数: {:?}",
+            self.subcommand_args.len().styled_sub_command(),
+            self.subcommand_args,
+        ));
     }
 
     pub fn get_string(self) -> ParseResult<String> {
@@ -186,8 +207,8 @@ impl SubcommandArgsValue {
         }
         return Err(format!(
             "参数数量不正确: 需要 1 个参数, 实际接收到了 {} 个参数: {:?}",
-            s.len().cyan(),
-            s.green(),
+            s.len().styled_sub_command(),
+            format!("{:?}", s).styled_arg(),
         ));
     }
 
@@ -210,8 +231,9 @@ impl SubcommandArgsValue {
         } else {
             return Err(format!(
                 "参数数量不正确: 需要 1 个参数, 实际接收到了 {} 个参数: {:?}",
-                s.len().cyan(),
-                s.green(),
+                s.len().styled_sub_command(),
+                // s.green(),
+                format!("{:?}", s).styled_arg(),
             ));
         }
         return Err("()".to_string());
@@ -238,7 +260,6 @@ impl SubcommandArgsValue {
     }
 
     pub fn get_path(self) -> ParseResult<arg_type::Path> {
-    
         let s = self.subcommand_args;
 
         if s.len() == 1 {
@@ -250,15 +271,15 @@ impl SubcommandArgsValue {
         } else {
             return Err(format!(
                 "参数数量不正确: 需要 1 个参数, 实际接收到了 {} 个参数: {:?}",
-                s.len().cyan(),
-                s.green(),
+                s.len().styled_sub_command(),
+                // s.green(),
+                format!("{:?}", s).styled_arg(),
             ));
         }
         return Err("()".to_string());
     }
 
     pub fn get_vec_path(self) -> ParseResult<arg_type::PathMutiple> {
-     
         let s = self.subcommand_args;
 
         let mut re: arg_type::PathMutiple = vec![];
@@ -272,7 +293,6 @@ impl SubcommandArgsValue {
     }
 
     pub fn get_bool(self) -> ParseResult<bool> {
-     
         let s = self.subcommand_args;
 
         if s.len() == 1 {
@@ -292,33 +312,33 @@ impl SubcommandArgsValue {
 
                 return Err(format!(
                     "参数不正确: 参数的类型是 {}, {} 类型的值可以是: {}, {}, 实际接收到的是: {}",
-                    "bool".magenta(),
-                    "bool".magenta(),
-                    true.green(),
-                    false.green(),
-                    lovwercase.green(),
+                    "bool".styled_arg_type(),
+                    "bool".styled_arg_type(),
+                    true.styled_arg(),
+                    false.styled_arg(),
+                    lovwercase.styled_arg(),
                 ));
             } else {
                 return Err(format!(
                     "参数不正确: 参数的类型是 {}, {} 类型的值可以是: {}, {}",
-                    "bool".magenta(),
-                    "bool".magenta(),
-                    true.green(),
-                    false.green(),
+                    "bool".styled_arg_type(),
+                    "bool".styled_arg_type(),
+                    true.styled_arg(),
+                    false.styled_arg(),
                 ));
             }
         } else {
             return Err(format!(
                 "参数数量不正确: 需要 1 个 {} 类型的参数, 实际接收到了 {} 个参数: {:?}",
-                "bool".magenta(),
-                s.len().cyan(),
-                s.green(),
+                "bool".styled_arg_type(),
+                s.len().styled_sub_command(),
+                // s.styled_arg(),
+                format!("{:?}", s).styled_arg(),
             ));
         }
     }
 
     pub fn get_vec_bool(self) -> ParseResult<Vec<bool>> {
-     
         let s = self.subcommand_args;
         let mut re: Vec<bool> = vec![];
 
@@ -361,8 +381,9 @@ impl SubcommandArgsValue {
 
         return Err(format!(
             "参数数量不正确: 需要 0 个 或者 1 个 参数, 实际接收到了 {} 个参数: {:?}",
-            s.len().cyan(),
-            s.green(),
+            s.len().styled_sub_command(),
+            // s.styled_arg(),
+            format!("{:?}", s).styled_arg(),
         ));
     }
 }

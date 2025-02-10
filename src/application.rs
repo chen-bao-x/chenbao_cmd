@@ -153,8 +153,18 @@ impl App {
     // ============================
 
     pub fn new(app_name: &str) -> App {
+        let mut cmd_name: String = app_name.to_string();
+
+        let arr: Vec<String> = std::env::args().collect();
+        if let Some(path) = arr.get(0) {
+            let p = std::path::Path::new(path).file_name();
+            if let Some(name) = p {
+                cmd_name = name.to_string_lossy().into_owned();
+            }
+        }
+
         return Self {
-            app_name: app_name.to_string(),
+            app_name: cmd_name,
             ..Default::default()
         };
     }
@@ -289,16 +299,16 @@ impl App {
             let command_name = &x.command_name;
 
             // TODO: 为 cmd_name 添加颜色.
-            let cmd_name = format!("{}, {}", command_name.cyan(), short_name.cyan());
+            let cmd_name = format!("{}, {}", command_name.styled_sub_command(), short_name.styled_sub_command());
 
             table.add_row(row![cmd_name, x.about]);
         }
 
         let all_commands_about: String = table.to_string();
 
-        let help = format!("{}, {}", "-h".cyan(), "--help".cyan());
-        let ver = format!("{}, {}", "-v".cyan(), "--version".cyan());
-        let example = format!("{}, {}", "-e".cyan(), "--example".cyan());
+        let help = format!("{}, {}", "-h".styled_sub_command(), "--help".styled_sub_command());
+        let ver = format!("{}, {}", "-v".styled_sub_command(), "--version".styled_sub_command());
+        let example = format!("{}, {}", "-e".styled_sub_command(), "--example".styled_sub_command());
 
         // TODO: 让打印的信息更优美.
         let flag_message = format!("Flags:\n\n    {help}\t\t显示此命令的帮助.\n    {ver}\t查看此程序的版本.\n    {example}\t查看示例.\n" );
@@ -380,7 +390,7 @@ impl App {
                     return DidHandled::Handled;
                 }
             }
-            return DidHandled::Failed(format!("查询的命令 {} 不存在", 需要查询的命令名称.cyan()));
+            return DidHandled::Failed(format!("查询的命令 {} 不存在", 需要查询的命令名称.styled_sub_command()));
         } else {
             // 打印 App 的帮助信息.
             self.print_app_help();
@@ -418,7 +428,7 @@ impl App {
 
             return DidHandled::Handled;
         } else {
-            return DidHandled::Failed(format!("不是 {} 命令", "version".cyan()));
+            return DidHandled::Failed(format!("不是 {} 命令", "version".styled_sub_command()));
         }
     }
 
@@ -452,8 +462,8 @@ impl App {
         }
 
         return DidHandled::Failed(format!(
-            "_handle_commands(_) -> DidHandled \n未知命令: {:?}",
-            self.env_arg
+            "未知命令: {:?}\n\n输入 {} -h 查看帮助",
+            self.env_arg, self.app_name
         ));
     }
 

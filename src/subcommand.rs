@@ -125,10 +125,22 @@ impl SubCommand {
         let v = SubcommandArgsValue::new(cmd_args.clone());
         match &self.arg_type_with_action {
             ArgAction::Empty(func) => {
-                if need_run_action {
-                    func();
+                let re = v.get_empty();
+                match re {
+                    Ok(_s) => {
+                        if need_run_action {
+                            func();
+                        }
+                        return DidHandled::Handled;
+                    }
+                    Err(e) => {
+                        return DidHandled::Failed(format!(
+                            "{}\n{}",
+                            e,
+                            self.arg_type_with_action.arg_message()
+                        ));
+                    }
                 }
-                return DidHandled::Handled;
             }
             ArgAction::String(func) => {
                 let re = v.get_string();
@@ -140,7 +152,12 @@ impl SubCommand {
                         return DidHandled::Handled;
                     }
                     Err(e) => {
-                        return DidHandled::Failed(e);
+                        // return DidHandled::Failed(e);
+                        return DidHandled::Failed(format!(
+                            "{}\n{}",
+                            e,
+                            self.arg_type_with_action.arg_message()
+                        ));
                     }
                 }
             }
@@ -155,7 +172,12 @@ impl SubCommand {
                         return DidHandled::Handled;
                     }
                     Err(e) => {
-                        return DidHandled::Failed(e);
+                        // return DidHandled::Failed(e);
+                        return DidHandled::Failed(format!(
+                            "{}\n{}",
+                            e,
+                            self.arg_type_with_action.arg_message()
+                        ));
                     }
                 }
             }
@@ -169,7 +191,12 @@ impl SubCommand {
                         return DidHandled::Handled;
                     }
                     Err(e) => {
-                        return DidHandled::Failed(e);
+                        // return DidHandled::Failed(e);
+                        return DidHandled::Failed(format!(
+                            "{}\n{}",
+                            e,
+                            self.arg_type_with_action.arg_message()
+                        ));
                     }
                 }
             }
@@ -183,7 +210,12 @@ impl SubCommand {
                         return DidHandled::Handled;
                     }
                     Err(e) => {
-                        return DidHandled::Failed(e);
+                        // return DidHandled::Failed(e);
+                        return DidHandled::Failed(format!(
+                            "{}\n{}",
+                            e,
+                            self.arg_type_with_action.arg_message()
+                        ));
                     }
                 }
             }
@@ -197,7 +229,12 @@ impl SubCommand {
                         return DidHandled::Handled;
                     }
                     Err(e) => {
-                        return DidHandled::Failed(e);
+                        // return DidHandled::Failed(e);
+                        return DidHandled::Failed(format!(
+                            "{}\n{}",
+                            e,
+                            self.arg_type_with_action.arg_message()
+                        ));
                     }
                 }
             }
@@ -211,7 +248,12 @@ impl SubCommand {
                         return DidHandled::Handled;
                     }
                     Err(e) => {
-                        return DidHandled::Failed(e);
+                        // return DidHandled::Failed(e);
+                        return DidHandled::Failed(format!(
+                            "{}\n{}",
+                            e,
+                            self.arg_type_with_action.arg_message()
+                        ));
                     }
                 }
             }
@@ -225,7 +267,12 @@ impl SubCommand {
                         return DidHandled::Handled;
                     }
                     Err(e) => {
-                        return DidHandled::Failed(e);
+                        // return DidHandled::Failed(e);
+                        return DidHandled::Failed(format!(
+                            "{}\n{}",
+                            e,
+                            self.arg_type_with_action.arg_message()
+                        ));
                     }
                 }
             }
@@ -239,7 +286,12 @@ impl SubCommand {
                         return DidHandled::Handled;
                     }
                     Err(e) => {
-                        return DidHandled::Failed(e);
+                        // return DidHandled::Failed(e);
+                        return DidHandled::Failed(format!(
+                            "{}\n{}",
+                            e,
+                            self.arg_type_with_action.arg_message()
+                        ));
                     }
                 }
             }
@@ -253,7 +305,12 @@ impl SubCommand {
                         return DidHandled::Handled;
                     }
                     Err(e) => {
-                        return DidHandled::Failed(e);
+                        // return DidHandled::Failed(e);
+                        return DidHandled::Failed(format!(
+                            "{}\n{}",
+                            e,
+                            self.arg_type_with_action.arg_message()
+                        ));
                     }
                 }
             }
@@ -285,8 +342,8 @@ impl SubCommand {
             };
             let arg_in_usage = arg_in_usage.magenta();
 
-            let help = format!("{}, {}", "-h".cyan(), "--help".cyan());
-            let example = format!("{}, {}", "-e".cyan(), "--example".cyan());
+            let help = format!("{}, {}", "-h".styled_sub_command(), "--help".styled_sub_command());
+            let example = format!("{}, {}", "-e".styled_sub_command(), "--example".styled_sub_command());
             let flag_message =
                 format!("Flags:\n\n    {help}\t\t显示此命令的帮助.\n    {example}\t查看示例.\n");
 
@@ -304,7 +361,7 @@ Arguments:
 
 "#,
                 about = self.about,
-                command_name = self.command_name.cyan(),
+                command_name = self.command_name.styled_sub_command(),
             );
 
             return message;
@@ -330,11 +387,11 @@ Arguments:
             table.add_row(row![
                 format!(
                     "{app_name} {command_name} {arg}",
-                    command_name = self.command_name.cyan(),
+                    command_name = self.command_name.styled_sub_command(),
                 ),
                 self.about
             ]);
-            
+
             return table;
         } else {
             return self.exaples.pretty_formated();
