@@ -81,6 +81,8 @@
 //! app.run();
 //! ```
 
+use crate::examples_types::Examples;
+
 use super::*;
 use owo_colors::OwoColorize;
 use prettytable::{row, table};

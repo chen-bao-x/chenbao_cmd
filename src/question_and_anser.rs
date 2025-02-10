@@ -122,7 +122,7 @@ impl DialogGenerator {
     /// println!("输入的是: {:?}", x);
     /// assert_eq!(repl.is_from_json, true);
     /// ```
-    pub fn string_multiple(self, result_value: &mut Vec<String>, prompt: &str) -> Self {
+    pub fn string_multiple(self, result_value: &mut arg_type::StringMutiple, prompt: &str) -> Self {
         let mut re = self;
 
         if re.is_from_json {
@@ -182,11 +182,7 @@ impl DialogGenerator {
         return re;
     }
 
-    pub fn req_multiple_number(
-        self,
-        result_value: &mut arg_type::NumberMutiple,
-        prompt: &str,
-    ) -> Self {
+    pub fn number_multiple(self, result_value: &mut arg_type::NumberMutiple, prompt: &str) -> Self {
         let mut multiple_string: Vec<String> = vec![];
         let re = self.string_multiple(&mut multiple_string, prompt);
 
@@ -207,7 +203,7 @@ impl DialogGenerator {
                     let mut rollup = re;
                     rollup.arguments.pop(); // 清理 self.string_multiple(_) 添加的东西.
                     rollup.index = rollup.arguments.len() - 1;
-                    return rollup.req_multiple_number(result_value, prompt);
+                    return rollup.number_multiple(result_value, prompt);
                 }
             }
         }
@@ -247,7 +243,8 @@ impl DialogGenerator {
         return re;
     }
 
-    pub fn yes_or_no_multiple(self, result_value: &mut Vec<bool>, prompt: &str) -> Self {
+    // NOTE: 没见过需要输入多个 boolean 值的命令行程序子命令参数, 就先不提供这个函数了.
+    fn yes_or_no_multiple(self, result_value: &mut Vec<bool>, prompt: &str) -> Self {
         let mut multiple_string: Vec<String> = vec![];
         let re = self.string_multiple(&mut multiple_string, prompt);
 
@@ -312,6 +309,7 @@ impl DialogGenerator {
         return re;
     }
 
+    /// 从 items 中选择一个.
     pub fn select(self, result_value: &mut String, items: &Vec<&str>, prompt: &str) -> Self {
         let mut re = self;
 
@@ -335,6 +333,7 @@ impl DialogGenerator {
         return re;
     }
 
+    /// 从 items 中选择多个.
     pub fn select_multiple(
         self,
         result_value: &mut Vec<String>,

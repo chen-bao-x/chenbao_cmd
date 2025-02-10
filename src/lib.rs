@@ -1,23 +1,22 @@
-pub use question_and_anser::*;
-pub mod arg_type;
-pub use action::*;
-pub use application::*;
-pub use examples_types::*;
-pub use subcommand::*;
+// ------- Public -------
 
-use dialoguer;
-use owo_colors::{self};
-use prettytable;
-use serde_json;
+pub use action::ArgAction;
+pub use application::App;
+pub use application::DidHandled;
+pub use subcommand::SubCommand;
+pub mod arg_type;
+
+// ------- Private -------
+
+use helper::*;
+use vec_string::*;
+mod action;
 mod application;
+mod examples_types;
+mod helper;
+mod question_and_anser;
 mod subcommand;
 mod vec_string;
-use vec_string::*;
-mod helper;
-use helper::*;
-mod action;
-mod examples_types;
-mod question_and_anser;
 
 #[cfg(test)]
 mod tests {
@@ -99,14 +98,15 @@ mod tests {
                         let mut string: String = String::new();
                         let mut string_multiple: Vec<String> = vec![];
                         let mut req_bool: arg_type::Bool = false;
-                        let mut req_bool_multiple: arg_type::BoolMutiple = vec![];
+                        // let mut req_bool_multiple: arg_type::BoolMutiple = vec![];
 
                         r.number(&mut 你要吃几个汉堡包, "你要吃几个汉堡包?")
-                            .req_multiple_number(&mut 多个_number, "多个 number")
+                            .number_multiple(&mut 多个_number, "多个 number")
                             .string(&mut string, "string")
                             .string_multiple(&mut string_multiple, "string_multiple")
                             .yes_or_no(&mut req_bool, "bool")
-                            .yes_or_no_multiple(&mut req_bool_multiple, "bool mutiple");
+                            // .yes_or_no_multiple(&mut req_bool_multiple, "bool mutiple")
+                            ;
                     }))),
             );
 

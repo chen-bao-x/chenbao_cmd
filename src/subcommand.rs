@@ -1,3 +1,5 @@
+use crate::{action::{ArgAction, ParseResult, SubcommandArgsValue}, examples_types::Examples};
+
 use super::*;
 use application::DidHandled;
 use owo_colors::OwoColorize;
@@ -45,7 +47,9 @@ impl SubCommand {
             arg_type_with_action: ArgAction::default(),
         };
     }
+}
 
+impl SubCommand {
     /// set `Command.short_name`
     pub fn short_name(self, short_name: &str) -> Self {
         let mut re = self;
@@ -86,6 +90,144 @@ impl SubCommand {
 
     pub fn run(&self, app_name: &String, cmd_args: &Vec<String>) -> DidHandled {
         self.try_run(app_name, cmd_args, true)
+    }
+}
+
+impl SubCommand {
+    pub fn print_command_help(&self, app_name: &String) {
+        println!("{}", self.formated_command_help(app_name));
+    }
+
+    /// `app cmd -e` 打印当前子命令的示例.
+    pub fn print_command_example(&self, app_name: &String) {
+        let arr = self.formated_command_example(app_name);
+        let mut table = table!();
+        table.set_format(table_formater());
+
+        arr.row_iter().for_each(|x| {
+            table.add_row(x.clone());
+        });
+
+        println!(
+            "子命令 {} {} 的使用示例:",
+            app_name,
+            self.command_name.styled_sub_command()
+        );
+        println!();
+        println!("{}", table);
+    }
+}
+impl SubCommand {
+    fn formated_usage(&self, app_name: &String) -> String {
+        let command_name = self.command_name.styled_sub_command();
+        let short_name = self.short_name.styled_sub_command();
+
+        let arg_in_usage = match self.arg_type_with_action {
+            ArgAction::Empty(_) => "".to_string(),
+
+            ArgAction::String(_) => format!(r#"{}"#, "String".styled_arg_type()),
+            ArgAction::Number(_) => format!(r#"{}"#, "Number".styled_arg_type()),
+            ArgAction::Path(_) => format!(r#"{}"#, "Path".styled_arg_type()),
+            ArgAction::Bool(_) => format!(r#"{}"#, "Bool".styled_arg_type()),
+
+            ArgAction::StringMutiple(_) => format!(r#"{}..."#, "String".styled_arg_type()),
+            ArgAction::NumberMutiple(_) => format!(r#"{}..."#, "Number".styled_arg_type()),
+            ArgAction::PathMutiple(_) => format!(r#"{}..."#, "Path".styled_arg_type()),
+            ArgAction::BoolMutiple(_) => format!(r#"{}..."#, "Bool".styled_arg_type()),
+
+            ArgAction::Dialog(_) => "".to_string(),
+        };
+
+        let arg_in_usage = arg_in_usage;
+        if self.short_name == "" {
+            return format!(
+                r#"
+Usage: 
+    {app_name} {command_name} {arg_in_usage}"#
+            );
+        } else {
+            return format!(
+                r#"
+Usage: 
+    {app_name} {command_name} {arg_in_usage}
+    {app_name} {short_name} {arg_in_usage}"#
+            );
+        }
+    }
+    
+    /// `app cmd -h` 时显示的帮助文档.
+    pub fn formated_command_help(&self, app_name: &String) -> String {
+        if self.help_document != "" {
+            // 自定义了帮助文档的情况;
+            return format!("{}", self.help_document);
+        } else {
+            // 自动生成这个 Command 的帮助文档
+
+            let arg_message: String = if self.arg_type_with_action.arg_message() == "" {
+                format!(
+                    r#"
+                {}{}"#,
+                    "Arguments:\n",
+                    self.arg_type_with_action.arg_message()
+                )
+            } else {
+                String::new()
+            };
+
+            let help = format!(
+                "{}, {}",
+                "-h".styled_sub_command(),
+                "--help".styled_sub_command()
+            );
+            let example = format!(
+                "{}, {}",
+                "-e".styled_sub_command(),
+                "--example".styled_sub_command()
+            );
+            let flag_message =
+                format!("Flags:\n    {help}\t\t显示此命令的帮助.\n    {example}\t查看示例.\n");
+
+            let message = format!(
+                r#"
+{about}
+{Usage}
+{arg_message}
+{flag_message}
+
+"#,
+                about = self.about,
+                // command_name = self.command_name.styled_sub_command(),
+                Usage = self.formated_usage(&app_name),
+            );
+
+            return message;
+        }
+    }
+
+    /// 已经格式化好了, 直接放进 Table 打印就行.
+    pub fn formated_command_example(&self, app_name: &String) -> Table {
+        if self.exaples.is_empty() {
+            let mut table = table!();
+            table.set_format(helper::table_formater());
+
+            let arg = self
+                .arg_type_with_action
+                .value_example()
+                .bright_green()
+                .to_string();
+
+            table.add_row(row![
+                format!(
+                    "{app_name} {command_name} {arg}",
+                    command_name = self.command_name.styled_sub_command(),
+                ),
+                self.about
+            ]);
+
+            return table;
+        } else {
+            return self.exaples.pretty_formated();
+        }
     }
 
     // /// 检查 example 里面的 command 是否能够被正常解析.
@@ -206,144 +348,6 @@ impl SubCommand {
                     ));
                 }
             }
-        }
-    }
-}
-
-impl SubCommand {
-    /// `app cmd -h` 时显示的帮助文档.
-    pub fn formated_command_help(&self, app_name: &String) -> String {
-        if self.help_document != "" {
-            // 自定义了帮助文档的情况;
-            return format!("{}", self.help_document);
-        } else {
-            // 自动生成这个 Command 的帮助文档
-
-            let arg_message: String = if self.arg_type_with_action.arg_message() == "" {
-                format!(
-                    r#"
-                    {}{}"#,
-                    "Arguments:\n",
-                    self.arg_type_with_action.arg_message()
-                )
-            } else {
-                String::new()
-            };
-
-            let help = format!(
-                "{}, {}",
-                "-h".styled_sub_command(),
-                "--help".styled_sub_command()
-            );
-            let example = format!(
-                "{}, {}",
-                "-e".styled_sub_command(),
-                "--example".styled_sub_command()
-            );
-            let flag_message =
-                format!("Flags:\n    {help}\t\t显示此命令的帮助.\n    {example}\t查看示例.\n");
-
-            let message = format!(
-                r#"
-{about}
-{Usage}
-{arg_message}
-{flag_message}
-
-"#,
-                about = self.about,
-                // command_name = self.command_name.styled_sub_command(),
-                Usage = self.formated_usage(&app_name),
-            );
-
-            return message;
-        }
-    }
-
-    pub fn print_command_help(&self, app_name: &String) {
-        println!("{}", self.formated_command_help(app_name));
-    }
-
-    /// 已经格式化好了, 直接放进 Table 打印就行.
-    pub fn formated_command_example(&self, app_name: &String) -> Table {
-        if self.exaples.is_empty() {
-            let mut table = table!();
-            table.set_format(helper::table_formater());
-
-            let arg = self
-                .arg_type_with_action
-                .value_example()
-                .bright_green()
-                .to_string();
-
-            table.add_row(row![
-                format!(
-                    "{app_name} {command_name} {arg}",
-                    command_name = self.command_name.styled_sub_command(),
-                ),
-                self.about
-            ]);
-
-            return table;
-        } else {
-            return self.exaples.pretty_formated();
-        }
-    }
-
-    /// `app cmd -e` 打印当前子命令的示例.
-    pub fn print_command_example(&self, app_name: &String) {
-        let arr = self.formated_command_example(app_name);
-        let mut table = table!();
-        table.set_format(table_formater());
-
-        arr.row_iter().for_each(|x| {
-            table.add_row(x.clone());
-        });
-
-        println!(
-            "子命令 {} {} 的使用示例:",
-            app_name,
-            self.command_name.styled_sub_command()
-        );
-        println!();
-        println!("{}", table);
-    }
-}
-impl SubCommand {
-    fn formated_usage(&self, app_name: &String) -> String {
-        let command_name = self.command_name.styled_sub_command();
-        let short_name = self.short_name.styled_sub_command();
-
-        let arg_in_usage = match self.arg_type_with_action {
-            ArgAction::Empty(_) => "".to_string(),
-
-            ArgAction::String(_) => format!(r#"{}"#, "String".styled_arg_type()),
-            ArgAction::Number(_) => format!(r#"{}"#, "Number".styled_arg_type()),
-            ArgAction::Path(_) => format!(r#"{}"#, "Path".styled_arg_type()),
-            ArgAction::Bool(_) => format!(r#"{}"#, "Bool".styled_arg_type()),
-
-            ArgAction::StringMutiple(_) => format!(r#"{}..."#, "String".styled_arg_type()),
-            ArgAction::NumberMutiple(_) => format!(r#"{}..."#, "Number".styled_arg_type()),
-            ArgAction::PathMutiple(_) => format!(r#"{}..."#, "Path".styled_arg_type()),
-            ArgAction::BoolMutiple(_) => format!(r#"{}..."#, "Bool".styled_arg_type()),
-
-            ArgAction::Dialog(_) => "".to_string(),
-        };
-
-        let arg_in_usage = arg_in_usage;
-        if self.short_name == "" {
-            return format!(
-                r#"
-Usage: 
-    {app_name} {command_name} {arg_in_usage}"#
-            );
-        } else {
-            return format!(
-                r#"
-Usage: 
-    {app_name} {command_name} {arg_in_usage}
-    {app_name} {short_name} {arg_in_usage}"#
-            );
         }
     }
 }
