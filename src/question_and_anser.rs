@@ -4,7 +4,7 @@ use std::{num::ParseIntError, path::Path, vec};
 use super::*;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
-/// ArgType::Repl(_) 需要用到 ReplQuestions.
+/// ArgType::Repl(_) 需要用到 ReplQuestions.  
 pub struct DialogGenerator {
     /// 从 json_str 转换过来的 Vec<String>.
     /// 也可能是通过 问答式命令行交互 获取到的 Vec<String>.
@@ -25,7 +25,7 @@ impl DialogGenerator {
     /// * `input` :
     ///     1. 如果是 `None`, 则会在命令行里要求用户来提交所需要的参数.  
     ///     2. 如果是 `Some(json_string)`, 则会直接解析并返回所需参数.
-    /// ```rust
+    /// ```
     /// let cmd = chenbao_cmd::DialogGenerator::new(None);
     /// let cmd2 = chenbao_cmd::DialogGenerator::new(Some(r#"["hello"]"#));
     /// ```
@@ -40,7 +40,7 @@ impl DialogGenerator {
         }
     }
 
-    /// ```rust
+    /// ```
     /// let cmd = chenbao_cmd::DialogGenerator::new_from_jsonstr(r#"["hello"]"#);
     /// ```
     pub fn new_from_jsonstr(str: &str) -> Self {
@@ -70,7 +70,7 @@ impl DialogGenerator {
     }
 
     /// 转换为 json 字符串.
-    /// ```rust
+    /// ```
     /// let cmd = chenbao_cmd::DialogGenerator::new(Some(r#"["hello"]"#));
     /// let json_string = cmd.to_json_str();
     /// ```
@@ -324,7 +324,7 @@ impl DialogGenerator {
     }
 
     // _password_with_confirmation
-    pub fn password_with_confirmation(prompt: &str) -> String {
+    pub fn password_with_confirmation(&mut self, prompt: &str) -> String {
         // 密码不应该被输出到 self.arguments 里面.
         DialogGeter::password_with_confirmation(prompt)
     }
@@ -352,31 +352,37 @@ mod test_repl_new_api_style {
         assert_eq!(repl.is_from_json, is_from_json);
     }
 
-    #[test]
-    fn it_works() {
-        let mut repl1 = DialogGenerator::new(None);
-        {
-            let _str = repl1.string("string");
-            let _string_multiple = repl1.string_multiple("string_multiple");
-            let _num = repl1.number("number");
-            let _number_multiple = repl1.number_multiple("number_multiple");
-            let _number_multiple = repl1.path("number_multiple");
-            let _number_multiple = repl1.path_multiple("number_multiple");
+    // #[test]
+    // fn it_works() {
+    // // 此测试需要手动测试.
+    //     let mut repl1 = DialogGenerator::new(None);
+    //     {
+    //         let items = vec!["one", "two", "tree", "four"];
 
-            let items = vec!["one", "two", "tree", "four"];
-            let _number_multiple = repl1.select("number_multiple", &items);
-            let _number_multiple = repl1.select_multiple("number_multiple", &items);
-        }
+    //         let _str = repl1.string("string");
+    //         let _string_multiple = repl1.string_multiple("string_multiple");
+    //         let _num = repl1.number("number");
+    //         let _number_multiple = repl1.number_multiple("number_multiple");
+    //         let _number_multiple = repl1.path("path");
+    //         let _number_multiple = repl1.path_multiple("path_multiple");
+    //         let _number_multiple = repl1.select("select", &items);
+    //         let _number_multiple = repl1.select_multiple("select_multiple", &items);
+    //         let _password = repl1.password("password");
+    //         let _password_with_confirmation = repl1.password_with_confirmation("password");
+    //         let _editor = repl1.editor("editor");
+    //         let _yes_or_no = repl1.yes_or_no("yes_or_no");
+    //     }
 
-        let json_str = repl1.to_json_str();
-        let mut _repl2 = DialogGenerator::new(Some(&json_str));
+    //     let json_str = repl1.to_json_str();
+    //     let mut _repl2 = DialogGenerator::new(Some(&json_str));
 
-        println!(
-            "repl1: {:?}\nrepl2: {:?}",
-            repl1.arguments, _repl2.arguments
-        );
-        assert_eq!(repl1.arguments, _repl2.arguments);
-    }
+    //     println!(
+    //         "repl1: {:?}\nrepl2: {:?}",
+    //         repl1.arguments, _repl2.arguments
+    //     );
+    //     assert_eq!(repl1.arguments, _repl2.arguments);
+    // }
+
     #[test]
     fn test_string() {
         // 已测试, 可以逆转.
@@ -457,14 +463,6 @@ mod test_repl_new_api_style {
 }
 
 impl DialogGenerator {
-    /// ```rust
-    /// let mut x = String::new();
-    /// let repl = chenbao_cmd::DialogGenerator::new(Some(r#"["hello"]"#)).string(&mut x, "");
-    ///
-    /// println!("输入的是: {:?}", x);
-    ///
-    /// assert_eq!(repl.is_from_json, true);
-    /// ```
     pub fn _string(self, result_value: &mut String, prompt: &str) -> Self {
         let mut re = self;
 
@@ -493,13 +491,6 @@ impl DialogGenerator {
         return re;
     }
 
-    /// ```rust
-    ///             let mut x: Vec<String> = vec![];
-    /// let repl = chenbao_cmd::DialogGenerator::new(Some(r#" ["[\"asdfasdf\",\"sadfsadf\"]"] "#))
-    ///     .string_multiple(&mut x, "");
-    /// println!("输入的是: {:?}", x);
-    /// assert_eq!(repl.is_from_json, true);
-    /// ```
     pub fn _string_multiple(
         self,
         result_value: &mut arg_type::StringMutiple,
@@ -597,13 +588,6 @@ impl DialogGenerator {
         return re;
     }
 
-    /// ```rust
-    /// let mut x: bool = true;
-    /// let repl =
-    /// chenbao_cmd::DialogGenerator::new(Some(r#"   ["false"]    "#)).yes_or_no(&mut x, "get an bool");
-    /// println!("输入的是: {:?}", x);
-    /// assert_eq!(repl.is_from_json, true);
-    /// ```
     pub fn _yes_or_no(self, result_value: &mut bool, prompt: &str) -> Self {
         let mut re = self;
         if re.is_from_json {

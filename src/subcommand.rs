@@ -293,7 +293,7 @@ Usage:
                     match_and_try_run(v.get_vec_bool(), need_to_run, m, |_s| func(_s))
                 }
                 ArgAction::Dialog(func) => match_and_try_run(v.get_repl(), need_to_run, m, |s| {
-                    func(arg_type::Dialog::new(s.as_deref()));
+                    func(&mut arg_type::Dialog::new(s.as_deref()));
                 }),
             };
         }

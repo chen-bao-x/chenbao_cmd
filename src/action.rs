@@ -37,7 +37,7 @@ pub enum ArgAction {
     BoolMutiple(Rc<dyn Fn(arg_type::BoolMutiple) -> ()>),
 
     // Repl(Rc<dyn Fn(Option<String>) -> ()>),
-    Dialog(Rc<dyn Fn(arg_type::Dialog) -> ()>),
+    Dialog(Rc<dyn Fn(&mut arg_type::Dialog) -> ()>),
 }
 
 impl std::fmt::Display for ArgAction {
