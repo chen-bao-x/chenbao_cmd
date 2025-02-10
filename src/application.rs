@@ -1,6 +1,6 @@
 //! ```rust
 //! let app = App::new("cmd")
-//!      .add_about("这个程序主要是为了测试我写的 cmd crate")
+//!      .add_about("在这里介绍这个程序在什么情况下能帮助用户解决什么问题.")
 //!      .add_author("chen bao")
 //!      .app_version_message("0.0.1".to_string())
 //!      .add_subcommand(
@@ -81,10 +81,9 @@
 //!         app.run();
 //! ```
 
+use super::*;
 use owo_colors::OwoColorize;
 use prettytable::{row, table};
-
-use super::*;
 use std::{collections::HashSet, rc::Rc};
 
 #[derive(Clone)]
@@ -152,6 +151,11 @@ impl App {
     // =        Public Part       =
     // ============================
 
+    /// ```rust
+    ///     let app = chenbao_cmd::App::new("cmd");
+    ///     app.run();
+    ///
+    /// ```
     pub fn new(app_name: &str) -> App {
         let mut cmd_name: String = app_name.to_string();
 
@@ -169,12 +173,16 @@ impl App {
         };
     }
 
+    /// 在这里介绍这个程序是什么. 做什么用的
     pub fn about(self, about: &'static str) -> Self {
         let mut re = self;
         re.about = about;
         return re;
     }
 
+    /// 使用此程序的一些示例,  
+    /// 当用户使用 `app -e` 时会打印在这里添加的示例.  
+    /// 此 method 可以多次调用来给此程序添加多个示例.
     pub fn add_app_example(self, command: &'static str, description: &'static str) -> Self {
         let mut re = self;
 
@@ -183,13 +191,18 @@ impl App {
         return re;
     }
 
-    /// 当用户查询此程序的 --version 信息时显示的信息;
+    /// 此程序的版本信息.  
+    /// 当用户使用 `app --version` 时会打印在这里添加的版本信息.  
+    /// 此 method 只需要调用一次.  
     pub fn version_message(self, version: String) -> Self {
         let mut re = self;
         re.app_version_message = version;
         return re;
     }
 
+    /// 此程序的版本信息.  
+    /// 当用户使用 `app --version` 时会打印在这里添加的版本信息.  
+    /// 此 method 只需要调用一次.  
     pub fn author(self, author: &'static str) -> Self {
         let mut re = self;
         re.author = author;
@@ -223,8 +236,33 @@ impl App {
         return re;
     }
 
-    /// 运行 App.
-    pub fn run(self) -> DidHandled {
+    /// ```rust
+    /// let app = chenbao_cmd::App::new("cmd")
+    ///     .about("在这里介绍这个程序在什么情况下能帮助用户解决什么问题.")
+    ///     .author("chen bao")
+    ///     .version_message("0.0.1".to_string())
+    ///     .add_subcommand(
+    ///         chenbao_cmd::SubCommand::new("run")
+    ///          .about("运行程序")
+    ///          .action(chenbao_cmd::ArgAction::Empty(std::rc::Rc::new(|| {
+    ///              print!(r#"runing commmand: "run""#);
+    ///          }))),
+    ///     );
+    ///     app.run();
+    ///
+    /// ```
+    pub fn run(self) {
+        let re = self.try_run();
+        match re {
+            DidHandled::Handled => {}
+            DidHandled::Failed(_e) => {
+                eprintln!("{}", _e)
+            }
+        }
+    }
+
+    /// like run(), but has result.
+    pub fn try_run(self) -> DidHandled {
         debug_run(|| {
             self.debug_check();
         });
@@ -292,41 +330,58 @@ impl App {
                 "".to_string()
             } else {
                 // ", ".to_string() + &x.short_name
-                x.short_name.to_string()
-                // format!("{}{}", ", ", &x.short_name )
+
+                format!("{}{}", &x.short_name, ", ",)
             };
 
             let command_name = &x.command_name;
 
             // TODO: 为 cmd_name 添加颜色.
-            let cmd_name = format!("{}, {}", command_name.styled_sub_command(), short_name.styled_sub_command());
+            let cmd_name = format!(
+                "{}{}",
+                short_name.styled_sub_command(),
+                command_name.styled_sub_command(),
+            );
 
             table.add_row(row![cmd_name, x.about]);
         }
 
         let all_commands_about: String = table.to_string();
 
-        let help = format!("{}, {}", "-h".styled_sub_command(), "--help".styled_sub_command());
-        let ver = format!("{}, {}", "-v".styled_sub_command(), "--version".styled_sub_command());
-        let example = format!("{}, {}", "-e".styled_sub_command(), "--example".styled_sub_command());
+        let help = format!(
+            "{}, {}",
+            "-h".styled_sub_command(),
+            "--help".styled_sub_command()
+        );
+        let ver = format!(
+            "{}, {}",
+            "-v".styled_sub_command(),
+            "--version".styled_sub_command()
+        );
+        let example = format!(
+            "{}, {}",
+            "-e".styled_sub_command(),
+            "--example".styled_sub_command()
+        );
 
         // TODO: 让打印的信息更优美.
-        let flag_message = format!("Flags:\n\n    {help}\t\t显示此命令的帮助.\n    {ver}\t查看此程序的版本.\n    {example}\t查看示例.\n" );
+        let flag_message = format!("{}\n    {help}\t\t显示此命令的帮助.\n    {ver}\t查看此程序的版本.\n    {example}\t查看示例.\n" , "Flags:".bright_green());
 
         let message = format!(
             r#"
 {about}
-Author: {author}
-Version: {version}
-
+{author}
 {flag_message}
-Commands:
-
-{all_commands_about}
+{commands}
 "#,
             about = self.about,
-            author = self.author,
-            version = self.app_version_message,
+            author = if self.author == "" {
+                "".to_string()
+            } else {
+                format!("{} {}", "Author:", self.author)
+            },
+            // version = self.app_versioCn_message,
+            commands = format!("{}\n{}", "Commands:".bright_green(), all_commands_about),
         );
         print!("{}", message);
     }
@@ -390,7 +445,10 @@ impl App {
                     return DidHandled::Handled;
                 }
             }
-            return DidHandled::Failed(format!("查询的命令 {} 不存在", 需要查询的命令名称.styled_sub_command()));
+            return DidHandled::Failed(format!(
+                "查询的命令 {} 不存在",
+                需要查询的命令名称.styled_sub_command()
+            ));
         } else {
             // 打印 App 的帮助信息.
             self.print_app_help();
@@ -505,7 +563,7 @@ impl App {
         re.sub_command_arg = sub_cmd_arg;
         re.env_arg = env_arg;
 
-        let did_handled = re.run();
+        let did_handled = re.try_run();
 
         match did_handled {
             DidHandled::Handled => { /* runs perfact. */ }

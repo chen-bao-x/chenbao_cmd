@@ -6,7 +6,7 @@ pub use examples_types::*;
 pub use subcommand::*;
 
 use dialoguer;
-use owo_colors;
+use owo_colors::{self};
 use prettytable;
 use serde_json;
 mod application;
@@ -41,8 +41,8 @@ mod tests {
             .add_subcommand(
                 SubCommand::new("run")
                     .about("运行程序")
-                    .action(ArgAction::Bool(Rc::new(|_x| {
-                        print!("command \"run\"{:?}\n", _x);
+                    .action(ArgAction::Empty(Rc::new(|| {
+                        print!(r#"runing commmand: "run""#);
                     }))),
             )
             .add_subcommand(
@@ -93,7 +93,6 @@ mod tests {
                         print!("testing arg_zero");
                     }))),
             )
-
             .add_subcommand(
                 SubCommand::new("repl")
                     .about("用来测试 ArgCount::Repl(_) ")
@@ -135,7 +134,7 @@ mod tests {
             // .deubg_run(vec!["cmd", "-h"])
             // .deubg_run(vec!["cmd"])
             // .deubg_run(vec!["cmd", "arg_one", "-h"])
-            
+
             ;
     }
 

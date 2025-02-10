@@ -41,7 +41,7 @@ impl SubCommand {
             help_document: "".to_string(),
             short_name: "".to_string(),
             exaples: Examples::new(),
-            arg_type_with_action: ArgAction::Empty(Rc::new(|| {})),
+            arg_type_with_action: ArgAction::default(),
         };
     }
 
@@ -52,7 +52,7 @@ impl SubCommand {
         return re;
     }
 
-    /// set `Command. about`
+    /// set `SubCommand.about`
     pub fn about(self, about: &str) -> Self {
         let mut re = self;
         re.about = about.to_string();
@@ -126,199 +126,289 @@ impl SubCommand {
         match &self.arg_type_with_action {
             ArgAction::Empty(func) => {
                 let re = v.get_empty();
-                match re {
-                    Ok(_s) => {
-                        if need_run_action {
-                            func();
-                        }
-                        return DidHandled::Handled;
-                    }
-                    Err(e) => {
-                        return DidHandled::Failed(format!(
-                            "{}\n{}",
-                            e,
-                            self.arg_type_with_action.arg_message()
-                        ));
-                    }
-                }
+                return aaaaaaaa(
+                    re,
+                    need_run_action,
+                    self.arg_type_with_action.arg_message(),
+                    |_s| func(),
+                );
+                // match re {
+                //     Ok(_s) => {
+                //         if need_run_action {
+                //             func();
+                //         }
+                //         return DidHandled::Handled;
+                //     }
+                //     Err(e) => {
+                //         return DidHandled::Failed(format!(
+                //             "{}\n{}",
+                //             e,
+                //             self.arg_type_with_action.arg_message()
+                //         ));
+                //     }
+                // }
             }
             ArgAction::String(func) => {
                 let re = v.get_string();
-                match re {
-                    Ok(s) => {
-                        if need_run_action {
-                            func(s);
-                        }
-                        return DidHandled::Handled;
-                    }
-                    Err(e) => {
-                        // return DidHandled::Failed(e);
-                        return DidHandled::Failed(format!(
-                            "{}\n{}",
-                            e,
-                            self.arg_type_with_action.arg_message()
-                        ));
-                    }
-                }
+                return aaaaaaaa(
+                    re,
+                    need_run_action,
+                    self.arg_type_with_action.arg_message(),
+                    |s| func(s),
+                );
+                // match re {
+                //     Ok(s) => {
+                //         if need_run_action {
+                //             func(s);
+                //         }
+                //         return DidHandled::Handled;
+                //     }
+                //     Err(e) => {
+                //         // return DidHandled::Failed(e);
+                //         return DidHandled::Failed(format!(
+                //             "{}\n{}",
+                //             e,
+                //             self.arg_type_with_action.arg_message()
+                //         ));
+                //     }
+                // }
             }
             ArgAction::StringMutiple(func) => {
                 let re = v.get_vec_string();
-                match re {
-                    Ok(s) => {
-                        if need_run_action {
-                            func(s);
-                        }
+                return aaaaaaaa(
+                    re,
+                    need_run_action,
+                    self.arg_type_with_action.arg_message(),
+                    |s| func(s),
+                );
+                // match re {
+                //     Ok(s) => {
+                //         if need_run_action {
+                //             func(s);
+                //         }
 
-                        return DidHandled::Handled;
-                    }
-                    Err(e) => {
-                        // return DidHandled::Failed(e);
-                        return DidHandled::Failed(format!(
-                            "{}\n{}",
-                            e,
-                            self.arg_type_with_action.arg_message()
-                        ));
-                    }
-                }
+                //         return DidHandled::Handled;
+                //     }
+                //     Err(e) => {
+                //         // return DidHandled::Failed(e);
+                //         return DidHandled::Failed(format!(
+                //             "{}\n{}",
+                //             e,
+                //             self.arg_type_with_action.arg_message()
+                //         ));
+                //     }
+                // }
             }
             ArgAction::Number(func) => {
                 let re = v.get_number();
-                match re {
-                    Ok(s) => {
-                        if need_run_action {
-                            func(s);
-                        }
-                        return DidHandled::Handled;
-                    }
-                    Err(e) => {
-                        // return DidHandled::Failed(e);
-                        return DidHandled::Failed(format!(
-                            "{}\n{}",
-                            e,
-                            self.arg_type_with_action.arg_message()
-                        ));
-                    }
-                }
+                return aaaaaaaa(
+                    re,
+                    need_run_action,
+                    self.arg_type_with_action.arg_message(),
+                    |s| func(s),
+                );
+                // match re {
+                //     Ok(s) => {
+                //         if need_run_action {
+                //             func(s);
+                //         }
+                //         return DidHandled::Handled;
+                //     }
+                //     Err(e) => {
+                //         // return DidHandled::Failed(e);
+                //         return DidHandled::Failed(format!(
+                //             "{}\n{}",
+                //             e,
+                //             self.arg_type_with_action.arg_message()
+                //         ));
+                //     }
+                // }
             }
             ArgAction::NumberMutiple(func) => {
                 let re = v.get_vec_number();
-                match re {
-                    Ok(s) => {
-                        if need_run_action {
-                            func(s);
-                        }
-                        return DidHandled::Handled;
-                    }
-                    Err(e) => {
-                        // return DidHandled::Failed(e);
-                        return DidHandled::Failed(format!(
-                            "{}\n{}",
-                            e,
-                            self.arg_type_with_action.arg_message()
-                        ));
-                    }
-                }
+                return aaaaaaaa(
+                    re,
+                    need_run_action,
+                    self.arg_type_with_action.arg_message(),
+                    |s| func(s),
+                );
+                // match re {
+                //     Ok(s) => {
+                //         if need_run_action {
+                //             func(s);
+                //         }
+                //         return DidHandled::Handled;
+                //     }
+                //     Err(e) => {
+                //         // return DidHandled::Failed(e);
+                //         return DidHandled::Failed(format!(
+                //             "{}\n{}",
+                //             e,
+                //             self.arg_type_with_action.arg_message()
+                //         ));
+                //     }
+                // }
             }
             ArgAction::Path(func) => {
                 let re = v.get_path();
-                match re {
-                    Ok(s) => {
-                        if need_run_action {
-                            func(Rc::new(s));
-                        }
-                        return DidHandled::Handled;
-                    }
-                    Err(e) => {
-                        // return DidHandled::Failed(e);
-                        return DidHandled::Failed(format!(
-                            "{}\n{}",
-                            e,
-                            self.arg_type_with_action.arg_message()
-                        ));
-                    }
-                }
+                return aaaaaaaa(
+                    re,
+                    need_run_action,
+                    self.arg_type_with_action.arg_message(),
+                    |s| func(s.into()),
+                );
+                // match re {
+                //     Ok(s) => {
+                //         if need_run_action {
+                //             func(Rc::new(s));
+                //         }
+                //         return DidHandled::Handled;
+                //     }
+                //     Err(e) => {
+                //         // return DidHandled::Failed(e);
+                //         return DidHandled::Failed(format!(
+                //             "{}\n{}",
+                //             e,
+                //             self.arg_type_with_action.arg_message()
+                //         ));
+                //     }
+                // }
             }
             ArgAction::PathMutiple(func) => {
                 let re = v.get_vec_path();
-                match re {
-                    Ok(s) => {
-                        if need_run_action {
-                            func(Rc::new(s));
-                        }
-                        return DidHandled::Handled;
-                    }
-                    Err(e) => {
-                        // return DidHandled::Failed(e);
-                        return DidHandled::Failed(format!(
-                            "{}\n{}",
-                            e,
-                            self.arg_type_with_action.arg_message()
-                        ));
-                    }
-                }
+                return aaaaaaaa(
+                    re,
+                    need_run_action,
+                    self.arg_type_with_action.arg_message(),
+                    |s| func(Rc::new(s)),
+                );
+                // match re {
+                //     Ok(s) => {
+                //         if need_run_action {
+                //             func(Rc::new(s));
+                //         }
+                //         return DidHandled::Handled;
+                //     }
+                //     Err(e) => {
+                //         // return DidHandled::Failed(e);
+                //         return DidHandled::Failed(format!(
+                //             "{}\n{}",
+                //             e,
+                //             self.arg_type_with_action.arg_message()
+                //         ));
+                //     }
+                // }
             }
             ArgAction::Bool(func) => {
                 let re = v.get_bool();
-                match re {
-                    Ok(s) => {
-                        if need_run_action {
-                            func(s);
-                        }
-                        return DidHandled::Handled;
-                    }
-                    Err(e) => {
-                        // return DidHandled::Failed(e);
-                        return DidHandled::Failed(format!(
-                            "{}\n{}",
-                            e,
-                            self.arg_type_with_action.arg_message()
-                        ));
-                    }
-                }
+
+                return aaaaaaaa(
+                    re,
+                    need_run_action,
+                    self.arg_type_with_action.arg_message(),
+                    |s| func(s),
+                );
+                // match re {
+                //     Ok(s) => {
+                //         if need_run_action {
+                //             func(s);
+                //         }
+                //         return DidHandled::Handled;
+                //     }
+                //     Err(e) => {
+                //         // return DidHandled::Failed(e);
+                //         return DidHandled::Failed(format!(
+                //             "{}\n{}",
+                //             e,
+                //             self.arg_type_with_action.arg_message()
+                //         ));
+                //     }
+                // }
             }
             ArgAction::BoolMutiple(func) => {
                 let re = v.get_vec_bool();
-                match re {
-                    Ok(s) => {
-                        if need_run_action {
-                            func(s);
-                        }
-                        return DidHandled::Handled;
-                    }
-                    Err(e) => {
-                        // return DidHandled::Failed(e);
-                        return DidHandled::Failed(format!(
-                            "{}\n{}",
-                            e,
-                            self.arg_type_with_action.arg_message()
-                        ));
-                    }
-                }
+                return aaaaaaaa(
+                    re,
+                    need_run_action,
+                    self.arg_type_with_action.arg_message(),
+                    |s| {
+                        func(s);
+                    },
+                );
+                // match re {
+                //     Ok(s) => {
+                //         if need_run_action {
+                //             func(s);
+                //         }
+                //         return DidHandled::Handled;
+                //     }
+                //     Err(e) => {
+                //         // return DidHandled::Failed(e);
+                //         return DidHandled::Failed(format!(
+                //             "{}\n{}",
+                //             e,
+                //             self.arg_type_with_action.arg_message()
+                //         ));
+                //     }
+                // }
             }
             ArgAction::Dialog(func) => {
                 let re = v.get_repl();
-                match re {
-                    Ok(s) => {
-                        if need_run_action {
-                            func(arg_type::Dialog::new(s.as_deref()));
-                        }
-                        return DidHandled::Handled;
-                    }
-                    Err(e) => {
-                        // return DidHandled::Failed(e);
-                        return DidHandled::Failed(format!(
-                            "{}\n{}",
-                            e,
-                            self.arg_type_with_action.arg_message()
-                        ));
-                    }
-                }
+                return aaaaaaaa(
+                    re,
+                    need_run_action,
+                    self.arg_type_with_action.arg_message(),
+                    |s| {
+                        func(arg_type::Dialog::new(s.as_deref()));
+                    },
+                );
+
+                // match re {
+                //     Ok(s) => {
+                //         if need_run_action {
+                //             func(arg_type::Dialog::new(s.as_deref()));
+                //         }
+                //         return DidHandled::Handled;
+                //     }
+                //     Err(e) => {
+                //         // return DidHandled::Failed(e);
+                //         return DidHandled::Failed(format!(
+                //             "{}\n{}",
+                //             e,
+                //             self.arg_type_with_action.arg_message()
+                //         ));
+                //     }
+                // }
             }
         }
     }
 }
 
+fn aaaaaaaa<T, F>(
+    re: ParseResult<T>,
+    need_run_action: bool,
+    arg_message: String,
+    func: F,
+) -> DidHandled
+where
+    F: Fn(T) -> (),
+{
+    match re {
+        Ok(s) => {
+            if need_run_action {
+                func(s);
+            }
+            return DidHandled::Handled;
+        }
+        Err(e) => {
+            // return DidHandled::Failed(e);
+            return DidHandled::Failed(format!("{}\n{}", e, arg_message,));
+        }
+    }
+}
+
 impl SubCommand {
+    /// `app cmd -h` 时显示的帮助文档.
     pub fn formated_command_help(&self, app_name: &String) -> String {
         if self.help_document != "" {
             // 自定义了帮助文档的情况;
@@ -326,42 +416,41 @@ impl SubCommand {
         } else {
             // 自动生成这个 Command 的帮助文档
 
-            let arg_message: String = self.arg_type_with_action.arg_message();
-
-            let arg_in_usage = match self.arg_type_with_action {
-                ArgAction::Empty(_) => "",
-                ArgAction::String(_) => r#""string""#,
-                ArgAction::StringMutiple(_) => r#""string...""#,
-                ArgAction::Number(_) => r#"Number"#,
-                ArgAction::NumberMutiple(_) => r#"Number..."#,
-                ArgAction::Path(_) => r#""path""#,
-                ArgAction::PathMutiple(_) => r#""path"..."#,
-                ArgAction::Bool(_) => r#"bool"#,
-                ArgAction::BoolMutiple(_) => r#"bool..."#,
-                ArgAction::Dialog(_) => "",
+            let arg_message: String = if self.arg_type_with_action.arg_message() == "" {
+                format!(
+                    r#"
+                    {}{}"#,
+                    "Arguments:\n",
+                    self.arg_type_with_action.arg_message()
+                )
+            } else {
+                String::new()
             };
-            let arg_in_usage = arg_in_usage.magenta();
 
-            let help = format!("{}, {}", "-h".styled_sub_command(), "--help".styled_sub_command());
-            let example = format!("{}, {}", "-e".styled_sub_command(), "--example".styled_sub_command());
+            let help = format!(
+                "{}, {}",
+                "-h".styled_sub_command(),
+                "--help".styled_sub_command()
+            );
+            let example = format!(
+                "{}, {}",
+                "-e".styled_sub_command(),
+                "--example".styled_sub_command()
+            );
             let flag_message =
-                format!("Flags:\n\n    {help}\t\t显示此命令的帮助.\n    {example}\t查看示例.\n");
+                format!("Flags:\n    {help}\t\t显示此命令的帮助.\n    {example}\t查看示例.\n");
 
             let message = format!(
                 r#"
 {about}
-
-Usage: {app_name} {command_name} {arg_in_usage}
-
-Arguments:
-
+{Usage}
 {arg_message}
-
 {flag_message}
 
 "#,
                 about = self.about,
-                command_name = self.command_name.styled_sub_command(),
+                // command_name = self.command_name.styled_sub_command(),
+                Usage = self.formated_usage(&app_name),
             );
 
             return message;
@@ -372,7 +461,7 @@ Arguments:
         println!("{}", self.formated_command_help(app_name));
     }
 
-    /// 已静格式化好了, 直接放进 Table 打印就行.
+    /// 已经格式化好了, 直接放进 Table 打印就行.
     pub fn formated_command_example(&self, app_name: &String) -> Table {
         if self.exaples.is_empty() {
             let mut table = table!();
@@ -398,6 +487,7 @@ Arguments:
         }
     }
 
+    /// `app cmd -e` 打印当前子命令的示例.
     pub fn print_command_example(&self, app_name: &String) {
         let arr = self.formated_command_example(app_name);
         let mut table = table!();
@@ -407,6 +497,50 @@ Arguments:
             table.add_row(x.clone());
         });
 
+        println!(
+            "子命令 {} {} 的使用示例:",
+            app_name,
+            self.command_name.styled_sub_command()
+        );
+        println!();
         println!("{}", table);
+    }
+}
+impl SubCommand {
+    fn formated_usage(&self, app_name: &String) -> String {
+        let command_name = self.command_name.styled_sub_command();
+        let short_name = self.short_name.styled_sub_command();
+
+        let arg_in_usage = match self.arg_type_with_action {
+            ArgAction::Empty(_) => "".to_string(),
+
+            ArgAction::String(_) => format!(r#"{}"#, "String".styled_arg_type()),
+            ArgAction::Number(_) => format!(r#"{}"#, "Number".styled_arg_type()),
+            ArgAction::Path(_) => format!(r#"{}"#, "Path".styled_arg_type()),
+            ArgAction::Bool(_) => format!(r#"{}"#, "Bool".styled_arg_type()),
+
+            ArgAction::StringMutiple(_) => format!(r#"{}..."#, "String".styled_arg_type()),
+            ArgAction::NumberMutiple(_) => format!(r#"{}..."#, "Number".styled_arg_type()),
+            ArgAction::PathMutiple(_) => format!(r#"{}..."#, "Path".styled_arg_type()),
+            ArgAction::BoolMutiple(_) => format!(r#"{}..."#, "Bool".styled_arg_type()),
+
+            ArgAction::Dialog(_) => "".to_string(),
+        };
+
+        let arg_in_usage = arg_in_usage;
+        if self.short_name == "" {
+            return format!(
+                r#"
+Usage: 
+    {app_name} {command_name} {arg_in_usage}"#
+            );
+        } else {
+            return format!(
+                r#"
+Usage: 
+    {app_name} {command_name} {arg_in_usage}
+    {app_name} {short_name} {arg_in_usage}"#
+            );
+        }
     }
 }

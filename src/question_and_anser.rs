@@ -24,6 +24,10 @@ impl DialogGenerator {
     /// * `input` :
     ///     1. 如果是 `None`, 则会在命令行里要求用户来提交所需要的参数.  
     ///     2. 如果是 `Some(json_string)`, 则会直接解析并返回所需参数.
+    /// ```rust
+    /// let cmd = chenbao_cmd::DialogGenerator::new(None);
+    /// let cmd2 = chenbao_cmd::DialogGenerator::new(Some(r#"["hello"]"#));
+    /// ```
     pub fn new(input: Option<&str>) -> Self {
         match input {
             Some(s) => Self::new_from_jsonstr(s),
@@ -35,6 +39,9 @@ impl DialogGenerator {
         }
     }
 
+    /// ```rust
+    /// let cmd = chenbao_cmd::DialogGenerator::new_from_jsonstr(r#"["hello"]"#);
+    /// ```
     pub fn new_from_jsonstr(str: &str) -> Self {
         // &str -> ReplQuestions
 
@@ -49,7 +56,7 @@ impl DialogGenerator {
             }
             Err(_e) => {
                 debug_run(|| {
-                    println!("转换为 json 是出错: {}", _e);
+                    println!("转换为 json 时出错: {}", _e);
                 });
 
                 return Self {
@@ -62,12 +69,24 @@ impl DialogGenerator {
     }
 
     /// 转换为 json 字符串.
+    /// ```rust
+    /// let cmd = chenbao_cmd::DialogGenerator::new(Some(r#"["hello"]"#));
+    /// let json_string = cmd.to_json_str();
+    /// ```
     pub fn to_json_str(&self) -> String {
         return VecString::vec_to_json(&self.arguments);
     }
 }
 
 impl DialogGenerator {
+    /// ```rust
+    /// let mut x = String::new();
+    /// let repl = chenbao_cmd::DialogGenerator::new(Some(r#"["hello"]"#)).string(&mut x, "");
+    ///
+    /// println!("输入的是: {:?}", x);
+    ///
+    /// assert_eq!(repl.is_from_json, true);
+    /// ```
     pub fn string(self, result_value: &mut String, prompt: &str) -> Self {
         let mut re = self;
 
@@ -85,9 +104,7 @@ impl DialogGenerator {
                     re.index += 1;
                     return re;
                 }
-                None => {
-                    // not string
-                }
+                None => { /* not string */ }
             }
         }
 
@@ -98,6 +115,13 @@ impl DialogGenerator {
         return re;
     }
 
+    /// ```rust
+    ///             let mut x: Vec<String> = vec![];
+    /// let repl = chenbao_cmd::DialogGenerator::new(Some(r#" ["[\"asdfasdf\",\"sadfsadf\"]"] "#))
+    ///     .string_multiple(&mut x, "");
+    /// println!("输入的是: {:?}", x);
+    /// assert_eq!(repl.is_from_json, true);
+    /// ```
     pub fn string_multiple(self, result_value: &mut Vec<String>, prompt: &str) -> Self {
         let mut re = self;
 
@@ -113,10 +137,8 @@ impl DialogGenerator {
                         return re;
                     }
                     Err(_e) => {
-                        eprintln!("{}", _e.red());
-
                         // TODO: remove the panic!.
-                        panic!();
+                        panic!("转换为 json 时出错: {}", _e);
                     }
                 }
             }
@@ -182,19 +204,24 @@ impl DialogGenerator {
                 } else {
                     eprintln!("需要的是多个 bool 类型的值, 示例: true false true");
 
-                    let mut asdf = re;
-                    asdf.arguments.pop(); // 清理 self.string_multiple(_) 添加的东西.
-                    asdf.index = asdf.arguments.len() - 1;
-                    return asdf.req_multiple_number(result_value, prompt);
+                    let mut rollup = re;
+                    rollup.arguments.pop(); // 清理 self.string_multiple(_) 添加的东西.
+                    rollup.index = rollup.arguments.len() - 1;
+                    return rollup.req_multiple_number(result_value, prompt);
                 }
             }
         }
 
-        // re.index += 1;
-
         return re;
     }
 
+    /// ```rust
+    /// let mut x: bool = true;
+    /// let repl =
+    /// chenbao_cmd::DialogGenerator::new(Some(r#"   ["false"]    "#)).yes_or_no(&mut x, "get an bool");
+    /// println!("输入的是: {:?}", x);
+    /// assert_eq!(repl.is_from_json, true);
+    /// ```
     pub fn yes_or_no(self, result_value: &mut bool, prompt: &str) -> Self {
         let mut re = self;
         if re.is_from_json {
@@ -380,10 +407,8 @@ impl DialogGenerator {
 #[cfg(test)]
 mod test_repl_questions {
 
-    use owo_colors::OwoColorize;
-
     use super::*;
-
+    use owo_colors::OwoColorize;
     // #[test]
     // fn it_works() {
     //     let mut x: super::arg_types::Number = Default::default();
@@ -427,7 +452,7 @@ mod test_repl_questions {
         // {
         //     let mut x = String::new();
         //
-        //     let repl = ReplQuestions::new(None).req_string(&mut x, "");
+        //     let repl = DialogGenerator::new(None).req_string(&mut x, "");
         //
         //     println!("输入的是: {:?}", x);
         //     assert_eq!(repl.is_from_json, false);
@@ -458,12 +483,9 @@ mod test_repl_questions {
 
         {
             let mut x: Vec<String> = vec![];
-            // let repl = ReplQuestions::new(Some(r#"    [ "\"[\"sa dfadsf\",\"sadfadsf\",\"sa dfadsf\"]\""]  "#.to_string()))
             let repl = DialogGenerator::new(Some(r#" ["[\"asdfasdf\",\"sadfsadf\"]"] "#))
                 .string_multiple(&mut x, "");
-
             println!("输入的是: {:?}", x);
-
             assert_eq!(repl.is_from_json, true);
         }
     }
@@ -485,12 +507,9 @@ mod test_repl_questions {
 
         {
             let mut x: bool = true;
-            // let repl = ReplQuestions::new(Some(r#"    [ "\"[\"sa dfadsf\",\"sadfadsf\",\"sa dfadsf\"]\""]  "#.to_string()))
             let repl =
                 DialogGenerator::new(Some(r#"   ["false"]    "#)).yes_or_no(&mut x, "get an bool");
-
             println!("输入的是: {:?}", x);
-
             assert_eq!(repl.is_from_json, true);
         }
     }
@@ -821,9 +840,8 @@ impl DialogGeter {
 
     /// 示例子:
     /// ```rust
-    ///     use chenbao_cmd::Dialog;
     ///     let items = vec!["foo", "bar", "baz"];
-    ///     let b = Dialog::get_single_selected("prompt", &items);
+    ///     let b = DialogGeter::get_single_selected("prompt", &items);
     ///     println!("最终获得的数字是: {:?}", b);
     /// ```
     fn get_single_selected<'a, T>(prompt: &str, items: &'a [T]) -> &'a T
@@ -831,7 +849,6 @@ impl DialogGeter {
         T: ToString + Clone,
     {
         let re = dialoguer::FuzzySelect::with_theme(&ColoredTheme::new())
-            // .with_prompt("What do you choose?")
             .with_prompt(prompt)
             .items(&items)
             .default(0)
@@ -851,7 +868,7 @@ impl DialogGeter {
     /// 示例:
     /// ```rust
     ///     let items = vec!["foo", "bar", "baz"];
-    ///     let b = Dialog::get_multiple_selected("prompt", &items);
+    ///     let b = DialogGeter::get_multiple_selected("prompt", &items);
     ///     println!("最终获得的数字是: {:?}", b);
     /// ```
     fn get_multiple_selected<T>(prompt: &str, items: &[T]) -> Vec<T>
@@ -887,7 +904,7 @@ impl DialogGeter {
     /// entered text.
     /// 示例:
     /// ```rust
-    ///    let b = Dialog::editor("prompt").unwrap();
+    ///    let b = DialogGeter::editor("prompt").unwrap();
     ///    println!("最终获得的数字是: {:?}", b);
     /// ```
     fn editor(prompt: &str) -> arg_type::String {

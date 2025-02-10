@@ -1,9 +1,8 @@
-
-
 ## feature:
 
 [x] 为 子命令 自动生成一些 example.
-[x] Q&A style repl for rule   资料: https://yexiyue.github.io/dialogue-macro/guide/password.html
+[x] Q&A style repl for rule 资料: https://yexiyue.github.io/dialogue-macro/guide/password.html
+[ ] dialogue 交互式问答要求用户输入 path 的时候能提供 completion.
 
 ## know issue:
 

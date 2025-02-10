@@ -1,7 +1,6 @@
 use super::arg_type;
 use crate::helper::*;
-use owo_colors::OwoColorize;
-use std::{num::ParseIntError, path::Path, rc::Rc};
+use std::{default, num::ParseIntError, path::Path, rc::Rc};
 
 // pub type Number = i128;
 // pub type PathBuf = path::PathBuf;
@@ -14,7 +13,7 @@ pub enum ArgAction {
     Empty(Rc<dyn Fn() -> ()>),
 
     /// String
-    String(Rc<dyn Fn(String) -> ()>),
+    String(Rc<dyn Fn(arg_type::String) -> ()>),
 
     /// Vec<String>
     StringMutiple(Rc<dyn Fn(arg_type::StringMutiple) -> ()>),
@@ -55,6 +54,11 @@ impl std::fmt::Display for ArgAction {
             ArgAction::BoolMutiple(_) => write!(f, "{}", "ArgType::VecBool"),
             ArgAction::Dialog(_) => write!(f, "{}", "ArgType::Repl"),
         }
+    }
+}
+impl default::Default for ArgAction {
+    fn default() -> Self {
+        Self::Empty(Rc::new(|| {}))
     }
 }
 
@@ -105,7 +109,7 @@ impl ArgAction {
                 r#"{s} -- 需要 1 个 {s} 类型的值, {t} 或者 {f}, 示例: {z}"#,
                 s = r#"bool"#.styled_arg_type(),
                 t = r#"true"#.styled_arg(),
-                f = r#"true"#.styled_arg(),
+                f = r#"false"#.styled_arg(),
                 z = r#"true"#.styled_arg(),
             ),
 
@@ -149,6 +153,7 @@ impl ArgAction {
         return sdafdsaf.to_string();
     }
 
+    /// 告诉用户某个类型的参数应该怎么正确填写.
     pub fn value_example(&self) -> String {
         let re = match self {
             ArgAction::Empty(_) => "",
