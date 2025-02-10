@@ -3,6 +3,7 @@ use std::{num::ParseIntError, path::Path, vec};
 
 use super::*;
 
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
 /// ArgType::Repl(_) 需要用到 ReplQuestions.
 pub struct DialogGenerator {
     /// 从 json_str 转换过来的 Vec<String>.
@@ -79,6 +80,383 @@ impl DialogGenerator {
 }
 
 impl DialogGenerator {
+    // _string
+    pub fn string(&mut self, prompt: &str) -> &arg_type::String {
+        if self.is_from_json {
+            println!("is_from_json");
+            let val = self.arguments.get(self.index);
+
+            match val {
+                Some(str) => {
+                    // 成功获取到了需要的参数
+
+                    self.index += 1;
+                    return str;
+                }
+                None => { /* not string */ }
+            }
+        } else {
+            let str = DialogGeter::get_string(prompt);
+
+            self.arguments.push(str);
+            self.index = self.arguments.len() - 1;
+        }
+
+        return self.arguments.last().unwrap();
+    }
+    // _string_multiple
+    pub fn string_multiple(&mut self, prompt: &str) -> arg_type::StringMutiple {
+        if self.is_from_json {
+            let val = self.arguments.get(self.index);
+
+            if let Some(json_str) = val {
+                let result = VecString::json_to_vec(&json_str);
+                match result {
+                    Ok(vec_from_str) => {
+                        // *result_value = vec_str_from_str;
+                        self.index += 1;
+                        // return self;
+                        return vec_from_str;
+                    }
+                    Err(_e) => {
+                        // TODO: remove the panic!.
+                        panic!("转换为 json 时出错: {}", _e);
+                    }
+                }
+            }
+        }
+
+        let result_value = DialogGeter::get_string_multiple(prompt);
+
+        let string = serde_json::to_string(&result_value).unwrap();
+
+        self.arguments.push(string);
+        self.index = self.arguments.len() - 1;
+        return result_value;
+    }
+
+    // _number
+    pub fn number(&mut self, prompt: &str) -> arg_type::Number {
+        // let mut self = self;
+
+        if self.is_from_json {
+            let val = self.arguments.get(self.index);
+
+            if let Some(str) = val {
+                let number_from_str: Result<arg_type::Number, std::num::ParseIntError> =
+                    str.parse();
+
+                if let Ok(x) = number_from_str {
+                    // 成功获取到了需要的参数
+                    // *result_value = x;
+
+                    self.index += 1;
+                    return x;
+                    // return self;
+                }
+            }
+        }
+
+        // get value from REPL.
+
+        let result_value = DialogGeter::get_number(prompt);
+
+        self.arguments.push(result_value.to_string());
+        self.index += self.arguments.len() - 1;
+        return result_value;
+    }
+    // _number_multiple
+    pub fn number_multiple(&mut self, prompt: &str) -> arg_type::NumberMutiple {
+        let multiple_string = self.string_multiple(prompt);
+
+        let mut result_value: Vec<arg_type::Number> = vec![];
+        {
+            /* 为 result_value 赋值. */
+
+            for str in multiple_string {
+                let number_from_str: Result<arg_type::Number, std::num::ParseIntError> =
+                    str.parse();
+
+                if let Ok(x) = number_from_str {
+                    // 成功获取到了需要的参数
+                    result_value.push(x);
+                } else {
+                    eprintln!("需要的是多个 bool 类型的值, 示例: true false true");
+
+                    let rollup = self;
+                    rollup.arguments.pop(); // 清理 self.string_multiple(_) 添加的东西.
+                    rollup.index = rollup.arguments.len() - 1;
+                    return rollup.number_multiple(prompt);
+                }
+            }
+        }
+        self.index = self.arguments.len() - 1;
+        return result_value;
+    }
+    // _yes_or_no
+    pub fn yes_or_no(&mut self, prompt: &str) -> arg_type::Bool {
+        let mut result_value = false;
+        if self.is_from_json {
+            let val = self.arguments.get(self.index);
+
+            if let Some(str) = val {
+                if str == "true" {
+                    result_value = true;
+                } else if str == "false" {
+                    result_value = false;
+                }
+                self.index += 1;
+                return result_value;
+            }
+        }
+
+        // get value from REPL.
+
+        result_value = DialogGeter::get_bool(prompt);
+
+        self.arguments.push(result_value.to_string()); // -> "true" or "false"
+        self.index += self.arguments.len() - 1;
+        return result_value;
+    }
+    // _path
+    pub fn path(&mut self, prompt: &str) -> arg_type::Path {
+        if self.is_from_json {
+            let val = self.arguments.get(self.index);
+            if let Some(str) = val {
+                let result_value = Path::new(&str).to_path_buf();
+                self.index += 1;
+                return result_value;
+            }
+        }
+
+        // get value from REPL.
+
+        let str = DialogGeter::get_string(prompt);
+
+        let result_value = Path::new(&str).to_path_buf();
+
+        self.arguments.push(str); // -> "true" or "false"
+        self.index = self.arguments.len() - 1;
+        return result_value;
+    }
+    // _path_multiple
+    pub fn path_multiple(&mut self, prompt: &str) -> arg_type::PathMutiple {
+        self.string_multiple(prompt)
+            .iter()
+            .map(|x| Path::new(&x).to_path_buf())
+            .collect()
+    }
+    // _select
+    pub fn select(&mut self, prompt: &str, items: &Vec<&str>) -> arg_type::String {
+        if self.is_from_json {
+            let val = self.arguments.get(self.index);
+            if let Some(str) = val {
+                let result_value = str.to_string();
+                self.index += 1;
+                return result_value;
+            }
+        }
+
+        // get value from REPL.
+
+        let str = DialogGeter::get_single_selected(prompt, items);
+
+        let result_value = str.to_string();
+
+        self.arguments.push(str.to_string());
+        self.index = self.arguments.len() - 1;
+        return result_value;
+    }
+    // _select_multiple
+    pub fn select_multiple(&mut self, prompt: &str, items: &Vec<&str>) -> arg_type::StringMutiple {
+        if self.is_from_json {
+            let val = self.arguments.get(self.index);
+            if let Some(str) = val {
+                let result_value = VecString::json_to_vec(&str).unwrap();
+                self.index += 1;
+                return result_value;
+            }
+        }
+
+        // get value from REPL.
+
+        let str = DialogGeter::get_multiple_selected(prompt, &items);
+
+        let result_value = str.iter().map(|x| x.to_string()).collect();
+
+        let json_string = serde_json::to_string(&str).unwrap();
+
+        self.arguments.push(json_string);
+        self.index = self.arguments.len() - 1;
+        return result_value;
+    }
+    // _editor
+    pub fn editor(&mut self, prompt: &str) -> arg_type::String {
+        if self.is_from_json {
+            println!("is_from_json");
+            let val = self.arguments.get(self.index);
+
+            match val {
+                Some(str) => {
+                    // 成功获取到了需要的参数
+                    let result_value = str.clone();
+
+                    self.index += 1;
+                    return result_value;
+                }
+                None => {
+                    // not string
+                }
+            }
+        }
+
+        let result_value = DialogGeter::editor(prompt);
+        self.arguments.push(result_value.to_string());
+        self.index = self.arguments.len() - 1;
+        return result_value;
+    }
+    // _password
+    /// 让用户手动输入密码.
+    pub fn password(&mut self, prompt: &str) -> String {
+        // 密码不应该被输出到 self.arguments 里面.
+
+        DialogGeter::password(prompt)
+    }
+
+    // _password_with_confirmation
+    pub fn password_with_confirmation(prompt: &str) -> String {
+        // 密码不应该被输出到 self.arguments 里面.
+        DialogGeter::password_with_confirmation(prompt)
+    }
+}
+
+#[cfg(test)]
+mod test_repl_new_api_style {
+    use super::*;
+
+    use std::fmt::Debug;
+
+    // #[test]
+    fn dialog_generator_tester<F, R>(val: Option<&str>, f: F)
+    where
+        F: Fn(&mut DialogGenerator) -> R,
+        R: Debug,
+    {
+        let mut repl = DialogGenerator::new(val);
+        let x = f(&mut repl);
+
+        let is_from_json = if let Some(_) = val { true } else { false };
+
+        println!("输入的是: {:?}", x);
+        println!("json_str: {}", repl.to_json_str());
+        assert_eq!(repl.is_from_json, is_from_json);
+    }
+
+    #[test]
+    fn it_works() {
+        let mut repl1 = DialogGenerator::new(None);
+        {
+            let _str = repl1.string("string");
+            let _string_multiple = repl1.string_multiple("string_multiple");
+            let _num = repl1.number("number");
+            let _number_multiple = repl1.number_multiple("number_multiple");
+            let _number_multiple = repl1.path("number_multiple");
+            let _number_multiple = repl1.path_multiple("number_multiple");
+
+            let items = vec!["one", "two", "tree", "four"];
+            let _number_multiple = repl1.select("number_multiple", &items);
+            let _number_multiple = repl1.select_multiple("number_multiple", &items);
+        }
+
+        let json_str = repl1.to_json_str();
+        let mut _repl2 = DialogGenerator::new(Some(&json_str));
+
+        println!(
+            "repl1: {:?}\nrepl2: {:?}",
+            repl1.arguments, _repl2.arguments
+        );
+        assert_eq!(repl1.arguments, _repl2.arguments);
+    }
+    #[test]
+    fn test_string() {
+        // 已测试, 可以逆转.
+
+        // // form terminal repl.
+        // dialog_generator_tester(None, |x| {
+        //     return x.string("prompt").to_string();
+        // });
+
+        // form json string.
+        dialog_generator_tester(Some(r#"     ["sadfdsaf dsf sad f"]    "#), |x| {
+            return x.string("prompt").to_string();
+        });
+    }
+
+    #[test]
+    fn test_string_multiple() {
+        // 已测试, 可以逆转.
+
+        // form terminal repl.
+        // dialog_generator_tester(None, |x| {
+        //     return x.string_multiple("prompt");
+        // });
+
+        // form json string.
+        dialog_generator_tester(Some(r#"   ["[\"sadfdsafsadf\",\"sdaf\"]"]   "#), |x| {
+            return x.string_multiple("prompt");
+        });
+    }
+
+    #[test]
+    fn test_number() {
+        // 已测试, 可以逆转.
+
+        // // form terminal repl.
+        // dialog_generator_tester(None, |x| {
+        //     return x.number("prompt");
+        // });
+
+        // form json string.
+        dialog_generator_tester(Some(r#"       ["325435325"]      "#), |x| {
+            return x.number("prompt");
+        });
+    }
+
+    #[test]
+    fn test_number_multiple() {
+        // 已测试, 可以逆转.
+
+        // form terminal repl.
+        // dialog_generator_tester(None, |x| {
+        //     return x.number_multiple("prompt");
+        // });
+
+        // form json string.
+        dialog_generator_tester(
+            Some(r#"      ["[\"1\",\"2\",\"3\",\"4\",\"5\"]"]     "#),
+            |x| {
+                return x.number_multiple("prompt");
+            },
+        );
+    }
+
+    #[test]
+    fn test_yes_or_no() {
+        // 已测试, 可以逆转.
+
+        // // form terminal repl.
+        // dialog_generator_tester(None, |x| {
+        //     return x.yes_or_no("prompt");
+        // });
+
+        // form json string.
+        dialog_generator_tester(Some(r#"      ["false"]     "#), |x| {
+            return x.yes_or_no("prompt");
+        });
+    }
+}
+
+impl DialogGenerator {
     /// ```rust
     /// let mut x = String::new();
     /// let repl = chenbao_cmd::DialogGenerator::new(Some(r#"["hello"]"#)).string(&mut x, "");
@@ -87,7 +465,7 @@ impl DialogGenerator {
     ///
     /// assert_eq!(repl.is_from_json, true);
     /// ```
-    pub fn string(self, result_value: &mut String, prompt: &str) -> Self {
+    pub fn _string(self, result_value: &mut String, prompt: &str) -> Self {
         let mut re = self;
 
         if re.is_from_json {
@@ -122,7 +500,11 @@ impl DialogGenerator {
     /// println!("输入的是: {:?}", x);
     /// assert_eq!(repl.is_from_json, true);
     /// ```
-    pub fn string_multiple(self, result_value: &mut arg_type::StringMutiple, prompt: &str) -> Self {
+    pub fn _string_multiple(
+        self,
+        result_value: &mut arg_type::StringMutiple,
+        prompt: &str,
+    ) -> Self {
         let mut re = self;
 
         if re.is_from_json {
@@ -153,7 +535,7 @@ impl DialogGenerator {
         return re;
     }
 
-    pub fn number(self, result_value: &mut super::arg_type::Number, prompt: &str) -> Self {
+    pub fn _number(self, result_value: &mut super::arg_type::Number, prompt: &str) -> Self {
         let mut re = self;
 
         if re.is_from_json {
@@ -182,9 +564,13 @@ impl DialogGenerator {
         return re;
     }
 
-    pub fn number_multiple(self, result_value: &mut arg_type::NumberMutiple, prompt: &str) -> Self {
+    pub fn _number_multiple(
+        self,
+        result_value: &mut arg_type::NumberMutiple,
+        prompt: &str,
+    ) -> Self {
         let mut multiple_string: Vec<String> = vec![];
-        let re = self.string_multiple(&mut multiple_string, prompt);
+        let re = self._string_multiple(&mut multiple_string, prompt);
 
         {
             /* 为 result_value 赋值. */
@@ -203,7 +589,7 @@ impl DialogGenerator {
                     let mut rollup = re;
                     rollup.arguments.pop(); // 清理 self.string_multiple(_) 添加的东西.
                     rollup.index = rollup.arguments.len() - 1;
-                    return rollup.number_multiple(result_value, prompt);
+                    return rollup._number_multiple(result_value, prompt);
                 }
             }
         }
@@ -218,7 +604,7 @@ impl DialogGenerator {
     /// println!("输入的是: {:?}", x);
     /// assert_eq!(repl.is_from_json, true);
     /// ```
-    pub fn yes_or_no(self, result_value: &mut bool, prompt: &str) -> Self {
+    pub fn _yes_or_no(self, result_value: &mut bool, prompt: &str) -> Self {
         let mut re = self;
         if re.is_from_json {
             let val = re.arguments.get(re.index);
@@ -244,9 +630,9 @@ impl DialogGenerator {
     }
 
     // NOTE: 没见过需要输入多个 boolean 值的命令行程序子命令参数, 就先不提供这个函数了.
-    fn yes_or_no_multiple(self, result_value: &mut Vec<bool>, prompt: &str) -> Self {
+    fn _yes_or_no_multiple(self, result_value: &mut Vec<bool>, prompt: &str) -> Self {
         let mut multiple_string: Vec<String> = vec![];
-        let re = self.string_multiple(&mut multiple_string, prompt);
+        let re = self._string_multiple(&mut multiple_string, prompt);
 
         {
             /* 为 result_value 赋值. */
@@ -262,7 +648,7 @@ impl DialogGenerator {
 
                     let mut asdf = re;
                     asdf.arguments.pop(); // 清理 self.string_multiple(_) 添加的东西.
-                    return asdf.yes_or_no_multiple(result_value, prompt);
+                    return asdf._yes_or_no_multiple(result_value, prompt);
                 }
             }
         }
@@ -270,7 +656,7 @@ impl DialogGenerator {
         return re;
     }
 
-    pub fn path(self, result_value: &mut arg_type::Path, prompt: &str) -> Self {
+    pub fn _path(self, result_value: &mut arg_type::Path, prompt: &str) -> Self {
         let mut re = self;
 
         if re.is_from_json {
@@ -293,9 +679,9 @@ impl DialogGenerator {
         return re;
     }
 
-    pub fn path_multiple(self, result_value: &mut arg_type::PathMutiple, prompt: &str) -> Self {
+    pub fn _path_multiple(self, result_value: &mut arg_type::PathMutiple, prompt: &str) -> Self {
         let mut r: Vec<String> = vec![];
-        let re = self.string_multiple(&mut r, prompt);
+        let re = self._string_multiple(&mut r, prompt);
 
         {
             /* 为 result_value 赋值. */
@@ -310,7 +696,7 @@ impl DialogGenerator {
     }
 
     /// 从 items 中选择一个.
-    pub fn select(self, result_value: &mut String, items: &Vec<&str>, prompt: &str) -> Self {
+    pub fn _select(self, result_value: &mut String, items: &Vec<&str>, prompt: &str) -> Self {
         let mut re = self;
 
         if re.is_from_json {
@@ -334,7 +720,7 @@ impl DialogGenerator {
     }
 
     /// 从 items 中选择多个.
-    pub fn select_multiple(
+    pub fn _select_multiple(
         self,
         result_value: &mut Vec<String>,
         items: &Vec<&str>,
@@ -364,7 +750,7 @@ impl DialogGenerator {
         return re;
     }
 
-    pub fn editor(self, result_value: &mut String, prompt: &str) -> Self {
+    pub fn _editor(self, result_value: &mut String, prompt: &str) -> Self {
         let mut re = self;
 
         if re.is_from_json {
@@ -394,11 +780,11 @@ impl DialogGenerator {
     }
 
     /// 让用户手动输入密码.
-    pub fn password(prompt: &str) -> String {
+    pub fn _password(prompt: &str) -> String {
         DialogGeter::password(prompt)
     }
 
-    pub fn password_with_confirmation(prompt: &str) -> String {
+    pub fn _password_with_confirmation(prompt: &str) -> String {
         DialogGeter::password_with_confirmation(prompt)
     }
 }
@@ -459,7 +845,7 @@ mod test_repl_questions {
 
         {
             let mut x = String::new();
-            let repl = DialogGenerator::new(Some(r#"["hello"]"#)).string(&mut x, "");
+            let repl = DialogGenerator::new(Some(r#"["hello"]"#))._string(&mut x, "");
 
             println!("输入的是: {:?}", x);
 
@@ -483,7 +869,7 @@ mod test_repl_questions {
         {
             let mut x: Vec<String> = vec![];
             let repl = DialogGenerator::new(Some(r#" ["[\"asdfasdf\",\"sadfsadf\"]"] "#))
-                .string_multiple(&mut x, "");
+                ._string_multiple(&mut x, "");
             println!("输入的是: {:?}", x);
             assert_eq!(repl.is_from_json, true);
         }
@@ -507,7 +893,7 @@ mod test_repl_questions {
         {
             let mut x: bool = true;
             let repl =
-                DialogGenerator::new(Some(r#"   ["false"]    "#)).yes_or_no(&mut x, "get an bool");
+                DialogGenerator::new(Some(r#"   ["false"]    "#))._yes_or_no(&mut x, "get an bool");
             println!("输入的是: {:?}", x);
             assert_eq!(repl.is_from_json, true);
         }
@@ -532,7 +918,7 @@ mod test_repl_questions {
             let mut x: Vec<bool> = vec![];
 
             let repl = DialogGenerator::new(Some(r#" ["[\"true\",\"false\"]"]  "#))
-                .yes_or_no_multiple(&mut x, "get mutiple path");
+                ._yes_or_no_multiple(&mut x, "get mutiple path");
 
             println!("输入的是: {:?}", x);
 
@@ -558,7 +944,7 @@ mod test_repl_questions {
             let mut x: arg_type::Path = arg_type::Path::new();
 
             let repl = DialogGenerator::new(Some(r#"  ["./hello/sadf.txt"]   "#))
-                .path(&mut x, "get an bool");
+                ._path(&mut x, "get an bool");
 
             println!("输入的是: {:?}", x);
 
@@ -585,7 +971,7 @@ mod test_repl_questions {
             let mut x: arg_type::PathMutiple = vec![];
 
             let repl = DialogGenerator::new(Some(r#" ["[\"a\",\"b.txt\",\"./\"]"]  "#))
-                .path_multiple(&mut x, "get mutiple path");
+                ._path_multiple(&mut x, "get mutiple path");
 
             println!("输入的是: {:?}", x);
 
@@ -614,7 +1000,7 @@ mod test_repl_questions {
             let mut x: String = "".to_string();
             let iterms = vec!["one", "two"];
 
-            let repl = DialogGenerator::new(Some(r#" ["two"] "#)).select(
+            let repl = DialogGenerator::new(Some(r#" ["two"] "#))._select(
                 &mut x,
                 &iterms,
                 "get mutiple path",
@@ -647,7 +1033,7 @@ mod test_repl_questions {
             let mut x: Vec<String> = vec![];
             let iterms = vec!["one", "two"];
 
-            let repl = DialogGenerator::new(Some(r#" ["[\"one\",\"two\"]"] "#)).select_multiple(
+            let repl = DialogGenerator::new(Some(r#" ["[\"one\",\"two\"]"] "#))._select_multiple(
                 &mut x,
                 &iterms,
                 "get mutiple path",
@@ -697,9 +1083,9 @@ mod test_repl_questions {
             let repl = DialogGenerator::new(Some(
                 r#"        ["true","8","[\"生菜\",\"西红柿片\"]"]       "#,
             ))
-            .yes_or_no(&mut did_like_green, "喜欢绿色吗?")
-            .number(&mut eat_howmuch_hanbager, "吃几个汉堡?")
-            .select_multiple(&mut 配菜, &all配菜, "需要哪些配菜?");
+            ._yes_or_no(&mut did_like_green, "喜欢绿色吗?")
+            ._number(&mut eat_howmuch_hanbager, "吃几个汉堡?")
+            ._select_multiple(&mut 配菜, &all配菜, "需要哪些配菜?");
 
             println!(
                 r#"
@@ -735,7 +1121,7 @@ eat_howmuch_hanbager: {}
 
         {
             let mut x = String::new();
-            let repl = DialogGenerator::new(Some(r#"      ["aaaasdfdsaf jsdal;fj lsd;kjf lksdjafl jsadl jflsa;djk f saj;df\nsadf\nas \ndf\ns a\nf \nsad\nf \nsad\nf \nsadf\n \nsadf \ns\nadf \nsad\nf \nsa\ndf  \\sadf\\sad \\f\\sadf\\\\sdaf\\\\'\\'\\'\\'\\'\\'\\'\n asd\nf\nsdaf\nsa\ndf\ndsa\nf\n\n\n\n\nasdf\n s\nadf\n sa\ndf\n as\ndf\n as\nd"]               "#)).string(&mut x, "");
+            let repl = DialogGenerator::new(Some(r#"      ["aaaasdfdsaf jsdal;fj lsd;kjf lksdjafl jsadl jflsa;djk f saj;df\nsadf\nas \ndf\ns a\nf \nsad\nf \nsad\nf \nsadf\n \nsadf \ns\nadf \nsad\nf \nsa\ndf  \\sadf\\sad \\f\\sadf\\\\sdaf\\\\'\\'\\'\\'\\'\\'\\'\n asd\nf\nsdaf\nsa\ndf\ndsa\nf\n\n\n\n\nasdf\n s\nadf\n sa\ndf\n as\ndf\n as\nd"]               "#))._string(&mut x, "");
 
             println!("输入的是: {}", x);
 

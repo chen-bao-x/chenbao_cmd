@@ -100,11 +100,11 @@ mod tests {
                         let mut req_bool: arg_type::Bool = false;
                         // let mut req_bool_multiple: arg_type::BoolMutiple = vec![];
 
-                        r.number(&mut 你要吃几个汉堡包, "你要吃几个汉堡包?")
-                            .number_multiple(&mut 多个_number, "多个 number")
-                            .string(&mut string, "string")
-                            .string_multiple(&mut string_multiple, "string_multiple")
-                            .yes_or_no(&mut req_bool, "bool")
+                        r._number(&mut 你要吃几个汉堡包, "你要吃几个汉堡包?")
+                            ._number_multiple(&mut 多个_number, "多个 number")
+                            ._string(&mut string, "string")
+                            ._string_multiple(&mut string_multiple, "string_multiple")
+                            ._yes_or_no(&mut req_bool, "bool")
                             // .yes_or_no_multiple(&mut req_bool_multiple, "bool mutiple")
                             ;
                     }))),
