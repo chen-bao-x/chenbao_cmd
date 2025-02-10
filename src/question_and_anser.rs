@@ -747,13 +747,9 @@ eat_howmuch_hanbager: {}
 
 // ------- REPL Functions -------
 
+/// 对 dialoguer crate 的二次封装.
 struct DialogGeter();
 impl DialogGeter {
-    /// 示例:
-    /// ```rust
-    ///    let a = Dialog::get_string("你要吃几个汉堡?").unwrap();
-    ///    println!("最终获得的数字是: {}", a);
-    /// ```
     fn get_string(prompt: &str) -> String {
         let re = dialoguer::Input::<String>::with_theme(&ColoredTheme::new())
             .with_prompt(prompt)
@@ -770,10 +766,6 @@ impl DialogGeter {
         }
     }
 
-    /// ```rust
-    ///     let arr = Dialog::get_multiple_str("hello");
-    ///     println!("{:?}", arr);
-    /// ``````
     fn get_string_multiple(prompt: &str) -> Vec<String> {
         let re = dialoguer::Input::<String>::with_theme(&ColoredTheme::new())
             .with_prompt(prompt)
@@ -790,11 +782,6 @@ impl DialogGeter {
         }
     }
 
-    /// 示例:
-    /// ```rust
-    ///     let a = Dialog::get_number("你要吃几个汉堡?");
-    ///     println!("最终获得的数字是: {}", a);
-    /// ```
     fn get_number(prompt: &str) -> arg_type::Number {
         let input = DialogGeter::get_string(prompt);
         let input = input.trim();
@@ -815,11 +802,6 @@ impl DialogGeter {
         };
     }
 
-    /// 示例:
-    /// ```rust
-    ///     let b = ReplFunctions::repl_req_bool("test_repl_req_bool").expect("获取 bool 是出错");
-    ///     println!("最终获得的数字是: {:?}", b);
-    /// ```
     fn get_bool(prompt: &str) -> bool {
         let re = dialoguer::Confirm::with_theme(&ColoredTheme::new())
             // .with_prompt("Y 键 N 键选择, 回车键确认: ")
@@ -838,12 +820,6 @@ impl DialogGeter {
         }
     }
 
-    /// 示例子:
-    /// ```rust
-    ///     let items = vec!["foo", "bar", "baz"];
-    ///     let b = DialogGeter::get_single_selected("prompt", &items);
-    ///     println!("最终获得的数字是: {:?}", b);
-    /// ```
     fn get_single_selected<'a, T>(prompt: &str, items: &'a [T]) -> &'a T
     where
         T: ToString + Clone,
@@ -865,12 +841,6 @@ impl DialogGeter {
         }
     }
 
-    /// 示例:
-    /// ```rust
-    ///     let items = vec!["foo", "bar", "baz"];
-    ///     let b = DialogGeter::get_multiple_selected("prompt", &items);
-    ///     println!("最终获得的数字是: {:?}", b);
-    /// ```
     fn get_multiple_selected<T>(prompt: &str, items: &[T]) -> Vec<T>
     where
         T: ToString + Clone,
@@ -898,15 +868,6 @@ impl DialogGeter {
         }
     }
 
-    /// Launches the editor to edit a string.
-    ///
-    /// Returns `None` if the file was not saved or otherwise the
-    /// entered text.
-    /// 示例:
-    /// ```rust
-    ///    let b = DialogGeter::editor("prompt").unwrap();
-    ///    println!("最终获得的数字是: {:?}", b);
-    /// ```
     fn editor(prompt: &str) -> arg_type::String {
         let re = dialoguer::Editor::new().edit(prompt);
 
@@ -964,69 +925,70 @@ impl DialogGeter {
 
 #[cfg(test)]
 mod test_dialog {
+    // 这里面都是一些 dialoguer 式交互, 需要手动来测试.
 
-    use super::*;
+    // use super::*;
 
-    #[test]
-    fn test_get_string() {
-        let a = DialogGeter::get_string("请输入一个字符串");
-        println!("最终获得的 string 是: {}", a);
-    }
+    // #[test]
+    // fn test_get_string() {
+    //     let a = DialogGeter::get_string("请输入一个字符串");
+    //     println!("最终获得的 string 是: {}", a);
+    // }
 
-    #[test]
-    fn test_repl_get_number() {
-        let a = DialogGeter::get_number("你要吃几个汉堡?");
-        println!("最终获得的数字是: {}", a);
-    }
+    // #[test]
+    // fn test_repl_get_number() {
+    //     let a = DialogGeter::get_number("你要吃几个汉堡?");
+    //     println!("最终获得的数字是: {}", a);
+    // }
 
-    #[test]
-    fn test_repl_get_multiple_string() {
-        let arr = DialogGeter::get_string_multiple("请输入多个字符串");
-        println!("{:?}", arr);
-    }
+    // #[test]
+    // fn test_repl_get_multiple_string() {
+    //     let arr = DialogGeter::get_string_multiple("请输入多个字符串");
+    //     println!("{:?}", arr);
+    // }
 
-    #[test]
-    fn test_repl_req_bool() {
-        let b = DialogGeter::get_bool("test_repl_req_bool");
-        println!("最终获得的数字是: {:?}", b);
-    }
+    // #[test]
+    // fn test_repl_req_bool() {
+    //     let b = DialogGeter::get_bool("test_repl_req_bool");
+    //     println!("最终获得的数字是: {:?}", b);
+    // }
 
-    #[test]
-    fn test_repl_req_string() {
-        let b = DialogGeter::get_string("请输入一个字符串");
-        println!("最终获得的数字是: {:?}", b);
-    }
+    // #[test]
+    // fn test_repl_req_string() {
+    //     let b = DialogGeter::get_string("请输入一个字符串");
+    //     println!("最终获得的数字是: {:?}", b);
+    // }
 
-    #[test]
-    fn test_get_single_selected() {
-        let items = vec!["foo", "bar", "baz"];
+    // #[test]
+    // fn test_get_single_selected() {
+    //     let items = vec!["foo", "bar", "baz"];
 
-        let b = DialogGeter::get_single_selected("prompt", &items);
-        println!("最终获得的数字是: {:?}", b);
-    }
+    //     let b = DialogGeter::get_single_selected("prompt", &items);
+    //     println!("最终获得的数字是: {:?}", b);
+    // }
 
-    #[test]
-    fn test_get_multiple_selected() {
-        let items = vec!["foo", "bar", "baz"];
-        let b = DialogGeter::get_multiple_selected("prompt", &items);
-        println!("最终获得的数字是: {:?}", b);
-    }
+    // #[test]
+    // fn test_get_multiple_selected() {
+    //     let items = vec!["foo", "bar", "baz"];
+    //     let b = DialogGeter::get_multiple_selected("prompt", &items);
+    //     println!("最终获得的数字是: {:?}", b);
+    // }
 
-    #[test]
-    fn test_edit() {
-        let b = DialogGeter::editor("prompt");
-        println!("最终获得的数字是: {:?}", b);
-    }
+    // #[test]
+    // fn test_edit() {
+    //     let b = DialogGeter::editor("prompt");
+    //     println!("最终获得的数字是: {:?}", b);
+    // }
 
-    #[test]
-    fn test_password() {
-        let b = DialogGeter::password("");
-        println!("最终获得的数字是: {:?}", b);
-    }
+    // #[test]
+    // fn test_password() {
+    //     let b = DialogGeter::password("");
+    //     println!("最终获得的数字是: {:?}", b);
+    // }
 
-    #[test]
-    fn test_password_with_confirmation() {
-        let b = DialogGeter::password_with_confirmation("password_with_confirmation");
-        println!("最终获得的数字是: {:?}", b);
-    }
+    // #[test]
+    // fn test_password_with_confirmation() {
+    //     let b = DialogGeter::password_with_confirmation("password_with_confirmation");
+    //     println!("最终获得的数字是: {:?}", b);
+    // }
 }

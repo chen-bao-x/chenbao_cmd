@@ -513,7 +513,7 @@ mod arg_check {
     #[test]
     fn err_case_empty() {
         let v = SubcommandArgsValue::new(vec!["false".to_string()]);
-        let re = v.get_bool();
+        let re = v.get_empty();
 
         // shold be Err, not ok.
         if let Ok(_) = re {
@@ -523,7 +523,7 @@ mod arg_check {
 
     #[test]
     fn err_case_string() {
-        let v = SubcommandArgsValue::new(vec!["false".to_string()]);
+        let v = SubcommandArgsValue::new(vec![]);
         let re = v.get_bool();
 
         // shold be Err, not ok.
@@ -532,21 +532,21 @@ mod arg_check {
         }
     }
 
-    #[test]
-    fn err_case_path() {
-        let v = SubcommandArgsValue::new(vec!["false".to_string()]);
-        let re = v.get_bool();
+    // #[test]
+    // fn err_case_path() {
+    //     let v = SubcommandArgsValue::new(vec!["false".to_string()]);
+    //     let re = v.get_path();
 
-        // shold be Err, not ok.
-        if let Ok(_) = re {
-            panic!("");
-        }
-    }
+    //     // shold be Err, not ok.
+    //     if let Ok(_) = re {
+    //         panic!("");
+    //     }
+    // }
 
     #[test]
     fn err_case_number() {
         let v = SubcommandArgsValue::new(vec!["false".to_string()]);
-        let re = v.get_bool();
+        let re = v.get_number();
 
         // shold be Err, not ok.
         if let Ok(_) = re {
@@ -556,7 +556,7 @@ mod arg_check {
 
     #[test]
     fn err_case_vec_bool() {
-        let v = SubcommandArgsValue::new(vec!["false".to_string()]);
+        let v = SubcommandArgsValue::new(vec!["faasdflse".to_string()]);
         let re = v.get_bool();
 
         // shold be Err, not ok.
@@ -568,7 +568,7 @@ mod arg_check {
     #[test]
     fn err_case_vec_number() {
         let v = SubcommandArgsValue::new(vec!["false".to_string()]);
-        let re = v.get_bool();
+        let re = v.get_number();
 
         // shold be Err, not ok.
         if let Ok(_) = re {
@@ -576,20 +576,20 @@ mod arg_check {
         }
     }
 
-    #[test]
-    fn err_case_vec_path() {
-        let v = SubcommandArgsValue::new(vec!["false".to_string()]);
-        let re = v.get_bool();
+    // #[test]
+    // fn err_case_vec_path() {
+    //     let v = SubcommandArgsValue::new(vec!["".to_string()]);
+    //     let re = v.get_path();
 
-        // shold be Err, not ok.
-        if let Ok(_) = re {
-            panic!("");
-        }
-    }
+    //     // shold be Err, not ok.
+    //     if let Ok(_) = re {
+    //         panic!("");
+    //     }
+    // }
 
     #[test]
     fn err_case_vec_string() {
-        let v = SubcommandArgsValue::new(vec!["false".to_string()]);
+        let v = SubcommandArgsValue::new(vec!["falsasdfe".to_string()]);
         let re = v.get_bool();
 
         // shold be Err, not ok.

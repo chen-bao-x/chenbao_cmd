@@ -19,9 +19,6 @@ mod action;
 mod examples_types;
 mod question_and_anser;
 
-// mod arg_count;
-// pub use arg_count::*;
-
 #[cfg(test)]
 mod tests {
 

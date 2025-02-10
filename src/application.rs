@@ -1,84 +1,84 @@
+//! # 示例:  
 //! ```rust
 //! let app = App::new("cmd")
-//!      .add_about("在这里介绍这个程序在什么情况下能帮助用户解决什么问题.")
-//!      .add_author("chen bao")
-//!      .app_version_message("0.0.1".to_string())
-//!      .add_subcommand(
-//!          SubCommand::new("run")
-//!              .about("运行程序")
-//!              .action(ArgAction::Bool(Rc::new(|_x| {
-//!                  print!("command \"run\"{:?}\n", _x);
-//!              }))),
-//!      )
-//!      .add_subcommand(
-//!          SubCommand::new("help")
-//!              .about("运行程序")
-//!              .action(ArgAction::Empty(Rc::new(|| {}))),
-//!      )
-//!      .add_subcommand(
-//!          SubCommand::new("build")
-//!              .short_name("b")
-//!              .about("编译项目")
-//!              .action(ArgAction::Bool(Rc::new(|_x| {
-//!                  print!("command \"run\"{:?}\n", _x);
-//!              }))),
-//!      )
-//!      .add_subcommand(
-//!          SubCommand::new("empty")
-//!              .about("用来测试 ArgCount::Zero ")
-//!              .action(ArgAction::Empty(Rc::new(|| {
-//!                  print!("testing arg_zero");
-//!              }))),
-//!      )
-//!      .add_subcommand(
-//!          SubCommand::new("number")
-//!              .about("用来测试 ArgCount::Zero ")
-//!              .action(ArgAction::Number(Rc::new(|_x| {
-//!                  print!("testing arg_zero");
-//!              }))),
-//!      )
-//!      .add_subcommand(
-//!          SubCommand::new("vecnumber")
-//!              .about("用来测试 ArgCount::Zero ")
-//!              .action(ArgAction::NumberMutiple(Rc::new(|_x| {
-//!                  print!("testing arg_zero");
-//!              }))),
-//!      )
-//!      .add_subcommand(
-//!          SubCommand::new("vecbool")
-//!              .about("用来测试 ArgCount::Zero ")
-//!              .action(ArgAction::BoolMutiple(Rc::new(|_x| {
-//!                  print!("testing arg_zero");
-//!              }))),
-//!      )
-//!      .add_subcommand(
-//!          SubCommand::new("vecstring")
-//!              .about("用来测试 ArgCount::Zero ")
-//!              .action(ArgAction::StringMutiple(Rc::new(|_x| {
-//!                  print!("testing arg_zero");
-//!              }))),
-//!      )
-//!      .add_subcommand(
-//!          SubCommand::new("repl")
-//!              .about("用来测试 ArgCount::Repl(_) ")
-//!              .action(ArgAction::Dialog(Rc::new(|r| {
-//!                  let mut 你要吃几个汉堡包: arg_type::Number = 0;
-//!                  let mut 多个_number: arg_type::NumberMutiple = vec![];
-//!                  let mut string: String = String::new();
-//!                  let mut string_multiple: Vec<String> = vec![];
-//!                  let mut req_bool: arg_type::Bool = false;
-//!                  let mut req_bool_multiple: arg_type::BoolMutiple = vec![];
-//!      
-//!                  r.number(&mut 你要吃几个汉堡包, "你要吃几个汉堡包?")
-//!                      .req_multiple_number(&mut 多个_number, "多个 number")
-//!                      .string(&mut string, "string")
-//!                      .string_multiple(&mut string_multiple, "string_multiple")
-//!                      .yes_or_no(&mut req_bool, "bool")
-//!                      .yes_or_no_multiple(&mut req_bool_multiple, "bool mutiple");
-//!                  }))),
-//!         );
-//!
-//!         app.run();
+//!     .about("这个程序主要是为了测试我写的 cmd crate")
+//!     .author("chen bao")
+//!     .version_message("0.0.1".to_string())
+//!     .add_subcommand(
+//!         SubCommand::new("run")
+//!             .about("运行程序")
+//!             .action(ArgAction::Empty(std::rc::Rc::new(|| {
+//!                 print!(r#"runing commmand: "run""#);
+//!             }))),
+//!     )
+//!     .add_subcommand(
+//!         SubCommand::new("help")
+//!             .about("运行程序")
+//!             .action(ArgAction::Empty(std::rc::Rc::new(|| {}))),
+//!     )
+//!     .add_subcommand(
+//!         SubCommand::new("build")
+//!             .short_name("b")
+//!             .about("编译项目")
+//!             .action(ArgAction::Bool(std::rc::Rc::new(|_x| {
+//!                 print!("command \"run\"{:?}\n", _x);
+//!             }))),
+//!     )
+//!     .add_subcommand(
+//!         SubCommand::new("empty")
+//!             .about("用来测试 ArgCount::Zero ")
+//!             .action(ArgAction::Empty(std::rc::Rc::new(|| {
+//!                 print!("testing arg_zero");
+//!             }))),
+//!     )
+//!     .add_subcommand(
+//!         SubCommand::new("number")
+//!             .about("用来测试 ArgCount::Zero ")
+//!             .action(ArgAction::Number(std::rc::Rc::new(|_x| {
+//!                 print!("testing arg_zero");
+//!             }))),
+//!     )
+//!     .add_subcommand(
+//!         SubCommand::new("vecnumber")
+//!             .about("用来测试 ArgCount::Zero ")
+//!             .action(ArgAction::NumberMutiple(std::rc::Rc::new(|_x| {
+//!                 print!("testing arg_zero");
+//!             }))),
+//!     )
+//!     .add_subcommand(
+//!         SubCommand::new("vecbool")
+//!             .about("用来测试 ArgCount::Zero ")
+//!             .action(ArgAction::BoolMutiple(std::rc::Rc::new(|_x| {
+//!                 print!("testing arg_zero");
+//!             }))),
+//!     )
+//!     .add_subcommand(
+//!         SubCommand::new("vecstring")
+//!             .about("用来测试 ArgCount::Zero ")
+//!             .action(ArgAction::StringMutiple(std::rc::Rc::new(|_x| {
+//!                 print!("testing arg_zero");
+//!             }))),
+//!     )
+//!     .add_subcommand(
+//!         SubCommand::new("repl")
+//!             .about("用来测试 ArgCount::Repl(_) ")
+//!             .action(ArgAction::Dialog(std::rc::Rc::new(|r| {
+//!                 let mut 你要吃几个汉堡包: arg_type::Number = 0;
+//!                 let mut 多个_number: arg_type::NumberMutiple = vec![];
+//!                 let mut string: String = String::new();
+//!                 let mut string_multiple: Vec<String> = vec![];
+//!                 let mut req_bool: arg_type::Bool = false;
+//!                 let mut req_bool_multiple: arg_type::BoolMutiple = vec![];
+//! 
+//!                 r.number(&mut 你要吃几个汉堡包, "你要吃几个汉堡包?")
+//!                     .req_multiple_number(&mut 多个_number, "多个 number")
+//!                     .string(&mut string, "string")
+//!                     .string_multiple(&mut string_multiple, "string_multiple")
+//!                     .yes_or_no(&mut req_bool, "bool")
+//!                     .yes_or_no_multiple(&mut req_bool_multiple, "bool mutiple");
+//!             }))),
+//!     );
+//! app.run();
 //! ```
 
 use super::*;
@@ -393,12 +393,10 @@ impl App {
 
             for x in &self.sub_commands {
                 let rows = x.formated_command_example(&self.app_name);
+
                 rows.row_iter().for_each(|a| {
                     table.add_row(a.clone());
                 });
-                // for r in rows {
-                //     table.add_row(r);
-                // }
             }
             println!("{}", table);
             // table.printstd();
