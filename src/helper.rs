@@ -98,25 +98,49 @@ pub(crate) trait StyledString {
 
 impl<T: ToString> StyledString for T {
     fn styled_sub_command(&self) -> String {
-        self.to_string().cyan().to_string()
+        if self.to_string().is_empty() {
+            String::new()
+        } else {
+            self.to_string().cyan().to_string()
+        }
     }
     fn styled_arg_type(&self) -> String {
-        self.to_string().magenta().to_string()
+        if self.to_string().is_empty() {
+            String::new()
+        } else {
+            self.to_string().magenta().to_string()
+        }
     }
     fn styled_arg(&self) -> String {
-        self.to_string().green().to_string()
+        if self.to_string().is_empty() {
+            String::new()
+        } else {
+            self.to_string().green().to_string()
+        }
     }
 
     fn styled_repl_prompt(&self) -> String {
-        self.to_string()
+        if self.to_string().is_empty() {
+            String::new()
+        } else {
+            self.to_string()
+        }
     }
 
     fn styled_repl_input(&self) -> String {
-        self.to_string().bright_green().to_string()
+        if self.to_string().is_empty() {
+            String::new()
+        } else {
+            self.to_string().bright_green().to_string()
+        }
     }
 
     fn styled_repl_selected(&self) -> String {
-        self.to_string().bright_magenta().to_string()
+        if self.to_string().is_empty() {
+            String::new()
+        } else {
+            self.to_string().bright_magenta().to_string()
+        }
     }
 }
 

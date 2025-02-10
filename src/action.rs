@@ -1,5 +1,5 @@
 use super::arg_type;
-use crate::helper::*;
+use crate::helper::StyledString;
 use std::{default, num::ParseIntError, path::Path, rc::Rc};
 
 // pub type Number = i128;
@@ -68,15 +68,13 @@ impl ArgAction {
         let arg_tips = match self {
             ArgAction::Empty(_) => "".to_string(),
             ArgAction::String(_) => format!(
-                r#"{s} -- 需要 1 个 {g}, 示例: {z}"#,
-                s = r#""string""#.styled_arg_type(),
-                g = r#""string""#.styled_arg_type(),
+                r#"{s} -- 需要 1 个 {s}, 示例: {z}"#,
+                s = r#"string"#.styled_arg_type(),
                 z = r#""input an string""#.styled_arg(),
             ),
             ArgAction::StringMutiple(_) => format!(
-                r#"{s} -- 需要 多个 {z}, 示例: {example}"#,
-                s = r#"["string"...]"#.styled_arg_type(),
-                z = r#""string""#.styled_arg(),
+                r#"{s}... -- 需要 多个 {s}, 示例: {example}"#,
+                s = r#"string"#.styled_arg_type(),
                 example = r#""input an string" "string 2" "string 3" "#.styled_arg(),
             ),
             ArgAction::Number(_) => format!(
@@ -86,8 +84,8 @@ impl ArgAction {
             ),
             ArgAction::NumberMutiple(_) => {
                 format!(
-                    r#"{s} -- 需要 多个 Number, 每个 Number 用 [空格] 分开, 示例: {z}"#,
-                    s = r#"[Number...]"#.styled_arg_type(),
+                    r#"{s}... -- 需要 多个 {s}, 每个 {s} 用 [空格] 分开, 示例: {z}"#,
+                    s = r#"Number"#.styled_arg_type(),
                     z = r#"0 1 2 5 123 100"#.styled_arg(),
                 )
             }
@@ -100,8 +98,8 @@ impl ArgAction {
             }
             ArgAction::PathMutiple(_) => {
                 format!(
-                    r#"{s} -- 需要 多个 "Path",  每个 Path 用 [空格] 分开, 示例: {z}"#,
-                    s = r#"[Path...]"#.styled_arg_type(),
+                    r#"{s}... -- 需要 多个 {s},  每个 Path 用 [空格] 分开, 示例: {z}"#,
+                    s = r#"Path"#.styled_arg_type(),
                     z = r#"0 1 2 5 123 100"#.styled_arg(),
                 )
             }
@@ -115,9 +113,9 @@ impl ArgAction {
 
             ArgAction::BoolMutiple(_) => {
                 format!(
-                    r#"{s} -- 需要 多个 {b} 类型的值, {t} 或者 {f}, 每个 {b} 用 [空格] 分开, 示例: {z}"#,
-                    s = r#"[Bool...]"#.styled_arg_type(),
-                    b = r#"bool"#.styled_arg_type(),
+                    r#"{s}... -- 需要 多个 {s} 类型的值, {t} 或者 {f}, 每个 {s} 用 [空格] 分开, 示例: {z}"#,
+                    // s = r#"Bool..."#.styled_arg_type(),
+                    s = r#"bool"#.styled_arg_type(),
                     t = r#"true"#.styled_arg(),
                     f = r#"true"#.styled_arg(),
                     z = r#"true false true false"#.styled_arg(),
@@ -334,7 +332,7 @@ impl SubcommandArgsValue {
             }
         } else {
             return Err(format!(
-                "参数数量不正确: 需要 1 个 {} 类型的参数, 实际接收到了 {} 个参数: {:?}",
+                "参数数量不正确: 需要 1 个 {} 类型的参数, 实际接收到了 {} 个参数: {}",
                 "bool".styled_arg_type(),
                 s.len().styled_sub_command(),
                 // s.styled_arg(),
