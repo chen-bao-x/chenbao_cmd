@@ -93,6 +93,7 @@ pub(crate) trait StyledString {
 
     fn styled_repl_prompt(&self) -> String;
     fn styled_repl_input(&self) -> String;
+    fn styled_repl_selected(&self) -> String;
 }
 
 impl<T: ToString> StyledString for T {
@@ -107,15 +108,24 @@ impl<T: ToString> StyledString for T {
     }
 
     fn styled_repl_prompt(&self) -> String {
-        self.to_string().bold().to_string()
+        self.to_string()
     }
 
     fn styled_repl_input(&self) -> String {
-        self.to_string().green().to_string()
+        self.to_string().bright_green().to_string()
+    }
+
+    fn styled_repl_selected(&self) -> String {
+        self.to_string().bright_magenta().to_string()
     }
 }
 
 pub(crate) struct ColoredTheme {}
+impl ColoredTheme {
+    pub fn new() -> dialoguer::theme::ColorfulTheme {
+        dialoguer::theme::ColorfulTheme::default()
+    }
+}
 impl Theme for ColoredTheme {
     /// Formats a confirm prompt.
     fn format_confirm_prompt(
@@ -129,10 +139,8 @@ impl Theme for ColoredTheme {
         }
         match default {
             None => write!(f, "[y/n] ")?,
-            // Some(true) => write!(f, "{}{}", "[Y/n] ", "yes".green())?,
-            // Some(false) => write!(f, "{}{}", "[y/N] ", "no".green())?,
-            Some(true) => write!(f, "[{}/n] ", " Yes ".bright_green())?,
-            Some(false) => write!(f, "[y/{}]", " No ".bright_green())?,
+            Some(true) => write!(f, "[{}/n] ", " Yes ".styled_arg())?,
+            Some(false) => write!(f, "[y/{}]", " No ".styled_arg())?,
         }
         Ok(())
     }
@@ -144,11 +152,25 @@ impl Theme for ColoredTheme {
         prompt: &str,
         default: Option<&str>,
     ) -> fmt::Result {
+        let prompt = prompt.styled_repl_prompt();
+
         match default {
-            Some(default) if prompt.is_empty() => write!(f, "[{}]: \n", default),
-            Some(default) => write!(f, "{} [{}]: ", prompt, default),
+            Some(default) if prompt.is_empty() => {
+                write!(f, "[{}]: \n", default.styled_repl_input())
+            }
+            Some(default) => write!(f, "{} [{}]: ", prompt, default.styled_repl_input()),
             None => write!(f, "{}: ", prompt),
         }
+    }
+
+    /// Formats an input prompt after selection.
+    fn format_input_prompt_selection(
+        &self,
+        f: &mut dyn fmt::Write,
+        prompt: &str,
+        sel: &str,
+    ) -> fmt::Result {
+        write!(f, "{}: {}", prompt, sel.styled_repl_input())
     }
 
     /// Formats a select prompt item.
@@ -164,7 +186,7 @@ impl Theme for ColoredTheme {
             if active { ">" } else { " " },
             // text.bright_green(),
             if active {
-                text.bright_magenta().to_string()
+                text.styled_repl_selected()
             } else {
                 text.to_string()
             }
@@ -190,7 +212,7 @@ impl Theme for ColoredTheme {
             },
             // text
             if checked {
-                text.bright_magenta().to_string()
+                text.styled_repl_selected()
             } else {
                 text.to_string()
             }

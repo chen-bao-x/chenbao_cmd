@@ -736,8 +736,8 @@ impl DialogGeter {
     ///    println!("最终获得的数字是: {}", a);
     /// ```
     fn get_string(prompt: &str) -> String {
-        let re = dialoguer::Input::<String>::with_theme(&ColoredTheme {})
-            .with_prompt(prompt.bright_magenta().to_string())
+        let re = dialoguer::Input::<String>::with_theme(&ColoredTheme::new())
+            .with_prompt(prompt)
             .interact_text();
 
         match re {
@@ -756,8 +756,8 @@ impl DialogGeter {
     ///     println!("{:?}", arr);
     /// ``````
     fn get_string_multiple(prompt: &str) -> Vec<String> {
-        let re = dialoguer::Input::<String>::with_theme(&ColoredTheme {})
-            .with_prompt(prompt.bright_magenta().to_string())
+        let re = dialoguer::Input::<String>::with_theme(&ColoredTheme::new())
+            .with_prompt(prompt)
             .interact_text();
 
         match re {
@@ -777,37 +777,23 @@ impl DialogGeter {
     ///     println!("最终获得的数字是: {}", a);
     /// ```
     fn get_number(prompt: &str) -> arg_type::Number {
-        println!("{}", prompt.bright_magenta());
+        let input = DialogGeter::get_string(prompt);
+        let input = input.trim();
+        // 用户说输入了某些东西
+        let parse_result: Result<arg_type::Number, ParseIntError> = input.parse();
 
-        let mut input = "".to_string();
-        let re = std::io::stdin().read_line(&mut input);
-
-        match re {
-            Ok(_n) => {
-                let input = input.trim();
-                // 用户说输入了某些东西
-                let parse_result: Result<arg_type::Number, ParseIntError> = input.parse();
-                // println!("input is: {}", input);
-
-                match parse_result {
-                    Ok(num) => {
-                        return num;
-                    }
-                    Err(_e) => {
-                        let err_message = format!("{}", _e).red().to_string();
-                        eprintln!("{}", err_message);
-
-                        // TODO: 打印正确的书写方式;
-                        println!("需要输入一个数字, 示例: 123  ");
-                        return DialogGeter::get_number(prompt); // 继续本次问题
-                    }
-                };
+        match parse_result {
+            Ok(num) => {
+                return num;
             }
             Err(_e) => {
-                eprintln!("{}", _e.red());
+                let err_message = format!("{}", _e).red().to_string();
+                eprintln!("{}", err_message);
+
+                println!("需要输入一个数字, 示例: {x}", x = "123".styled_arg());
                 return DialogGeter::get_number(prompt); // 继续本次问题
             }
-        }
+        };
     }
 
     /// 示例:
@@ -816,13 +802,9 @@ impl DialogGeter {
     ///     println!("最终获得的数字是: {:?}", b);
     /// ```
     fn get_bool(prompt: &str) -> bool {
-        println!("{}", prompt.bright_magenta());
-
-        // format!("{}{}", "Y 键 N 键选择, 回车键确认: ", prompt.bright_magenta());
-
-        let re = dialoguer::Confirm::with_theme(&ColoredTheme {})
+        let re = dialoguer::Confirm::with_theme(&ColoredTheme::new())
             // .with_prompt("Y 键 N 键选择, 回车键确认: ")
-            .with_prompt(prompt.bright_magenta().to_string())
+            .with_prompt(prompt)
             .wait_for_newline(true)
             .interact();
 
@@ -848,9 +830,9 @@ impl DialogGeter {
     where
         T: ToString + Clone,
     {
-        let re = dialoguer::Select::with_theme(&ColoredTheme {})
+        let re = dialoguer::FuzzySelect::with_theme(&ColoredTheme::new())
             // .with_prompt("What do you choose?")
-            .with_prompt(prompt.bright_magenta().to_string())
+            .with_prompt(prompt)
             .items(&items)
             .default(0)
             .interact();
@@ -876,9 +858,9 @@ impl DialogGeter {
     where
         T: ToString + Clone,
     {
-        let re = dialoguer::MultiSelect::with_theme(&ColoredTheme {})
+        let re = dialoguer::MultiSelect::with_theme(&ColoredTheme::new())
             // .with_prompt("What do you choose?")
-            .with_prompt(prompt.bright_magenta().to_string())
+            .with_prompt(prompt)
             .items(&items)
             .interact();
 
@@ -930,8 +912,8 @@ impl DialogGeter {
             prompt
         };
 
-        let re = dialoguer::Password::new()
-            .with_prompt(prompt_message.bright_magenta().to_string())
+        let re = dialoguer::Password::with_theme(&ColoredTheme::new())
+            .with_prompt(prompt_message)
             .interact();
         match re {
             Ok(password) => {
@@ -948,11 +930,8 @@ impl DialogGeter {
         println!("{}", prompt.bright_green());
 
         let re = dialoguer::Password::new()
-            .with_prompt("New Password".bright_magenta().to_string())
-            .with_confirmation(
-                "Confirm password".bright_magenta().to_string(),
-                "Passwords mismatching",
-            )
+            .with_prompt("New Password")
+            .with_confirmation("Confirm password", "Passwords mismatching")
             .interact();
         match re {
             Ok(password) => {
