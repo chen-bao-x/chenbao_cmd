@@ -290,17 +290,39 @@ Usage:
             let v = SubcommandArgsValue::new(cmd_args.clone());
 
             let re = match &self._arg_type_with_action {
-                ArgAction::Empty(f) => adsfdasf(v.get_empty(), need_to_run, f),
-                ArgAction::String(f) => adsfdasf(v.get_string(), need_to_run, f),
-                ArgAction::StringMutiple(f) => adsfdasf(v.get_vec_string(), need_to_run, f),
-                ArgAction::Number(f) => adsfdasf(v.get_number(), need_to_run, f),
-                ArgAction::NumberMutiple(f) => adsfdasf(v.get_vec_number(), need_to_run, f),
-                ArgAction::Path(f) => adsfdasf(v.get_path(), need_to_run, f),
-                ArgAction::PathMutiple(f) => adsfdasf(v.get_vec_path(), need_to_run, f),
-                ArgAction::Bool(f) => adsfdasf(v.get_bool(), need_to_run, f),
-                ArgAction::BoolMutiple(f) => adsfdasf(v.get_vec_bool(), need_to_run, f),
-                ArgAction::Dialog(f) => adsfdasf(v.get_repl(), need_to_run, &|s| {
-                    f(&mut arg_type::Dialog::new(s.as_deref()));
+                ArgAction::Empty(f) => run(v.get_empty(), need_to_run, f),
+                ArgAction::String(f) => run(v.get_string(), need_to_run, f),
+                ArgAction::StringMutiple(f) => run(v.get_vec_string(), need_to_run, f),
+                ArgAction::Number(f) => run(v.get_number(), need_to_run, f),
+                ArgAction::NumberMutiple(f) => run(v.get_vec_number(), need_to_run, f),
+                ArgAction::Path(f) => run(v.get_path(), need_to_run, f),
+                ArgAction::PathMutiple(f) => run(v.get_vec_path(), need_to_run, f),
+                ArgAction::Bool(f) => run(v.get_bool(), need_to_run, f),
+                ArgAction::BoolMutiple(f) => run(v.get_vec_bool(), need_to_run, f),
+                ArgAction::Dialog(f) => run(v.get_repl(), need_to_run, &|s| match s {
+                    Some(str) => {
+                        let re = &mut arg_type::Dialog::new_from_jsonstr(str.as_str());
+                        match re {
+                            Ok(repl) => {
+                                f(repl);
+
+                                repl.finesh(app_name, &self._command_name);
+                            }
+                            Err(_e) => {
+                                panic!(
+                                    "\n参数不正确.\nsee {} {} {} for more infomation.\n",
+                                    app_name.magenta(),
+                                    self._command_name.styled_sub_command(),
+                                    "-h".styled_arg()
+                                );
+                            }
+                        }
+                    }
+                    None => {
+                        let mut repl = arg_type::Dialog::new();
+                        f(&mut repl);
+                        repl.finesh(app_name, &self._command_name);
+                    }
                 }),
             };
 
@@ -319,7 +341,7 @@ Usage:
 
             return re;
 
-            fn adsfdasf<T>(
+            fn run<T>(
                 result: ParseResult<T>,
                 need_run_action: bool,
                 func: &dyn Fn(T) -> (),
@@ -335,56 +357,6 @@ Usage:
                 }
             }
         }
-
-        // {
-        //     let arg_message = self._arg_type_with_action.arg_message();
-        //     let n = need_to_run;
-        //     let v = SubcommandArgsValue::new(cmd_args.clone());
-
-        //     return match &self._arg_type_with_action {
-        //         ArgAction::Empty(f) => _try_run(v.get_empty(), n, arg_message, f),
-        //         ArgAction::String(f) => _try_run(v.get_string(), n, arg_message, f),
-        //         ArgAction::StringMutiple(f) => _try_run(v.get_vec_string(), n, arg_message, f),
-        //         ArgAction::Number(f) => _try_run(v.get_number(), n, arg_message, f),
-        //         ArgAction::NumberMutiple(f) => _try_run(v.get_vec_number(), n, arg_message, f),
-        //         ArgAction::Path(f) => _try_run(v.get_path(), n, arg_message, f),
-        //         ArgAction::PathMutiple(f) => _try_run(v.get_vec_path(), n, arg_message, f),
-        //         ArgAction::Bool(f) => _try_run(v.get_bool(), n, arg_message, f),
-        //         ArgAction::BoolMutiple(f) => _try_run(v.get_vec_bool(), n, arg_message, f),
-        //         ArgAction::Dialog(f) => _try_run(v.get_repl(), n, arg_message, &|s| {
-        //             f(&mut arg_type::Dialog::new(s.as_deref()));
-        //         }),
-        //     };
-        // }
-
-        //         // match_and_try_run
-        //         fn _try_run<T>(
-        //             result: ParseResult<T>,
-        //             need_run_action: bool,
-        //             arg_message: String,
-        //             func: &dyn Fn(T) -> (),
-        //         ) -> DidHandled {
-        //             match result {
-        //                 Ok(s) => {
-        //                     if need_run_action {
-        //                         func(s);
-        //                     }
-        //                     return DidHandled::Handled;
-        //                 }
-        //                 Err(err) => {
-        //                     return DidHandled::Failed(format!(
-        //                         r#"
-        // {}{}
-
-        // {}
-        //                     "#,
-        //                         "error: ".bright_red(),
-        //                         err,
-        //                         arg_message,
-        //                     ));
-        //                 }
-        //             }
-        //         }
     }
 
     /// 检查 子命令 的名字是否符合要求.

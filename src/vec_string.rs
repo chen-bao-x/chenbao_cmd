@@ -6,25 +6,8 @@ impl VecString {
 
     pub(crate) fn vec_to_json(vec: &Vec<String>) -> String {
         let json_value = serde_json::json!(vec);
+        // return serde_json::to_string_pretty(&json_value).unwrap();
         return json_value.to_string();
-    }
-
-    pub(crate) fn adsfadsf(a: Vec<String>) -> String {
-        let mut str: String = String::new();
-        let mut index: usize = 0;
-        // serde_json::to_string(&a);
-
-        str.push('[');
-        for x in &a {
-            str.push_str(&format!("{:?}", x));
-            if index < a.len() - 1 {
-                str.push_str(", ");
-            }
-
-            index += 1;
-        }
-        str.push(']');
-        return str;
     }
 }
 

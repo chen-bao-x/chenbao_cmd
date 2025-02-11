@@ -31,45 +31,32 @@ impl DialogGenerator {
     /// let cmd = crate::DialogGenerator::new(None);
     /// let cmd2 = crate::DialogGenerator::new(Some(r#"["hello"]"#));
     /// ```
-    pub fn new(input: Option<&str>) -> Self {
-        match input {
-            Some(s) => Self::new_from_jsonstr(s),
-            None => Self {
-                arguments: vec![],
-                index: 0,
-                is_from_json: false,
-            },
+    pub fn new() -> Self {
+        Self {
+            arguments: vec![],
+            index: 0,
+            is_from_json: false,
         }
     }
 
     /// ```rs
     /// let cmd = crate::DialogGenerator::new_from_jsonstr(r#"["hello"]"#);
     /// ```
-    pub fn new_from_jsonstr(str: &str) -> Self {
+    pub fn new_from_jsonstr(str: &str) -> Result<Self, String> {
         // &str -> ReplQuestions
-
+        // println!("json_str: {}", str);
         let parse_result = VecString::json_to_vec(&str);
         match parse_result {
             Ok(v) => {
-                return Self {
+                let d = Self {
                     arguments: v,
                     index: 0,
                     is_from_json: true,
                 };
+                return Ok(d);
             }
             Err(_e) => {
-                #[cfg(debug_assertions)]
-                {
-                    println!("{}{}转换为 json 时出错: {}", file!(), line!(), _e,);
-                }
-
-                panic!("参数错误, ");
-             
-                return Self {
-                    arguments: vec![],
-                    index: 0,
-                    is_from_json: false,
-                };
+                return Err(format!("{}{}转换为 json 时出错: {}", file!(), line!(), _e,));
             }
         }
     }
@@ -88,7 +75,6 @@ impl DialogGenerator {
     // _string
     pub fn string(&mut self, prompt: &str) -> &arg_type::String {
         if self.is_from_json {
-            println!("is_from_json");
             let val = self.arguments.get(self.index);
 
             match val {
@@ -129,15 +115,16 @@ impl DialogGenerator {
                     }
                 }
             }
+            panic!("{:?}", val);
+        } else {
+            let result_value = DialogGeter::get_string_multiple(prompt);
+
+            let string = serde_json::to_string(&result_value).unwrap();
+
+            self.arguments.push(string);
+            self.index = self.arguments.len() - 1;
+            return result_value;
         }
-
-        let result_value = DialogGeter::get_string_multiple(prompt);
-
-        let string = serde_json::to_string(&result_value).unwrap();
-
-        self.arguments.push(string);
-        self.index = self.arguments.len() - 1;
-        return result_value;
     }
 
     // _number
@@ -160,15 +147,16 @@ impl DialogGenerator {
                     // return self;
                 }
             }
+            panic!();
+        } else {
+            // get value from REPL.
+
+            let result_value = DialogGeter::get_number(prompt);
+
+            self.arguments.push(result_value.to_string());
+            self.index += self.arguments.len() - 1;
+            return result_value;
         }
-
-        // get value from REPL.
-
-        let result_value = DialogGeter::get_number(prompt);
-
-        self.arguments.push(result_value.to_string());
-        self.index += self.arguments.len() - 1;
-        return result_value;
     }
     // _number_multiple
     pub fn number_multiple(&mut self, prompt: &str) -> arg_type::NumberMutiple {
@@ -195,7 +183,7 @@ impl DialogGenerator {
                 }
             }
         }
-        self.index = self.arguments.len() - 1;
+        // self.index = self.arguments.len() - 1;
         return result_value;
     }
     // _yes_or_no
@@ -213,15 +201,16 @@ impl DialogGenerator {
                 self.index += 1;
                 return result_value;
             }
+            panic!();
+        } else {
+            // get value from REPL.
+
+            result_value = DialogGeter::get_bool(prompt);
+
+            self.arguments.push(result_value.to_string()); // -> "true" or "false"
+            self.index += self.arguments.len() - 1;
+            return result_value;
         }
-
-        // get value from REPL.
-
-        result_value = DialogGeter::get_bool(prompt);
-
-        self.arguments.push(result_value.to_string()); // -> "true" or "false"
-        self.index += self.arguments.len() - 1;
-        return result_value;
     }
     // _path
     pub fn path(&mut self, prompt: &str) -> arg_type::Path {
@@ -232,17 +221,18 @@ impl DialogGenerator {
                 self.index += 1;
                 return result_value;
             }
+            panic!();
+        } else {
+            // get value from REPL.
+
+            let str = DialogGeter::get_string(prompt);
+
+            let result_value = Path::new(&str).to_path_buf();
+
+            self.arguments.push(str); // -> "true" or "false"
+            self.index = self.arguments.len() - 1;
+            return result_value;
         }
-
-        // get value from REPL.
-
-        let str = DialogGeter::get_string(prompt);
-
-        let result_value = Path::new(&str).to_path_buf();
-
-        self.arguments.push(str); // -> "true" or "false"
-        self.index = self.arguments.len() - 1;
-        return result_value;
     }
     // _path_multiple
     pub fn path_multiple(&mut self, prompt: &str) -> arg_type::PathMutiple {
@@ -260,17 +250,18 @@ impl DialogGenerator {
                 self.index += 1;
                 return result_value;
             }
+            panic!();
+        } else {
+            // get value from REPL.
+
+            let str = DialogGeter::get_single_selected(prompt, items);
+
+            let result_value = str.to_string();
+
+            self.arguments.push(str.to_string());
+            self.index = self.arguments.len() - 1;
+            return result_value;
         }
-
-        // get value from REPL.
-
-        let str = DialogGeter::get_single_selected(prompt, items);
-
-        let result_value = str.to_string();
-
-        self.arguments.push(str.to_string());
-        self.index = self.arguments.len() - 1;
-        return result_value;
     }
     // _select_multiple
     pub fn select_multiple(&mut self, prompt: &str, items: &Vec<&str>) -> arg_type::StringMutiple {
@@ -281,22 +272,23 @@ impl DialogGenerator {
                 self.index += 1;
                 return result_value;
             }
+            panic!();
+        } else {
+            // get value from REPL.
+
+            let str = DialogGeter::get_multiple_selected(prompt, &items);
+
+            let result_value = str.iter().map(|x| x.to_string()).collect();
+
+            let json_string = serde_json::to_string(&str).unwrap();
+
+            self.arguments.push(json_string);
+            self.index = self.arguments.len() - 1;
+            return result_value;
         }
-
-        // get value from REPL.
-
-        let str = DialogGeter::get_multiple_selected(prompt, &items);
-
-        let result_value = str.iter().map(|x| x.to_string()).collect();
-
-        let json_string = serde_json::to_string(&str).unwrap();
-
-        self.arguments.push(json_string);
-        self.index = self.arguments.len() - 1;
-        return result_value;
     }
     // _editor
-    pub fn editor(mut self, prompt: &str) -> arg_type::String {
+    pub fn editor(&mut self, prompt: &str) -> arg_type::String {
         if self.is_from_json {
             println!("is_from_json");
             let val = self.arguments.get(self.index);
@@ -313,12 +305,14 @@ impl DialogGenerator {
                     // not string
                 }
             }
-        }
 
-        let result_value = DialogGeter::editor(prompt);
-        self.arguments.push(result_value.to_string());
-        self.index = self.arguments.len() - 1;
-        return result_value;
+            panic!();
+        } else {
+            let result_value = DialogGeter::editor(prompt);
+            self.arguments.push(result_value.to_string());
+            self.index = self.arguments.len() - 1;
+            return result_value;
+        }
     }
     // _password
     /// 让用户手动输入密码.
@@ -335,6 +329,11 @@ impl DialogGenerator {
         // 密码不应该被输出到 self.arguments 里面.
         DialogGeter::password_with_confirmation(prompt)
     }
+
+    pub fn finesh(&mut self, app_name: &String, command_name: &String) {
+        println!("runing command: {app_name} {command_name} '{}'", self.to_json_str());
+     
+    }
 }
 
 #[cfg(test)]
@@ -349,7 +348,10 @@ mod test_repl_new_api_style {
         F: Fn(&mut DialogGenerator) -> R,
         R: Debug,
     {
-        let mut repl = DialogGenerator::new(val);
+        let mut repl = match val {
+            Some(str) => DialogGenerator::new_from_jsonstr(str).unwrap(),
+            None => DialogGenerator::new(),
+        };
         let x = f(&mut repl);
 
         let is_from_json = if let Some(_) = val { true } else { false };
@@ -358,7 +360,7 @@ mod test_repl_new_api_style {
         println!("json_str: {}", repl.to_json_str());
         assert_eq!(repl.is_from_json, is_from_json);
 
-        repl.editor("prompt");
+        // repl.editor("prompt");
     }
 
     // #[test]
@@ -403,7 +405,7 @@ mod test_repl_new_api_style {
 
         // form json string.
         dialog_generator_tester(Some(r#"     ["sadfdsaf dsf sad f"]    "#), |x| {
-            return x.string("prompt").to_string();
+            return x.string("string").to_string();
         });
     }
 

@@ -1,9 +1,6 @@
 use super::arg_type;
 use crate::{helper::StyledString, vec_string::VecString};
-use std::{default, fmt::Debug, num::ParseIntError, path::Path};
-
-// pub type Number = i128;
-// pub type PathBuf = path::PathBuf;
+use std::{default, num::ParseIntError, path::Path};
 
 pub type ParseResultMessage = String;
 pub type ParseResult<T> = Result<T, ParseResultMessage>;
@@ -370,11 +367,6 @@ impl SubcommandArgsValue {
 
         if args.len() == 1 {
             if let Some(str) = args.first() {
-                let mut a = arg_type::Dialog::new(Some(str));
-                a.string("prompt");
-                a.string("prompt");
-                a.string("prompt");
-
                 return Ok(Some(str.clone()));
             }
         }
@@ -383,10 +375,6 @@ impl SubcommandArgsValue {
             "参数数量不正确: 需要 0 个 或者 1 个 参数, 实际接收到了 {} 个参数: {}",
             args.len().styled_sub_command(),
             serde_json::to_string(&args).unwrap().styled_arg(),
-            // adsfadsf(args).styled_arg(),
-            // s.styled_arg(),
-            // format!("{}", args),
-            // VecString::vec_to_json(&args).styled_arg(),
         ));
     }
 }
