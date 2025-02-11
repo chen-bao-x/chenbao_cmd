@@ -3,7 +3,6 @@ use crate::{examples_types::Examples, helper::*};
 use super::*;
 use owo_colors::OwoColorize;
 use prettytable::{row, table};
-use std::rc::Rc;
 
 #[derive(Clone)]
 pub enum AppDefaultAction {
@@ -11,7 +10,7 @@ pub enum AppDefaultAction {
     PrintHelpMessage,
 
     /// 如果想读取命令行参数, 请使用:   `let env_arg: Vec<String> = env::args().collect();`
-    CustomAction(Rc<dyn Fn() -> ()>),
+    CustomAction(&'static dyn Fn() -> ()),
 }
 
 impl Default for AppDefaultAction {
@@ -199,12 +198,9 @@ impl App {
     /// 设置只有 程序名, 没有任何子命令也没有任何参数时执行的 action.  
     /// 默认情况下是打印此程序的帮助信息.  
     /// `app_default_action` 有默认实现, 可以不用设置.
-    pub fn app_default_action<F>(self, action: F) -> Self
-    where
-        F: Fn() -> () + 'static,
-    {
+    pub fn app_default_action(self, action: &'static dyn Fn() -> ()) -> Self {
         let mut re = self;
-        re._app_default_action = AppDefaultAction::CustomAction(Rc::new(action));
+        re._app_default_action = AppDefaultAction::CustomAction(action);
         return re;
     }
 
@@ -587,7 +583,9 @@ impl App {
 
     /// 检查子命令的名字是否重复.
     #[cfg(debug_assertions)] // 只在 debug 模式下使用
-    pub(crate) fn debug_duplicate_names_check(&self) -> Result<(), std::collections::HashSet<&String>> {
+    pub(crate) fn debug_duplicate_names_check(
+        &self,
+    ) -> Result<(), std::collections::HashSet<&String>> {
         use std::collections::HashSet;
 
         // 重复了的子命令名称.
@@ -652,7 +650,17 @@ impl Default for App {
     fn default() -> Self {
         let env_arg: Vec<String> = std::env::args().collect();
 
-        // 第 2 个一级后面的所有.
+        let mut app_name: String = String::new();
+
+        let arr: Vec<String> = std::env::args().collect();
+        if let Some(path) = arr.get(0) {
+            let p = std::path::Path::new(path).file_name();
+            if let Some(name) = p {
+                app_name = name.to_string_lossy().into_owned();
+            }
+        }
+
+        // 第 2 个以及后面的所有.
         let sub_cmd_arg: Vec<String> = if env_arg.len() > 2 {
             env_arg[2..].to_vec()
         } else {
@@ -660,7 +668,7 @@ impl Default for App {
         };
 
         Self {
-            _app_name: Default::default(),
+            _app_name: app_name,
             _about: Default::default(),
             _author: Default::default(),
             _app_version_message: "0.0.1".to_string(),
@@ -673,3 +681,76 @@ impl Default for App {
         }
     }
 }
+
+// struct Adasfdfas(Rc<dyn Fn() -> ()>);
+// struct Adasfdfaasdfadsfs((fn() -> ()));
+
+// fn adsfadsf(a: Adasfdfaasdfadsfs) {
+//     // a.0();
+//     let sadf = a.0();
+// }
+
+// #[derive(Clone)]
+// enum Adsfadsf<'a> {
+//     A(&'static dyn Fn() -> ()),
+//     B(&'a (dyn Fn(String) -> ())),
+//     C(&'a (dyn Fn(arg_type::StringMutiple) -> ())),
+//     D(&'a (dyn Fn(arg_type::Number) -> ())),
+// }
+
+// impl Drop for Adsfadsf<'_> {
+//     fn drop(&mut self) {
+//         println!("Adsfadsf 被清理掉了",);
+//     }
+// }
+
+// #[test]
+// fn testsadfasdfasdf() {
+//     let _asdf = Adasfdfas { 0: Rc::new(|| {}) };
+
+//     fn haha() {}
+
+//     let a = "";
+//     let mut b = "";
+//     let asdf = inout((a, &mut b), |x| x);
+
+//     let asdf = 3_i8;
+//     let asdf = inout(asdf, add_one);
+
+//     // let _asdfadsf = Adasfdfaasdfadsfs { 0: &|| {} };
+//     let _asdfadsf = Adasfdfaasdfadsfs { 0: || {} };
+//     let _asdfadsf = Adasfdfaasdfadsfs { 0: haha };
+//     let _asdfadsf = Adasfdfaasdfadsfs { 0: hehe };
+
+//     let adsfadsfadsf = || {
+//         b;
+//         println!();
+//     };
+//     // let _asdfadsf = Adasfdfaasdfadsfs { 0: adsfadsfadsf };
+
+//     let _asdfadsf = Adasfdfaasdfadsfs {
+//         0: || {
+//             println!();
+//         },
+//     };
+
+//     adsfadsf(_asdfadsf);
+
+//     let a = Adsfadsf::A(&|| {});
+// }
+
+// fn hehe() {
+//     println!();
+// }
+
+// type Dsafadsf<Input, Output> = (Input, fn(Input) -> Output);
+
+// type capture<Input, Output> = fn(val: Input, f: fn(Input) -> Output) -> Output;
+
+// fn inout<Input, Output>(capture: Input, function: fn(Input) -> Output) -> Output {
+//     function(capture)
+// }
+
+// fn add_one(a: i8) -> i8 {
+//     a + 1
+// }

@@ -11,34 +11,25 @@ pub type ParseResult<T> = Result<T, ParseResultMessage>;
 /// 设置子命令的参数数量和参数类型, 以及·该子命令要执行的函数.
 #[derive(Clone)]
 pub enum ArgAction {
-    Empty(Rc<dyn Fn() -> ()>),
+    Empty(&'static dyn Fn() -> ()),
 
-    /// String
-    String(Rc<dyn Fn(arg_type::String) -> ()>),
+    String(&'static dyn Fn(arg_type::String) -> ()),
 
-    /// `Vec<String>`
-    StringMutiple(Rc<dyn Fn(arg_type::StringMutiple) -> ()>),
+    StringMutiple(&'static dyn Fn(arg_type::StringMutiple) -> ()),
 
-    /// isize
-    Number(Rc<dyn Fn(arg_type::Number) -> ()>),
+    Number(&'static dyn Fn(arg_type::Number) -> ()),
 
-    /// `Vec<isize>`
-    NumberMutiple(Rc<dyn Fn(arg_type::NumberMutiple) -> ()>),
+    NumberMutiple(&'static dyn Fn(arg_type::NumberMutiple) -> ()),
 
-    /// Path
-    Path(Rc<dyn Fn(Rc<arg_type::Path>) -> ()>),
+    Path(&'static dyn Fn(Rc<arg_type::Path>) -> ()),
 
-    /// `Vec<Path>`
-    PathMutiple(Rc<dyn Fn(Rc<arg_type::PathMutiple>) -> ()>),
+    PathMutiple(&'static dyn Fn(Rc<arg_type::PathMutiple>) -> ()),
 
-    /// bool
-    Bool(Rc<dyn Fn(arg_type::Bool) -> ()>),
+    Bool(&'static dyn Fn(arg_type::Bool) -> ()),
 
-    /// `Vec<bool>`
-    BoolMutiple(Rc<dyn Fn(arg_type::BoolMutiple) -> ()>),
+    BoolMutiple(&'static dyn Fn(arg_type::BoolMutiple) -> ()),
 
-    // Repl(Rc<dyn Fn(Option<String>) -> ()>),
-    Dialog(Rc<dyn Fn(&mut arg_type::Dialog) -> ()>),
+    Dialog(&'static dyn Fn(&mut arg_type::Dialog) -> ()),
 }
 
 impl std::fmt::Display for ArgAction {
@@ -59,13 +50,13 @@ impl std::fmt::Display for ArgAction {
 }
 impl default::Default for ArgAction {
     fn default() -> Self {
-        Self::Empty(Rc::new(|| {}))
+        Self::Empty(&|| {})
     }
 }
 
 impl ArgAction {
     /// 当音帮助文档时的 arguments 参数说明.
-    pub fn arg_message(&self) -> String {
+    pub(crate) fn arg_message(&self) -> String {
         let arg_tips = match self {
             ArgAction::Empty(_) => "".to_string(),
             ArgAction::String(_) => format!(
@@ -128,32 +119,32 @@ impl ArgAction {
         return format!("    {}", arg_tips);
     }
 
-    /// 遇到参数类型错误时告诉用户如何输入正确的参数.
-    pub fn arg_type_tips(&self) -> String {
-        let sdafdsaf: &str = match self {
-            ArgAction::Empty(_) => "",
-            ArgAction::String(_) => r#"参数类型: string, 示例: "string" -- 需要 1 个 "string""#,
-            ArgAction::StringMutiple(_) => {
-                r#"参数类型: ["string"...]], 示例: "str 1" "string 2" string_three "#
-            }
-            ArgAction::Number(_) => r#"参数类型: number, 示例: 999"#,
-            ArgAction::NumberMutiple(_) => {
-                r#"参数类型: [number...], 示例: 1 2 3 100 555 -- 需要 多个 Number, 每个 Number 用 [空格] 分开."#
-            }
-            ArgAction::Path(_) => r#"参数类型: path, 示例: /path/to/file.txt"#,
-            ArgAction::PathMutiple(_) => {
-                r#"参数类型: [path...], 示例: "/path/to/folder/" "./path/to/file.txt" "filename.txt""#
-            }
-            ArgAction::Bool(_) => r#"参数类型: bool, 示例: "true""#,
-            ArgAction::BoolMutiple(_) => r#"参数类型: [bool...], 示例: true false true false"#,
-            ArgAction::Dialog(_) => "",
-        };
+    // /// 遇到参数类型错误时告诉用户如何输入正确的参数.
+    // pub(crate) fn arg_type_tips(&self) -> String {
+    //     let sdafdsaf: &str = match self {
+    //         ArgAction::Empty(_) => "",
+    //         ArgAction::String(_) => r#"参数类型: string, 示例: "string" -- 需要 1 个 "string""#,
+    //         ArgAction::StringMutiple(_) => {
+    //             r#"参数类型: ["string"...]], 示例: "str 1" "string 2" string_three "#
+    //         }
+    //         ArgAction::Number(_) => r#"参数类型: number, 示例: 999"#,
+    //         ArgAction::NumberMutiple(_) => {
+    //             r#"参数类型: [number...], 示例: 1 2 3 100 555 -- 需要 多个 Number, 每个 Number 用 [空格] 分开."#
+    //         }
+    //         ArgAction::Path(_) => r#"参数类型: path, 示例: /path/to/file.txt"#,
+    //         ArgAction::PathMutiple(_) => {
+    //             r#"参数类型: [path...], 示例: "/path/to/folder/" "./path/to/file.txt" "filename.txt""#
+    //         }
+    //         ArgAction::Bool(_) => r#"参数类型: bool, 示例: "true""#,
+    //         ArgAction::BoolMutiple(_) => r#"参数类型: [bool...], 示例: true false true false"#,
+    //         ArgAction::Dialog(_) => "",
+    //     };
 
-        return sdafdsaf.to_string();
-    }
+    //     return sdafdsaf.to_string();
+    // }
 
     /// 告诉用户某个类型的参数应该怎么正确填写.
-    pub fn value_example(&self) -> String {
+    pub(crate) fn value_example(&self) -> String {
         let re = match self {
             ArgAction::Empty(_) => "",
             ArgAction::String(_) => r#""thid is an string example.""#,
@@ -173,7 +164,7 @@ impl ArgAction {
 
 /// 子命令实际接收到的参数
 #[derive(Clone)]
-pub struct SubcommandArgsValue {
+pub(crate) struct SubcommandArgsValue {
     /// 子命令的 参数
     pub subcommand_args: Vec<String>,
     // pub need_arg_type: ArgType,

@@ -29,7 +29,7 @@ pub struct SubCommand {
 
     /// 自定义的帮助文档.
     /// 当用户使用 help 命令查询此命令时显示的帮助文档.
-    pub _help_document: String,
+    pub _help_document: Option<String>,
 
     /// 子命令需要的参数的类型以及该子命令的 action.
     /// 在打印子命令的帮助文档时需要用到此属性.
@@ -64,7 +64,7 @@ impl SubCommand {
         return SubCommand {
             _command_name: name.to_string(),
             _about: "".to_string(),
-            _help_document: "".to_string(),
+            _help_document: None,
             _short_name: "".to_string(),
             _exaples: Examples::new(),
             _arg_type_with_action: ArgAction::default(),
@@ -87,7 +87,7 @@ impl SubCommand {
         return re;
     }
 
-    pub fn add_sub_command_example(self, command: &'static str, description: &'static str) -> Self {
+    pub fn add_example(self, command: &'static str, description: &'static str) -> Self {
         // TODO: 检查 `command: &'static str` 是否是可执行的 command.
 
         let mut re = self;
@@ -97,9 +97,10 @@ impl SubCommand {
     }
 
     /// set `Command.example`
-    pub fn help_document(self, str: &str) -> Self {
+    pub fn help_document(self, str: String) -> Self {
         let mut re = self;
-        re._help_document = str.to_string();
+        re._help_document = Some(str);
+
         return re;
     }
 
@@ -180,9 +181,9 @@ Usage:
 
     /// `app cmd -h` 时显示的帮助文档.
     pub fn formated_command_help(&self, app_name: &String) -> String {
-        if self._help_document != "" {
+        if let Some(s) = &self._help_document {
             // 自定义了帮助文档的情况;
-            return format!("{}", self._help_document);
+            return format!("{}", s);
         } else {
             // 自动生成这个 Command 的帮助文档
 
@@ -255,9 +256,9 @@ Usage:
 
     // /// 检查 example 里面的 command 是否能够被正常解析.
     // pub fn check(&self, app_name: &String, cmd_args: &Vec<String>) -> DidHandled {
-    //     // for x in &self.exaples.val {
-    //     //     let sadfdsaf = helper::parse_arg_string(x.command);
-    //     // }
+    //     for x in &self._exaples.val {
+    //         let asdf = parse_arg_string(x.command);
+    //     }
     //     self.try_run(app_name, cmd_args, false)
     // }
 

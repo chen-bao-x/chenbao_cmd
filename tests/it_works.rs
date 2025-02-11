@@ -1,4 +1,4 @@
-use std::{rc::Rc, vec};
+use std::vec;
 
 #[test]
 fn it_works() {
@@ -14,81 +14,93 @@ fn it_works() {
         .add_subcommand(
             SubCommand::new("run")
                 .about("运行程序")
-                .action(ArgAction::Empty(Rc::new(|| {
+                .action(ArgAction::Empty(&|| {
                     print!(r#"runing commmand: "run""#);
-                }))),
+                })),
         )
         .add_subcommand(
             SubCommand::new("help")
                 .about("运行程序")
-                .action(ArgAction::Empty(Rc::new(|| {}))),
+                .action(ArgAction::Empty(&(|| {}))),
         )
         .add_subcommand(
             SubCommand::new("build")
                 .short_name("b")
                 .about("编译项目")
-                .action(ArgAction::Bool(Rc::new(|_x| {
+                .action(ArgAction::Bool(&|_x| {
                     print!("command \"run\"{:?}\n", _x);
-                }))),
+                })),
         )
         .add_subcommand(
             SubCommand::new("empty")
                 .about("用来测试 ArgCount::Zero ")
-                .action(ArgAction::Empty(Rc::new(|| {
-                    print!("testing arg_zero");
-                }))),
+                .action(ArgAction::Empty(
+                    &|| {
+                        print!("testing arg_zero");
+                    },
+                )),
         )
         .add_subcommand(
             SubCommand::new("number")
                 .about("用来测试 ArgCount::Zero ")
-                .action(ArgAction::Number(Rc::new(|_x| {
-                    print!("testing arg_zero");
-                }))),
+                .action(ArgAction::Number(
+                    &|_x| {
+                        print!("testing arg_zero");
+                    },
+                )),
         )
         .add_subcommand(
             SubCommand::new("vecnumber")
                 .about("用来测试 ArgCount::Zero ")
-                .action(ArgAction::NumberMutiple(Rc::new(|_x| {
-                    print!("testing arg_zero");
-                }))),
+                .action(ArgAction::NumberMutiple(
+                    &|_x| {
+                        print!("testing arg_zero");
+                    },
+                )),
         )
         .add_subcommand(
             SubCommand::new("vecbool")
                 .about("用来测试 ArgCount::Zero ")
-                .action(ArgAction::BoolMutiple(Rc::new(|_x| {
-                    print!("testing arg_zero");
-                }))),
+                .action(ArgAction::BoolMutiple(
+                    &|_x| {
+                        print!("testing arg_zero");
+                    },
+                )),
         )
         .add_subcommand(
             SubCommand::new("vecstring")
                 .about("用来测试 ArgCount::Zero ")
-                .action(ArgAction::StringMutiple(Rc::new(|_x| {
-                    print!("testing arg_zero");
-                }))),
+                .action(ArgAction::StringMutiple(
+                    &|_x| {
+                        print!("testing arg_zero");
+                    },
+                )),
         )
         .add_subcommand(
             SubCommand::new("repl")
                 .about("用来测试 ArgCount::Repl(_) ")
-                .action(ArgAction::Dialog(Rc::new(|r| {
-                    // let mut 你要吃几个汉堡包: arg_type::Number = 0;
-                    // let mut 多个_number: arg_type::NumberMutiple = vec![];
-                    // let mut string: String = String::new();
-                    // let mut string_multiple: Vec<String> = vec![];
-                    // let mut req_bool: arg_type::Bool = false;
-                    // let mut req_bool_multiple: arg_type::BoolMutiple = vec![];
-                    let items = vec!["one", "two", "tree", "four"];
+                .action(ArgAction::Dialog(
+                    &(|r| {
+                        // let mut 你要吃几个汉堡包: arg_type::Number = 0;
+                        // let mut 多个_number: arg_type::NumberMutiple = vec![];
+                        // let mut string: String = String::new();
+                        // let mut string_multiple: Vec<String> = vec![];
+                        // let mut req_bool: arg_type::Bool = false;
+                        // let mut req_bool_multiple: arg_type::BoolMutiple = vec![];
+                        let items = vec!["one", "two", "tree", "four"];
 
-                    let _req_bool = r.number("你要吃几个汉堡包?");
-                    let _你要吃几个汉堡包 = r.number_multiple("多个 number");
-                    let _多个_number = r.string("string");
-                    let _string = r.string_multiple("string_multiple");
-                    let _string_multiple = r.yes_or_no("bool");
-                    let _path = r.path("path");
-                    let _path_multiple = r.path_multiple("path");
-                    let _seleted = r.select("selete", &items);
-                    let _seleted = r.select_multiple("selete", &items);
-                    // .yes_or_no_multiple(&mut req_bool_multiple, "bool mutiple")
-                }))),
+                        let _req_bool = r.number("你要吃几个汉堡包?");
+                        let _你要吃几个汉堡包 = r.number_multiple("多个 number");
+                        let _多个_number = r.string("string");
+                        let _string = r.string_multiple("string_multiple");
+                        let _string_multiple = r.yes_or_no("bool");
+                        let _path = r.path("path");
+                        let _path_multiple = r.path_multiple("path");
+                        let _seleted = r.select("selete", &items);
+                        let _seleted = r.select_multiple("selete", &items);
+                        // .yes_or_no_multiple(&mut req_bool_multiple, "bool mutiple")
+                    }),
+                )),
         );
 
     // let re = app.debug_duplicate_names_check();
