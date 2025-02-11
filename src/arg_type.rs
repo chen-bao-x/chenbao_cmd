@@ -1,4 +1,5 @@
-//! 
+//!  命令行参数的类型,
+
 pub type String = std::string::String;
 pub type StringMutiple = Vec<String>;
 pub type Number = i128;

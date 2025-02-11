@@ -1,4 +1,8 @@
-use crate::{action::{ArgAction, ParseResult, SubcommandArgsValue}, examples_types::Examples};
+use crate::{
+    action::{ArgAction, ParseResult, SubcommandArgsValue},
+    examples_types::Examples,
+    helper::*,
+};
 
 use super::*;
 use application::DidHandled;
@@ -6,45 +10,64 @@ use owo_colors::OwoColorize;
 use prettytable::{row, table, Table};
 use std::vec;
 
-// subcommand
+/// 设置子命令的名称 功能和参数类型.  
 #[derive(Clone)]
 pub struct SubCommand {
     /// 命令名   
     /// 命令的名称长度最好不要超过 20 个字符.
-    pub command_name: String,
+    pub _command_name: String,
 
     /// 命令名的简写形式, 通常是一个字符  
-    pub short_name: String,
+    pub _short_name: String,
 
     /// 一句话介绍此命令
-    pub about: String,
+    pub _about: String,
 
     /// 是用此命令的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
-    pub exaples: Examples,
+    pub _exaples: Examples,
 
     /// 自定义的帮助文档.
     /// 当用户使用 help 命令查询此命令时显示的帮助文档.
-    pub help_document: String,
+    pub _help_document: String,
 
     /// 子命令需要的参数的类型以及该子命令的 action.
     /// 在打印子命令的帮助文档时需要用到此属性.
-    pub arg_type_with_action: ArgAction,
+    pub _arg_type_with_action: ArgAction,
 }
 
 impl SubCommand {
+    /// 创建新的 SubCommand.  
+    ///
+    /// 这几个已经又了默认实现, 不能再作为子命令的名称:  
+    /// "-h" "--help"  
+    /// "-e" "--help"  
+    /// "-e" "--example"  
+    /// ```
+    /// use chenbao_cmd::*;
+    /// SubCommand::new("build")
+    ///     .short_name("b")
+    ///     .about("编译项目")
+    ///     .action(ArgAction::Bool(std::rc::Rc::new(|_x| {
+    ///         print!("command \"run\"{:?}\n", _x);
+    ///     })));
+    /// ```
     pub fn new(name: &str) -> Self {
-        if is_debug_mode() && name == "" {
-            eprintln!("WARNING: name 不能是空字符串 \"\", name 的值至少需要一个字符.");
+        #[cfg(debug_assertions)]
+        {
+            let re = SubCommand::command_name_check(name);
+            if let Err(s) = re {
+                panic!("{}", s);
+            }
         }
 
         return SubCommand {
-            command_name: name.to_string(),
-            about: "".to_string(),
-            help_document: "".to_string(),
-            short_name: "".to_string(),
-            exaples: Examples::new(),
-            arg_type_with_action: ArgAction::default(),
+            _command_name: name.to_string(),
+            _about: "".to_string(),
+            _help_document: "".to_string(),
+            _short_name: "".to_string(),
+            _exaples: Examples::new(),
+            _arg_type_with_action: ArgAction::default(),
         };
     }
 }
@@ -53,14 +76,14 @@ impl SubCommand {
     /// set `Command.short_name`
     pub fn short_name(self, short_name: &str) -> Self {
         let mut re = self;
-        re.short_name = short_name.to_string();
+        re._short_name = short_name.to_string();
         return re;
     }
 
     /// set `SubCommand.about`
     pub fn about(self, about: &str) -> Self {
         let mut re = self;
-        re.about = about.to_string();
+        re._about = about.to_string();
         return re;
     }
 
@@ -68,7 +91,7 @@ impl SubCommand {
         // TODO: 检查 `command: &'static str` 是否是可执行的 command.
 
         let mut re = self;
-        re.exaples.add_single_example(command, description);
+        re._exaples.add_single_example(command, description);
 
         return re;
     }
@@ -76,14 +99,14 @@ impl SubCommand {
     /// set `Command.example`
     pub fn help_document(self, str: &str) -> Self {
         let mut re = self;
-        re.help_document = str.to_string();
+        re._help_document = str.to_string();
         return re;
     }
 
     /// set `Command.action`
     pub fn action(self, need_arg_type: ArgAction) -> Self {
         let mut re = self;
-        re.arg_type_with_action = need_arg_type;
+        re._arg_type_with_action = need_arg_type;
 
         return re;
     }
@@ -111,7 +134,7 @@ impl SubCommand {
         println!(
             "子命令 {} {} 的使用示例:",
             app_name,
-            self.command_name.styled_sub_command()
+            self._command_name.styled_sub_command()
         );
         println!();
         println!("{}", table);
@@ -119,10 +142,10 @@ impl SubCommand {
 }
 impl SubCommand {
     fn formated_usage(&self, app_name: &String) -> String {
-        let command_name = self.command_name.styled_sub_command();
-        let short_name = self.short_name.styled_sub_command();
+        let command_name = self._command_name.styled_sub_command();
+        let short_name = self._short_name.styled_sub_command();
 
-        let arg_in_usage = match self.arg_type_with_action {
+        let arg_in_usage = match self._arg_type_with_action {
             ArgAction::Empty(_) => "".to_string(),
 
             ArgAction::String(_) => format!(r#"{}"#, "String".styled_arg_type()),
@@ -139,7 +162,7 @@ impl SubCommand {
         };
 
         let arg_in_usage = arg_in_usage;
-        if self.short_name == "" {
+        if self._short_name == "" {
             return format!(
                 r#"
 Usage: 
@@ -154,21 +177,21 @@ Usage:
             );
         }
     }
-    
+
     /// `app cmd -h` 时显示的帮助文档.
     pub fn formated_command_help(&self, app_name: &String) -> String {
-        if self.help_document != "" {
+        if self._help_document != "" {
             // 自定义了帮助文档的情况;
-            return format!("{}", self.help_document);
+            return format!("{}", self._help_document);
         } else {
             // 自动生成这个 Command 的帮助文档
 
-            let arg_message: String = if self.arg_type_with_action.arg_message() == "" {
+            let arg_message: String = if self._arg_type_with_action.arg_message() == "" {
                 format!(
                     r#"
                 {}{}"#,
                     "Arguments:\n",
-                    self.arg_type_with_action.arg_message()
+                    self._arg_type_with_action.arg_message()
                 )
             } else {
                 String::new()
@@ -195,7 +218,7 @@ Usage:
 {flag_message}
 
 "#,
-                about = self.about,
+                about = self._about,
                 // command_name = self.command_name.styled_sub_command(),
                 Usage = self.formated_usage(&app_name),
             );
@@ -206,12 +229,12 @@ Usage:
 
     /// 已经格式化好了, 直接放进 Table 打印就行.
     pub fn formated_command_example(&self, app_name: &String) -> Table {
-        if self.exaples.is_empty() {
+        if self._exaples.is_empty() {
             let mut table = table!();
             table.set_format(helper::table_formater());
 
             let arg = self
-                .arg_type_with_action
+                ._arg_type_with_action
                 .value_example()
                 .bright_green()
                 .to_string();
@@ -219,14 +242,14 @@ Usage:
             table.add_row(row![
                 format!(
                     "{app_name} {command_name} {arg}",
-                    command_name = self.command_name.styled_sub_command(),
+                    command_name = self._command_name.styled_sub_command(),
                 ),
-                self.about
+                self._about
             ]);
 
             return table;
         } else {
-            return self.exaples.pretty_formated();
+            return self._exaples.pretty_formated();
         }
     }
 
@@ -261,10 +284,10 @@ Usage:
         }
 
         {
-            let m = self.arg_type_with_action.arg_message();
+            let m = self._arg_type_with_action.arg_message();
             let v = SubcommandArgsValue::new(cmd_args.clone());
 
-            return match &self.arg_type_with_action {
+            return match &self._arg_type_with_action {
                 ArgAction::Empty(func) => {
                     match_and_try_run(v.get_empty(), need_to_run, m, |_s| func())
                 }
@@ -349,5 +372,42 @@ Usage:
                 }
             }
         }
+    }
+
+    /// 检查 子命令 的名字是否符合要求.
+    #[cfg(debug_assertions)] // 只在 debug 模式下使用
+    fn command_name_check(name: &str) -> Result<(), String> {
+        if name == "" {
+            let msg = format!(
+                r#"
+    {error}: name 不能是空字符串 "", name 的值至少需要一个字符.
+    
+    如果想要设置只有 程序名 时执行的 action.
+    
+    请使用: app_default_action(_) 来设置.
+    示例:
+    let app = App::new("cmd")
+        .app_default_action(||{{ /* action */ }}) 
+    "#,
+                error = "error".red(),
+            );
+
+            return Err(msg);
+        }
+
+        let arr = vec!["-h", "--help", "-e", "--example", "-v", "--version"];
+
+        if arr.contains(&name) {
+            let msg = format!(
+                r#"
+{error}: name 不能是 "-h", "--help", "-e", "--example", "-v", "--version", 这些已经有了默认的实现.
+    "#,
+                error = "error".red(),
+            );
+
+            return Err(msg);
+        }
+
+        return Ok(());
     }
 }

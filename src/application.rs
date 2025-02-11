@@ -1,74 +1,9 @@
-//! # 示例:  
-//! ```rust
-//!    use std::rc::Rc;
-//!    use chenbao_cmd::*;
-//!    let app = App::new("cmd")
-//!        .about("这个程序主要是为了测试我写的 cmd crate")
-//!        .author("chen bao")
-//!        .version_message("0.0.1".to_string())
-//!        .add_subcommand(
-//!            SubCommand::new("run")
-//!                .about("运行程序")
-//!                .action(ArgAction::Empty(Rc::new(|| {
-//!                    print!(r#"runing commmand: "run""#);
-//!                }))),
-//!        )
-//!        .add_subcommand(
-//!            SubCommand::new("help")
-//!                .about("运行程序")
-//!                .action(ArgAction::Empty(Rc::new(|| {}))),
-//!        )
-//!        .add_subcommand(
-//!            SubCommand::new("build")
-//!                .short_name("b")
-//!                .about("编译项目")
-//!                .action(ArgAction::Bool(Rc::new(|_x| {
-//!                    print!("command \"run\"{:?}\n", _x);
-//!                }))),
-//!        )
-//!        .add_subcommand(
-//!            SubCommand::new("empty")
-//!                .about("用来测试 ArgCount::Zero ")
-//!                .action(ArgAction::Empty(Rc::new(|| {
-//!                    print!("testing arg_zero");
-//!                }))),
-//!        )
-//!        .add_subcommand(
-//!            SubCommand::new("number")
-//!                .about("用来测试 ArgCount::Zero ")
-//!                .action(ArgAction::Number(Rc::new(|_x| {
-//!                    print!("testing arg_zero");
-//!                }))),
-//!        )
-//!        .add_subcommand(
-//!            SubCommand::new("vecnumber")
-//!                .about("用来测试 ArgCount::Zero ")
-//!                .action(ArgAction::NumberMutiple(Rc::new(|_x| {
-//!                    print!("testing arg_zero");
-//!                }))),
-//!        )
-//!        .add_subcommand(
-//!            SubCommand::new("vecbool")
-//!                .about("用来测试 ArgCount::Zero ")
-//!                .action(ArgAction::BoolMutiple(Rc::new(|_x| {
-//!                    print!("testing arg_zero");
-//!                }))),
-//!        )
-//!        .add_subcommand(
-//!            SubCommand::new("vecstring")
-//!                .about("用来测试 ArgCount::Zero ")
-//!                .action(ArgAction::StringMutiple(Rc::new(|_x| {
-//!                    print!("testing arg_zero");
-//!                }))),
-//!        );
-//!    app.run();
-//! ```
-use crate::examples_types::Examples;
+use crate::{examples_types::Examples, helper::*};
 
 use super::*;
 use owo_colors::OwoColorize;
 use prettytable::{row, table};
-use std::{collections::HashSet, rc::Rc};
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub enum AppDefaultAction {
@@ -85,6 +20,7 @@ impl Default for AppDefaultAction {
     }
 }
 
+/// 用于表示拥护输入的子命令和参数是否被正确解析.
 #[derive(Clone, Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub enum DidHandled {
     /// 表示匹配到了相关命令并正确执行了相关 action.
@@ -94,40 +30,107 @@ pub enum DidHandled {
     Failed(String),
 }
 
+/// 用于创建命令行程序并设置程序的 子命令.
+///
+/// # 示例:  
+/// ```rust
+///    use std::rc::Rc;
+///    use chenbao_cmd::*;
+///    let app = App::new("cmd")
+///        .about("这个程序主要是为了测试我写的 cmd crate")
+///        .author("chen bao")
+///        .version_message("0.0.1".to_string())
+///        .add_subcommand(
+///            SubCommand::new("run")
+///                .about("运行程序")
+///                .action(ArgAction::Empty(Rc::new(|| {
+///                    print!(r#"runing commmand: "run""#);
+///                }))),
+///        )
+///        .add_subcommand(
+///            SubCommand::new("help")
+///                .about("运行程序")
+///                .action(ArgAction::Empty(Rc::new(|| {}))),
+///        )
+///        .add_subcommand(
+///            SubCommand::new("build")
+///                .short_name("b")
+///                .about("编译项目")
+///                .action(ArgAction::Bool(Rc::new(|_x| {
+///                    print!("command \"run\"{:?}\n", _x);
+///                }))),
+///        )
+///        .add_subcommand(
+///            SubCommand::new("empty")
+///                .about("用来测试 ArgCount::Zero ")
+///                .action(ArgAction::Empty(Rc::new(|| {
+///                    print!("testing arg_zero");
+///                }))),
+///        )
+///        .add_subcommand(
+///            SubCommand::new("number")
+///                .about("用来测试 ArgCount::Zero ")
+///                .action(ArgAction::Number(Rc::new(|_x| {
+///                    print!("testing arg_zero");
+///                }))),
+///        )
+///        .add_subcommand(
+///            SubCommand::new("vecnumber")
+///                .about("用来测试 ArgCount::Zero ")
+///                .action(ArgAction::NumberMutiple(Rc::new(|_x| {
+///                    print!("testing arg_zero");
+///                }))),
+///        )
+///        .add_subcommand(
+///            SubCommand::new("vecbool")
+///                .about("用来测试 ArgCount::Zero ")
+///                .action(ArgAction::BoolMutiple(Rc::new(|_x| {
+///                    print!("testing arg_zero");
+///                }))),
+///        )
+///        .add_subcommand(
+///            SubCommand::new("vecstring")
+///                .about("用来测试 ArgCount::Zero ")
+///                .action(ArgAction::StringMutiple(Rc::new(|_x| {
+///                    print!("testing arg_zero");
+///                }))),
+///        );
+///    app.run();
+/// ```
 #[derive(Clone)]
 pub struct App {
     /// 此程序的名称;  
     /// 所有自动生成的帮助文档和示例都会使用到 {app_name}
-    pub app_name: String,
+    pub _app_name: String,
 
     /// 一句话介绍此程序.
-    pub about: &'static str,
+    pub _about: &'static str,
 
     /// 此程序的作者
-    pub author: &'static str,
+    pub _author: &'static str,
 
     /// 当用户查询此程序的 version 信息时显示的信息;
-    pub app_version_message: String,
+    pub _app_version_message: String,
 
     /// 此程序的帮助文档,
-    pub help_message: String,
+    pub _help_message: String,
 
     /// 此 app 的所有子命令.
-    pub sub_commands: Vec<SubCommand>,
+    pub _sub_commands: Vec<SubCommand>,
 
-    /// let env_arg: Vec<String> = std::env::args().collect()
-    pub env_arg: Vec<String>,
+    /// `let env_arg: Vec<String> = std::env::args().collect()`
+    pub _env_arg: Vec<String>,
 
     /// 使用此程序的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
-    pub examples: Examples,
+    pub _examples: Examples,
 
     /// 子命令的 “参数”
-    pub sub_command_arg: Vec<String>,
+    pub _sub_command_arg: Vec<String>,
 
     /// 只输入了程序名称没有子命令也没有任何 flag 时之行的 action.
     /// 默认是 AppDefaultAction::PrintHelpMessage;
-    pub app_default_action: AppDefaultAction,
+    pub _app_default_action: AppDefaultAction,
 }
 
 impl App {
@@ -138,7 +141,6 @@ impl App {
     /// ```rust
     ///     let app = chenbao_cmd::App::new("cmd");
     ///     app.run();
-    ///
     /// ```
     pub fn new(app_name: &str) -> App {
         let mut cmd_name: String = app_name.to_string();
@@ -152,7 +154,7 @@ impl App {
         }
 
         return Self {
-            app_name: cmd_name,
+            _app_name: cmd_name,
             ..Default::default()
         };
     }
@@ -160,7 +162,7 @@ impl App {
     /// 在这里介绍这个程序是什么. 做什么用的
     pub fn about(self, about: &'static str) -> Self {
         let mut re = self;
-        re.about = about;
+        re._about = about;
         return re;
     }
 
@@ -170,7 +172,7 @@ impl App {
     pub fn add_app_example(self, command: &'static str, description: &'static str) -> Self {
         let mut re = self;
 
-        re.examples.add_single_example(command, description);
+        re._examples.add_single_example(command, description);
 
         return re;
     }
@@ -180,7 +182,7 @@ impl App {
     /// 此 method 只需要调用一次.  
     pub fn version_message(self, version: String) -> Self {
         let mut re = self;
-        re.app_version_message = version;
+        re._app_version_message = version;
         return re;
     }
 
@@ -189,24 +191,28 @@ impl App {
     /// 此 method 只需要调用一次.  
     pub fn author(self, author: &'static str) -> Self {
         let mut re = self;
-        re.author = author;
+        re._author = author;
         return re;
     }
 
-    /// 设置只有 程序名, 没有任何子命令也没有任何参数时执行的 action.
+    ///
+    /// 设置只有 程序名, 没有任何子命令也没有任何参数时执行的 action.  
+    /// 默认情况下是打印此程序的帮助信息.  
+    /// `app_default_action` 有默认实现, 可以不用设置.
     pub fn app_default_action<F>(self, action: F) -> Self
     where
         F: Fn() -> () + 'static,
     {
         let mut re = self;
-        re.app_default_action = AppDefaultAction::CustomAction(Rc::new(action));
+        re._app_default_action = AppDefaultAction::CustomAction(Rc::new(action));
         return re;
     }
 
+    /// 为此 App 添加子命令
     pub fn add_subcommand(self, command: SubCommand) -> Self {
         let mut re = self;
 
-        re.sub_commands.push(command);
+        re._sub_commands.push(command);
 
         return re;
     }
@@ -215,7 +221,7 @@ impl App {
     /// 此方法会替换掉由 chenbao_cmd 提供的帮助文档.
     pub fn help_message(self, message: String) -> Self {
         let mut re = self;
-        re.help_message = message;
+        re._help_message = message;
 
         return re;
     }
@@ -247,11 +253,12 @@ impl App {
 
     /// like run(), but has result.
     pub fn try_run(self) -> DidHandled {
-        debug_run(|| {
+        #[cfg(debug_assertions)]
+        {
             self.debug_check();
-        });
+        }
 
-        let option_string = self.env_arg.get(1);
+        let option_string = self._env_arg.get(1);
         match option_string {
             None => {
                 //只输入了程序名称没有子命令也没有任何 flag
@@ -263,7 +270,7 @@ impl App {
                     let re = self._heldle_app_version();
                     match re {
                         DidHandled::Handled => return re,
-                        DidHandled::Failed(_x) => {}
+                        DidHandled::Failed(_x) => { /* continue. */ }
                     }
                 }
 
@@ -299,26 +306,28 @@ impl App {
 
     //  ------- Print -------
 
+    /// 打印 App 的帮助信息.  
+    /// `app -h` 时调用此函数.
     pub fn print_app_help(&self) {
-        if self.help_message.trim() != "" {
+        if self._help_message.trim() != "" {
             // 有自定义的帮助文档.
-            print!("{}", self.help_message);
+            print!("{}", self._help_message);
             return;
         }
 
         let mut table = table!();
         table.set_format(table_formater());
 
-        for x in &self.sub_commands {
-            let short_name = if x.short_name == "" {
+        for x in &self._sub_commands {
+            let short_name = if x._short_name == "" {
                 "".to_string()
             } else {
                 // ", ".to_string() + &x.short_name
 
-                format!("{}{}", &x.short_name, ", ",)
+                format!("{}{}", &x._short_name, ", ",)
             };
 
-            let command_name = &x.command_name;
+            let command_name = &x._command_name;
 
             // TODO: 为 cmd_name 添加颜色.
             let cmd_name = format!(
@@ -327,7 +336,7 @@ impl App {
                 command_name.styled_sub_command(),
             );
 
-            table.add_row(row![cmd_name, x.about]);
+            table.add_row(row![cmd_name, x._about]);
         }
 
         let all_commands_about: String = table.to_string();
@@ -358,11 +367,11 @@ impl App {
 {flag_message}
 {commands}
 "#,
-            about = self.about,
-            author = if self.author == "" {
+            about = self._about,
+            author = if self._author == "" {
                 "".to_string()
             } else {
-                format!("{} {}", "Author:", self.author)
+                format!("{} {}", "Author:", self._author)
             },
             // version = self.app_versioCn_message,
             commands = format!("{}\n{}", "Commands:".bright_green(), all_commands_about),
@@ -370,13 +379,15 @@ impl App {
         print!("{}", message);
     }
 
+    /// 打印 App 的示例.  
+    /// `app -e` 时调用此函数.
     pub fn print_app_examples(&self) {
-        if self.examples.is_empty() {
+        if self._examples.is_empty() {
             let mut table = table!();
             table.set_format(table_formater());
 
-            for x in &self.sub_commands {
-                let rows = x.formated_command_example(&self.app_name);
+            for x in &self._sub_commands {
+                let rows = x.formated_command_example(&self._app_name);
 
                 rows.row_iter().for_each(|a| {
                     table.add_row(a.clone());
@@ -388,7 +399,7 @@ impl App {
             let mut table = table!();
             table.set_format(helper::table_formater());
 
-            self.examples.pretty_formated().row_iter().for_each(|a| {
+            self._examples.pretty_formated().row_iter().for_each(|a| {
                 table.add_row(a.clone());
             });
 
@@ -403,49 +414,59 @@ impl App {
     /// app help 的默认实现;  
     /// // -h --help -v -version
     fn _handle_app_help(&self) -> DidHandled {
-        let command_name = self.env_arg[1].clone();
+        let command_name = &*self._env_arg[1];
+        // let arr = vec!["-h", "--help", "help", "h"];
+        let arr = vec!["-h", "--help"];
 
-        if !(command_name == "-h" || command_name == "--help") {
-            return DidHandled::Failed("不是程序的 help 命令".to_string());
-        }
-
-        //  "help" 命令 的默认实现, 这里处理的是: 是用 help 命令查询其他命令.
-        // 比如 `app help run` 查询 run 命令的帮助文档. 效果等同于 `app run --help`
-        if let Some(需要查询的命令名称) = self.sub_command_arg.first() {
-            if 需要查询的命令名称 == "-h" || 需要查询的命令名称 == "--help" {
-                // 命令 ‘help' 的帮助文档
-
-                println!("命令 ‘help' 的帮助文档");
-
-                return DidHandled::Handled;
-            }
-
-            for x in &self.sub_commands {
-                if 需要查询的命令名称 == &x.command_name || 需要查询的命令名称 == &x.short_name
-                {
-                    x.print_command_help(&self.app_name);
-                    return DidHandled::Handled;
-                }
-            }
-            return DidHandled::Failed(format!(
-                "查询的命令 {} 不存在",
-                需要查询的命令名称.styled_sub_command()
-            ));
-        } else {
+        if arr.contains(&command_name) {
             // 打印 App 的帮助信息.
             self.print_app_help();
             return DidHandled::Handled;
+        } else {
+            return DidHandled::Failed(r#"不是 "-h" or "--help""#.to_string());
         }
+
+        // if !(command_name == "-h" || command_name == "--help") {
+        //     return DidHandled::Failed("不是程序的 help 命令".to_string());
+        // }
+
+        // //  "help" 命令 的默认实现, 这里处理的是: 是用 help 命令查询其他命令.
+        // // 比如 `app help run` 查询 run 命令的帮助文档. 效果等同于 `app run --help`
+        // if let Some(需要查询的命令名称) = self.sub_command_arg.first() {
+        //     if 需要查询的命令名称 == "-h" || 需要查询的命令名称 == "--help" {
+        //         // TODO: 命令 ‘help' 的帮助文档
+
+        //         println!("命令 ‘help' 的帮助文档");
+
+        //         return DidHandled::Handled;
+        //     }
+
+        //     for x in &self.sub_commands {
+        //         if 需要查询的命令名称 == &x.command_name || 需要查询的命令名称 == &x.short_name
+        //         {
+        //             x.print_command_help(&self.app_name);
+        //             return DidHandled::Handled;
+        //         }
+        //     }
+        //     return DidHandled::Failed(format!(
+        //         "查询的命令 {} 不存在",
+        //         需要查询的命令名称.styled_sub_command()
+        //     ));
+        // } else {
+        //     // 打印 App 的帮助信息.
+        //     self.print_app_help();
+        //     return DidHandled::Handled;
+        // }
     }
 
     /// app version 命令的默认实现
     fn _heldle_app_version(&self) -> DidHandled {
         // 处理 App 的flags.
-        // -h --help -v -version
-        let command_name = self.env_arg[1].clone();
+        //  -v -version
+        let command_name = self._env_arg[1].clone();
 
         if command_name == "-v" || command_name == "--version" {
-            println!("{}", self.app_version_message);
+            println!("{}", self._app_version_message);
 
             return DidHandled::Handled;
         } else {
@@ -453,29 +474,25 @@ impl App {
         }
     }
 
-    /// app version 命令的默认实现
-    fn _heldle_app_example(&self) -> DidHandled {
-        // 处理 App 的flags.
-        // -h --help -v -version
-        let command_name = self.env_arg[1].clone();
+    // /// app version 命令的默认实现
+    // fn _heldle_app_example(&self) -> DidHandled {
+    //     // 处理 App 的flags.
+    //     // -h --help -v -version
+    //     let command_name = self.env_arg[1].clone();
 
-        if command_name == "v"
-            || command_name == "version"
-            || command_name == "-v"
-            || command_name == "--version"
-        {
-            println!("{}", self.app_version_message);
+    //     if command_name == "-v" || command_name == "--version" {
+    //         println!("{}", self.app_version_message);
 
-            return DidHandled::Handled;
-        } else {
-            return DidHandled::Failed(format!("不是 {} 命令", "version".styled_sub_command()));
-        }
-    }
+    //         return DidHandled::Handled;
+    //     } else {
+    //         return DidHandled::Failed(format!("不是 {} 命令", "version".styled_sub_command()));
+    //     }
+    // }
 
     /// 处理只输入了程序名称没有子命令也没有任何 flag 的情况.
     fn _handle_app_default_acton(&self) -> DidHandled {
-        if self.env_arg.len() == 1 {
-            match &self.app_default_action {
+        if self._env_arg.len() == 1 {
+            match &self._app_default_action {
                 AppDefaultAction::PrintHelpMessage => {
                     (&self).print_app_help();
                     return DidHandled::Handled;
@@ -491,11 +508,11 @@ impl App {
     }
 
     fn _handle_commands(&self, command_name: &String) -> DidHandled {
-        for x in &self.sub_commands {
-            if command_name == &x.command_name || command_name == &x.short_name {
-                let cmd_args = &self.sub_command_arg;
+        for x in &self._sub_commands {
+            if command_name == &x._command_name || command_name == &x._short_name {
+                let cmd_args = &self._sub_command_arg;
 
-                return x.run(&self.app_name, cmd_args);
+                return x.run(&self._app_name, cmd_args);
             } else {
                 continue;
             }
@@ -503,18 +520,14 @@ impl App {
 
         return DidHandled::Failed(format!(
             "未知命令: {:?}\n\n输入 {} -h 查看帮助",
-            self.env_arg, self.app_name
+            self._env_arg, self._app_name
         ));
     }
 
     fn _handle_app_example(&self) -> DidHandled {
-        let command_name = self.env_arg[1].clone();
+        let command_name = self._env_arg[1].clone();
 
-        if command_name == "e"
-            || command_name == "example"
-            || command_name == "-e"
-            || command_name == "--example"
-        {
+        if command_name == "-e" || command_name == "--example" {
             self.print_app_examples();
 
             return DidHandled::Handled;
@@ -542,8 +555,8 @@ impl App {
             vec![]
         };
 
-        re.sub_command_arg = sub_cmd_arg;
-        re.env_arg = env_arg;
+        re._sub_command_arg = sub_cmd_arg;
+        re._env_arg = env_arg;
 
         let did_handled = re.try_run();
 
@@ -560,6 +573,7 @@ impl App {
     /// 检查子命令示example是否能正确的被解析
     /// 检查子命令的名字是否重复.
     /// 命令人类友好度检查
+    #[cfg(debug_assertions)] // 只在 debug 模式下使用
     pub(crate) fn debug_check(&self) {
         let re = self.debug_duplicate_names_check();
         if let Err(duplicate_names) = re {
@@ -572,7 +586,10 @@ impl App {
     }
 
     /// 检查子命令的名字是否重复.
-    pub(crate) fn debug_duplicate_names_check(&self) -> Result<(), HashSet<&String>> {
+    #[cfg(debug_assertions)] // 只在 debug 模式下使用
+    pub(crate) fn debug_duplicate_names_check(&self) -> Result<(), std::collections::HashSet<&String>> {
+        use std::collections::HashSet;
+
         // 重复了的子命令名称.
         let mut duplicated_names: HashSet<&String> = HashSet::new();
 
@@ -589,9 +606,9 @@ impl App {
             default_impls.insert("-e".to_string());
             default_impls.insert("--example".to_string());
         }
-        for x in &self.sub_commands {
+        for x in &self._sub_commands {
             {
-                let name = &x.command_name;
+                let name = &x._command_name;
 
                 if set.contains(&name) || default_impls.contains(name) {
                     duplicated_names.insert(&name);
@@ -606,7 +623,7 @@ impl App {
             }
 
             {
-                let short_name = &x.short_name;
+                let short_name = &x._short_name;
 
                 if short_name == "" {
                     continue;
@@ -643,16 +660,16 @@ impl Default for App {
         };
 
         Self {
-            app_name: Default::default(),
-            about: Default::default(),
-            author: Default::default(),
-            app_version_message: "0.0.1".to_string(),
-            help_message: Default::default(),
-            sub_commands: Default::default(),
-            env_arg: env_arg,
-            examples: Examples::new(),
-            sub_command_arg: sub_cmd_arg,
-            app_default_action: Default::default(),
+            _app_name: Default::default(),
+            _about: Default::default(),
+            _author: Default::default(),
+            _app_version_message: "0.0.1".to_string(),
+            _help_message: Default::default(),
+            _sub_commands: Default::default(),
+            _env_arg: env_arg,
+            _examples: Examples::new(),
+            _sub_command_arg: sub_cmd_arg,
+            _app_default_action: Default::default(),
         }
     }
 }

@@ -8,6 +8,7 @@ use std::{default, num::ParseIntError, path::Path, rc::Rc};
 pub type ParseResultMessage = String;
 pub type ParseResult<T> = Result<T, ParseResultMessage>;
 
+/// 设置子命令的参数数量和参数类型, 以及·该子命令要执行的函数.
 #[derive(Clone)]
 pub enum ArgAction {
     Empty(Rc<dyn Fn() -> ()>),
@@ -15,25 +16,25 @@ pub enum ArgAction {
     /// String
     String(Rc<dyn Fn(arg_type::String) -> ()>),
 
-    /// Vec<String>
+    /// `Vec<String>`
     StringMutiple(Rc<dyn Fn(arg_type::StringMutiple) -> ()>),
 
     /// isize
     Number(Rc<dyn Fn(arg_type::Number) -> ()>),
 
-    /// Vec<isize>
+    /// `Vec<isize>`
     NumberMutiple(Rc<dyn Fn(arg_type::NumberMutiple) -> ()>),
 
     /// Path
     Path(Rc<dyn Fn(Rc<arg_type::Path>) -> ()>),
 
-    /// Vec<Path>
+    /// `Vec<Path>`
     PathMutiple(Rc<dyn Fn(Rc<arg_type::PathMutiple>) -> ()>),
 
     /// bool
     Bool(Rc<dyn Fn(arg_type::Bool) -> ()>),
 
-    /// Vec<bool>
+    /// `Vec<bool>`
     BoolMutiple(Rc<dyn Fn(arg_type::BoolMutiple) -> ()>),
 
     // Repl(Rc<dyn Fn(Option<String>) -> ()>),

@@ -4,19 +4,9 @@ use dialoguer::theme::Theme;
 use owo_colors::OwoColorize;
 use prettytable::format::TableFormat;
 
-pub(crate) fn is_debug_mode() -> bool {
-    return cfg!(debug_assertions);
-}
-
-/// 只会在 DEBUG 模式下运之行 f 函数.
-pub(crate) fn debug_run<F>(f: F)
-where
-    F: Fn() -> (),
-{
-    if cfg!(debug_assertions) {
-        f()
-    }
-}
+// pub(crate) fn is_debug_mode() -> bool {
+//     return cfg!(debug_assertions);
+// }
 
 // 我有这样的一个字符串: r#" "a" "b" c "d" e 32424 "32543" "a b dsaf""#
 // 我希望将这个字符串解析成 Vec<String> vec!["a", "b", "c", "d", "e", "32424", "32543", "a b dsaf"]

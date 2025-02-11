@@ -1,5 +1,7 @@
 use owo_colors::OwoColorize;
 use std::{num::ParseIntError, path::Path, vec};
+use crate::helper::*;
+use crate::vec_string::VecString;
 
 use super::*;
 
@@ -25,9 +27,9 @@ impl DialogGenerator {
     /// * `input` :
     ///     1. 如果是 `None`, 则会在命令行里要求用户来提交所需要的参数.  
     ///     2. 如果是 `Some(json_string)`, 则会直接解析并返回所需参数.
-    /// ```
-    /// let cmd = chenbao_cmd::DialogGenerator::new(None);
-    /// let cmd2 = chenbao_cmd::DialogGenerator::new(Some(r#"["hello"]"#));
+    /// ```rs
+    /// let cmd = crate::DialogGenerator::new(None);
+    /// let cmd2 = crate::DialogGenerator::new(Some(r#"["hello"]"#));
     /// ```
     pub fn new(input: Option<&str>) -> Self {
         match input {
@@ -40,8 +42,8 @@ impl DialogGenerator {
         }
     }
 
-    /// ```
-    /// let cmd = chenbao_cmd::DialogGenerator::new_from_jsonstr(r#"["hello"]"#);
+    /// ```rs
+    /// let cmd = crate::DialogGenerator::new_from_jsonstr(r#"["hello"]"#);
     /// ```
     pub fn new_from_jsonstr(str: &str) -> Self {
         // &str -> ReplQuestions
@@ -56,9 +58,10 @@ impl DialogGenerator {
                 };
             }
             Err(_e) => {
-                debug_run(|| {
-                    println!("转换为 json 时出错: {}", _e);
-                });
+                #[cfg(debug_assertions)]
+                {
+                    println!("{}{}转换为 json 时出错: {}", _e, file!(), line!(),);
+                }
 
                 return Self {
                     arguments: vec![],
@@ -70,8 +73,8 @@ impl DialogGenerator {
     }
 
     /// 转换为 json 字符串.
-    /// ```
-    /// let cmd = chenbao_cmd::DialogGenerator::new(Some(r#"["hello"]"#));
+    /// ```rs
+    /// let cmd = DialogGenerator::new(Some(r#"["hello"]"#));
     /// let json_string = cmd.to_json_str();
     /// ```
     pub fn to_json_str(&self) -> String {
@@ -1120,7 +1123,7 @@ eat_howmuch_hanbager: {}
 struct DialogGeter();
 impl DialogGeter {
     fn get_string(prompt: &str) -> String {
-        let re = dialoguer::Input::<String>::with_theme(&ColoredTheme::new())
+        let re = dialoguer::Input::<String>::with_theme(&crate::helper::ColoredTheme::new())
             .with_prompt(prompt)
             .interact_text();
 
@@ -1136,13 +1139,13 @@ impl DialogGeter {
     }
 
     fn get_string_multiple(prompt: &str) -> Vec<String> {
-        let re = dialoguer::Input::<String>::with_theme(&ColoredTheme::new())
+        let re = dialoguer::Input::<String>::with_theme(&crate::helper::ColoredTheme::new())
             .with_prompt(prompt)
             .interact_text();
 
         match re {
             Ok(input) => {
-                return parse_arg_string(&input);
+                return crate::helper::parse_arg_string(&input);
             }
             Err(_e) => {
                 eprintln!("{}", _e.red());

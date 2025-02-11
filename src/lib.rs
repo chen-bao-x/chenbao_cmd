@@ -1,4 +1,98 @@
+//!
+//!
+//!
+//! # 命令行程序命令设计规范:
+//!  ternary
+//! 现在的命令更多的是人类手动在 Terminal 中输入, 此规范主要是为了让人类在手动输入命令行指令时能 更轻松 更愉快 更容易输入正确的指令.
+//!
+//! > 如今，尽管许多 CLI 程序主要(甚至专门)是被人类使用，而不是被程序调用，但它们的许多交互设计仍然承载着过去的包袱。 现在是时候摆脱这些历史包袱了: 如果一个命令主要是被人类所使用的，而不是程序，那么它就应该首先以人为本设计。
+//! > from: <https://sunbk201.github.io/cli-guidelines-zh/>
+//!
+//! ## rules:  
+//! 1. 三元命令风格:
+//! 2. 如果是多个 “参数” 并且每个参数的类型相同:
+//! 3. 每个子命令的有的 flags: -h -e
+//! 4. app 自带的 flags: -h -e -v
+//! 5. 如果 “参数” 数量非常多, 类型各有不同, 建议使用 “交互式问答” 的形式来让用户能够 愉快的 轻松的 正确的 完成参数的填写, Don't let your user Panic.
+//!
+//!   
+//! ### 1. 三元命令风格:
+//! 程序名 子命令 参数
+//! ```sh
+//! cargo new "./folder/projectName"
+//! ```
+//!
+//! 参数可以省略:
+//! ```sh
+//! cargo init
+//! ```
+//!
+//! 只有程序名的情况也是可以的:
+//!
+//! 1. 则可以打印帮助信息, 例如:
+//! ```sh
+//! cargo
+//! ```
+//!
+//! 2. 也可以直接执行, 例如:
+//! ```sh
+//! ls
+//! ```
+//!
+//!
+//! ### 2. 如果是多个 “参数” 并且每个参数的类型相同:
+//! 备注: 很多时候 “参数” 默认被当作 字符串, 还是建议使用 半角双引号 包裹起来.
+//! ```sh
+//! cargo add packageA packageB packageC
+//!
+//! # 效果应该等同于:
+//! cargo add packageA
+//! cargo add packageB
+//! cargo add packageC
+//!
+//! ```
+//!
+//! ### 3. 每个子命令都有的 flags:
+//! ```sh
+//! app subcommand -h           # 查看帮助文档
+//! app subcommand --help       # 查看帮助文档
+//!
+//!
+//! app subcommand -e           # 查看示例
+//! app subcommand --example    # 查看示例
+//! ```
+//!
+//! ### 4. app 自带的 flags:
+//! ```sh
+//! app -h                      # 查看帮助文档
+//! app --help                  # 查看帮助文档
+//!
+//! app -v                      # 查看 app 的版本信息
+//! app --version               # 查看 app 的版本信息
+//!
+//! app -e                      # 查看示例
+//! app --example               # 查看示例
+//! ```
+//!
+//!
+//! ### 5. 如果 “参数” 数量非常多, 类型各有不同, 建议使用 “交互式问答” 的形式来让用户能够 愉快的 轻松的 正确的 完成参数的填写, Don't let your user Panic.
+//! 方案一:
+//! ```sh
+//! git commit --repl
+//! > did you want commit all changed files(y/n)?
+//! y
+//! > input commit message:
+//! 新增了某某功能.
+//! > runing command: git commit "all" = "true", message = "添加了一个新功能"  # for API.
+//!
+//! > runing command: git.commit().all().message("新增了某某功能.")
+//!
+//! ```
+//!
+//!
+
 // ------- Public -------
+
 
 pub use action::ArgAction;
 pub use application::App;
@@ -8,147 +102,10 @@ pub mod arg_type;
 
 // ------- Private -------
 
-use helper::*;
-use vec_string::*;
 mod action;
 mod application;
 mod examples_types;
 mod helper;
 mod question_and_anser;
-pub use question_and_anser::DialogGenerator;
 mod subcommand;
 mod vec_string;
-
-// #[cfg(test)]
-// mod tests {
-
-//     use std::{rc::Rc, vec};
-
-//     use super::*;
-
-//     #[test]
-//     fn it_works() {
-//         // ------- 基础 API 测试 -------
-//         println!("--------hello--------");
-
-//         let app = App::new("cmd")
-//             .about("这个程序主要是为了测试我写的 cmd crate")
-//             .author("chen bao")
-//             .version_message("0.0.1".to_string())
-//             .add_subcommand(
-//                 SubCommand::new("run")
-//                     .about("运行程序")
-//                     .action(ArgAction::Empty(Rc::new(|| {
-//                         print!(r#"runing commmand: "run""#);
-//                     }))),
-//             )
-//             .add_subcommand(
-//                 SubCommand::new("help")
-//                     .about("运行程序")
-//                     .action(ArgAction::Empty(Rc::new(|| {}))),
-//             )
-//             .add_subcommand(
-//                 SubCommand::new("build")
-//                     .short_name("b")
-//                     .about("编译项目")
-//                     .action(ArgAction::Bool(Rc::new(|_x| {
-//                         print!("command \"run\"{:?}\n", _x);
-//                     }))),
-//             )
-//             .add_subcommand(
-//                 SubCommand::new("empty")
-//                     .about("用来测试 ArgCount::Zero ")
-//                     .action(ArgAction::Empty(Rc::new(|| {
-//                         print!("testing arg_zero");
-//                     }))),
-//             )
-//             .add_subcommand(
-//                 SubCommand::new("number")
-//                     .about("用来测试 ArgCount::Zero ")
-//                     .action(ArgAction::Number(Rc::new(|_x| {
-//                         print!("testing arg_zero");
-//                     }))),
-//             )
-//             .add_subcommand(
-//                 SubCommand::new("vecnumber")
-//                     .about("用来测试 ArgCount::Zero ")
-//                     .action(ArgAction::NumberMutiple(Rc::new(|_x| {
-//                         print!("testing arg_zero");
-//                     }))),
-//             )
-//             .add_subcommand(
-//                 SubCommand::new("vecbool")
-//                     .about("用来测试 ArgCount::Zero ")
-//                     .action(ArgAction::BoolMutiple(Rc::new(|_x| {
-//                         print!("testing arg_zero");
-//                     }))),
-//             )
-//             .add_subcommand(
-//                 SubCommand::new("vecstring")
-//                     .about("用来测试 ArgCount::Zero ")
-//                     .action(ArgAction::StringMutiple(Rc::new(|_x| {
-//                         print!("testing arg_zero");
-//                     }))),
-//             )
-//             .add_subcommand(
-//                 SubCommand::new("repl")
-//                     .about("用来测试 ArgCount::Repl(_) ")
-//                     .action(ArgAction::Dialog(Rc::new(|r| {
-//                         // let mut 你要吃几个汉堡包: arg_type::Number = 0;
-//                         // let mut 多个_number: arg_type::NumberMutiple = vec![];
-//                         // let mut string: String = String::new();
-//                         // let mut string_multiple: Vec<String> = vec![];
-//                         // let mut req_bool: arg_type::Bool = false;
-//                         // let mut req_bool_multiple: arg_type::BoolMutiple = vec![];
-//                         let items = vec!["one", "two", "tree", "four"];
-
-//                         let req_bool = r.number("你要吃几个汉堡包?");
-//                         let 你要吃几个汉堡包 = r.number_multiple("多个 number");
-//                         let 多个_number = r.string("string");
-//                         let string = r.string_multiple("string_multiple");
-//                         let string_multiple = r.yes_or_no("bool");
-//                         let path = r.path("path");
-//                         let path_multiple = r.path_multiple("path");
-//                         let seleted = r.select("selete", &items);
-//                         let seleted = r.select_multiple("selete", &items);
-//                         // .yes_or_no_multiple(&mut req_bool_multiple, "bool mutiple")
-//                     }))),
-//             );
-
-//         // let re = app.debug_duplicate_names_check();
-//         // match re {
-//         //     Ok(_) => {}
-//         //     Err(s) => println!("这些命令名称重复了: ··{:?}", s),
-//         // }
-
-//         let _ = app
-//             // .deubg_run(vec!["cmd", "-e"])
-//             // .deubg_run(vec!["cmd", "help"])
-//             // .deubg_run(vec!["cmd", "-h"])
-//             // .deubg_run(vec!["cmd", "b"])
-//             .deubg_run(vec!["cmd", "build", "true"])
-//             // .deubg_run(vec!["cmd", "build", "-h"])
-//             // .deubg_run(vec!["cmd", "build", "-e"])
-//             // .deubg_run(vec!["cmd", "run"])
-//             // .deubg_run(vec!["cmd", "run", "3"])
-//             // .deubg_run(vec!["cmd", "run", "3", "32"]) // 类型正确, 数量不正确
-//             // .deubg_run(vec!["cmd", "run", "-h"])
-//             // .deubg_run(vec!["cmd", "-h"])
-//             // .deubg_run(vec!["cmd"])
-//             // .deubg_run(vec!["cmd", "arg_one", "-h"])
-
-//             ;
-//     }
-
-//     #[test]
-//     fn maadsfin() {
-//         println!("请输入一些文本：");
-
-//         let mut input = String::new();
-//         std::io::stdin()
-//             .read_line(&mut input)
-//             .expect("读取输入失败");
-
-//         println!("你输入了：{}", input.trim());
-//     }
-// }
