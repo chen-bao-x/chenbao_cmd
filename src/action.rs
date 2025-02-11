@@ -1,6 +1,6 @@
 use super::arg_type;
-use crate::helper::StyledString;
-use std::{default, num::ParseIntError, path::Path, rc::Rc};
+use crate::{helper::StyledString, vec_string::VecString};
+use std::{default, fmt::Debug, num::ParseIntError, path::Path};
 
 // pub type Number = i128;
 // pub type PathBuf = path::PathBuf;
@@ -11,7 +11,7 @@ pub type ParseResult<T> = Result<T, ParseResultMessage>;
 /// 设置子命令的参数数量和参数类型, 以及·该子命令要执行的函数.
 #[derive(Clone)]
 pub enum ArgAction {
-    Empty(&'static dyn Fn() -> ()),
+    Empty(&'static dyn Fn(arg_type::Empty) -> ()),
 
     String(&'static dyn Fn(arg_type::String) -> ()),
 
@@ -21,9 +21,9 @@ pub enum ArgAction {
 
     NumberMutiple(&'static dyn Fn(arg_type::NumberMutiple) -> ()),
 
-    Path(&'static dyn Fn(Rc<arg_type::Path>) -> ()),
+    Path(&'static dyn Fn(arg_type::Path) -> ()),
 
-    PathMutiple(&'static dyn Fn(Rc<arg_type::PathMutiple>) -> ()),
+    PathMutiple(&'static dyn Fn(arg_type::PathMutiple) -> ()),
 
     Bool(&'static dyn Fn(arg_type::Bool) -> ()),
 
@@ -48,9 +48,10 @@ impl std::fmt::Display for ArgAction {
         }
     }
 }
+
 impl default::Default for ArgAction {
     fn default() -> Self {
-        Self::Empty(&|| {})
+        Self::Empty(&|_x| {})
     }
 }
 
@@ -139,7 +140,7 @@ impl ArgAction {
     //         ArgAction::BoolMutiple(_) => r#"参数类型: [bool...], 示例: true false true false"#,
     //         ArgAction::Dialog(_) => "",
     //     };
-
+    //
     //     return sdafdsaf.to_string();
     // }
 
@@ -177,7 +178,6 @@ impl SubcommandArgsValue {
     ) -> Self {
         Self {
             subcommand_args: value,
-            // need_arg_type,
         }
     }
 
@@ -306,20 +306,19 @@ impl SubcommandArgsValue {
                 }
 
                 return Err(format!(
-                    "参数不正确: 参数的类型是 {}, {} 类型的值可以是: {}, {}, 实际接收到的是: {}",
-                    "bool".styled_arg_type(),
-                    "bool".styled_arg_type(),
-                    true.styled_arg(),
-                    false.styled_arg(),
-                    lovwercase.styled_arg(),
+                    "参数不正确: 参数的类型是 {btype}, {btype} 类型的值可以是: {t}, {f}, 实际接收到的是: {args}",
+                    btype = "bool".styled_arg_type(),
+                    t = true.styled_arg(),
+                    f = false.styled_arg(),
+                    args = VecString::vec_to_json(&s).styled_arg(),
                 ));
             } else {
                 return Err(format!(
-                    "参数不正确: 参数的类型是 {}, {} 类型的值可以是: {}, {}",
+                    "参数数量不正确: 需要 1 个 {} 类型的参数, 实际接收到了 {} 个参数: {}",
                     "bool".styled_arg_type(),
-                    "bool".styled_arg_type(),
-                    true.styled_arg(),
-                    false.styled_arg(),
+                    s.len().styled_sub_command(),
+                    // s.styled_arg(),
+                    format!("{:?}", s).styled_arg(),
                 ));
             }
         } else {
@@ -361,24 +360,33 @@ impl SubcommandArgsValue {
         return Ok(re);
     }
 
+    // pub fn get_repl(self) -> ParseResult<Option<String>> {
     pub fn get_repl(self) -> ParseResult<Option<String>> {
-        let s = self.subcommand_args;
+        let args = self.subcommand_args;
 
-        if s.len() == 0 {
+        if args.len() == 0 {
             return Ok(None);
         }
 
-        if s.len() == 1 {
-            if let Some(str) = s.first() {
+        if args.len() == 1 {
+            if let Some(str) = args.first() {
+                let mut a = arg_type::Dialog::new(Some(str));
+                a.string("prompt");
+                a.string("prompt");
+                a.string("prompt");
+
                 return Ok(Some(str.clone()));
             }
         }
 
         return Err(format!(
-            "参数数量不正确: 需要 0 个 或者 1 个 参数, 实际接收到了 {} 个参数: {:?}",
-            s.len().styled_sub_command(),
+            "参数数量不正确: 需要 0 个 或者 1 个 参数, 实际接收到了 {} 个参数: {}",
+            args.len().styled_sub_command(),
+            serde_json::to_string(&args).unwrap().styled_arg(),
+            // adsfadsf(args).styled_arg(),
             // s.styled_arg(),
-            format!("{:?}", s).styled_arg(),
+            // format!("{}", args),
+            // VecString::vec_to_json(&args).styled_arg(),
         ));
     }
 }

@@ -1,4 +1,4 @@
-pub(crate)  struct VecString();
+pub(crate) struct VecString();
 impl VecString {
     pub(crate) fn json_to_vec(json_string: &str) -> Result<Vec<String>, serde_json::Error> {
         return serde_json::from_str(json_string);
@@ -7,6 +7,24 @@ impl VecString {
     pub(crate) fn vec_to_json(vec: &Vec<String>) -> String {
         let json_value = serde_json::json!(vec);
         return json_value.to_string();
+    }
+
+    pub(crate) fn adsfadsf(a: Vec<String>) -> String {
+        let mut str: String = String::new();
+        let mut index: usize = 0;
+        // serde_json::to_string(&a);
+
+        str.push('[');
+        for x in &a {
+            str.push_str(&format!("{:?}", x));
+            if index < a.len() - 1 {
+                str.push_str(", ");
+            }
+
+            index += 1;
+        }
+        str.push(']');
+        return str;
     }
 }
 

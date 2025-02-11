@@ -93,12 +93,11 @@
 
 // ------- Public -------
 
-
 pub use action::ArgAction;
 pub use application::App;
 pub use application::DidHandled;
-pub use subcommand::SubCommand;
 pub mod arg_type;
+pub use subcommand::SubCommand;
 
 // ------- Private -------
 

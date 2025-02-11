@@ -285,94 +285,106 @@ Usage:
         }
 
         {
-            let m = self._arg_type_with_action.arg_message();
+            let arg_message = self._arg_type_with_action.arg_message();
+            // let n = need_to_run;
             let v = SubcommandArgsValue::new(cmd_args.clone());
 
-            return match &self._arg_type_with_action {
-                ArgAction::Empty(func) => {
-                    match_and_try_run(v.get_empty(), need_to_run, m, |_s| func())
-                }
-                ArgAction::String(func) => {
-                    match_and_try_run(v.get_string(), need_to_run, m, |_s| func(_s))
-                }
-                ArgAction::StringMutiple(func) => {
-                    match_and_try_run(v.get_vec_string(), need_to_run, m, |_s| func(_s))
-                }
-                ArgAction::Number(func) => {
-                    match_and_try_run(v.get_number(), need_to_run, m, |_s| func(_s))
-                }
-                ArgAction::NumberMutiple(func) => {
-                    match_and_try_run(v.get_vec_number(), need_to_run, m, |_s| func(_s))
-                }
-                ArgAction::Path(func) => {
-                    match_and_try_run(v.get_path(), need_to_run, m, |_s| func(_s.into()))
-                }
-                ArgAction::PathMutiple(func) => {
-                    match_and_try_run(v.get_vec_path(), need_to_run, m, |_s| func(_s.into()))
-                }
-                ArgAction::Bool(func) => {
-                    match_and_try_run(v.get_bool(), need_to_run, m, |_s| func(_s))
-                }
-                ArgAction::BoolMutiple(func) => {
-                    match_and_try_run(v.get_vec_bool(), need_to_run, m, |_s| func(_s))
-                }
-                ArgAction::Dialog(func) => match_and_try_run(v.get_repl(), need_to_run, m, |s| {
-                    func(&mut arg_type::Dialog::new(s.as_deref()));
+            let re = match &self._arg_type_with_action {
+                ArgAction::Empty(f) => adsfdasf(v.get_empty(), need_to_run, f),
+                ArgAction::String(f) => adsfdasf(v.get_string(), need_to_run, f),
+                ArgAction::StringMutiple(f) => adsfdasf(v.get_vec_string(), need_to_run, f),
+                ArgAction::Number(f) => adsfdasf(v.get_number(), need_to_run, f),
+                ArgAction::NumberMutiple(f) => adsfdasf(v.get_vec_number(), need_to_run, f),
+                ArgAction::Path(f) => adsfdasf(v.get_path(), need_to_run, f),
+                ArgAction::PathMutiple(f) => adsfdasf(v.get_vec_path(), need_to_run, f),
+                ArgAction::Bool(f) => adsfdasf(v.get_bool(), need_to_run, f),
+                ArgAction::BoolMutiple(f) => adsfdasf(v.get_vec_bool(), need_to_run, f),
+                ArgAction::Dialog(f) => adsfdasf(v.get_repl(), need_to_run, &|s| {
+                    f(&mut arg_type::Dialog::new(s.as_deref()));
                 }),
             };
-        }
 
-        /// 之前匹配 ArgAction 的时候发现
-        /// ArgAction::String(func) => {
-        ///     let re = v.get_string();
-        ///     match re {
-        ///         Ok(s) => {
-        ///             if need_run_action {
-        ///                 func(s);
-        ///             }
-        ///             return DidHandled::Handled;
-        ///         }
-        ///         Err(e) => {
-        ///             // return DidHandled::Failed(e);
-        ///             return DidHandled::Failed(format!(
-        ///                 "{}\n{}",
-        ///                 e,
-        ///                 self.arg_type_with_action.arg_message()
-        ///             ));
-        ///         }
-        ///     }
-        /// }
-        ///
-        fn match_and_try_run<T, F>(
-            result: ParseResult<T>,
-            need_run_action: bool,
-            arg_message: String,
-            func: F,
-        ) -> DidHandled
-        where
-            F: Fn(T) -> (),
-        {
-            match result {
-                Ok(s) => {
-                    if need_run_action {
-                        func(s);
-                    }
-                    return DidHandled::Handled;
-                }
-                Err(e) => {
-                    return DidHandled::Failed(format!(
-                        r#"
+            if let DidHandled::Failed(err) = re {
+                return DidHandled::Failed(format!(
+                    r#"
 {}{}
 
 {}
-                    "#,
-                        "error: ".bright_red(),
-                        e,
-                        arg_message,
-                    ));
+                "#,
+                    "error: ".bright_red(),
+                    err,
+                    arg_message,
+                ));
+            }
+
+            return re;
+
+            fn adsfdasf<T>(
+                result: ParseResult<T>,
+                need_run_action: bool,
+                func: &dyn Fn(T) -> (),
+            ) -> DidHandled {
+                match result {
+                    Ok(s) => {
+                        if need_run_action {
+                            func(s);
+                        }
+                        return DidHandled::Handled;
+                    }
+                    Err(err) => return DidHandled::Failed(err),
                 }
             }
         }
+
+        // {
+        //     let arg_message = self._arg_type_with_action.arg_message();
+        //     let n = need_to_run;
+        //     let v = SubcommandArgsValue::new(cmd_args.clone());
+
+        //     return match &self._arg_type_with_action {
+        //         ArgAction::Empty(f) => _try_run(v.get_empty(), n, arg_message, f),
+        //         ArgAction::String(f) => _try_run(v.get_string(), n, arg_message, f),
+        //         ArgAction::StringMutiple(f) => _try_run(v.get_vec_string(), n, arg_message, f),
+        //         ArgAction::Number(f) => _try_run(v.get_number(), n, arg_message, f),
+        //         ArgAction::NumberMutiple(f) => _try_run(v.get_vec_number(), n, arg_message, f),
+        //         ArgAction::Path(f) => _try_run(v.get_path(), n, arg_message, f),
+        //         ArgAction::PathMutiple(f) => _try_run(v.get_vec_path(), n, arg_message, f),
+        //         ArgAction::Bool(f) => _try_run(v.get_bool(), n, arg_message, f),
+        //         ArgAction::BoolMutiple(f) => _try_run(v.get_vec_bool(), n, arg_message, f),
+        //         ArgAction::Dialog(f) => _try_run(v.get_repl(), n, arg_message, &|s| {
+        //             f(&mut arg_type::Dialog::new(s.as_deref()));
+        //         }),
+        //     };
+        // }
+
+        //         // match_and_try_run
+        //         fn _try_run<T>(
+        //             result: ParseResult<T>,
+        //             need_run_action: bool,
+        //             arg_message: String,
+        //             func: &dyn Fn(T) -> (),
+        //         ) -> DidHandled {
+        //             match result {
+        //                 Ok(s) => {
+        //                     if need_run_action {
+        //                         func(s);
+        //                     }
+        //                     return DidHandled::Handled;
+        //                 }
+        //                 Err(err) => {
+        //                     return DidHandled::Failed(format!(
+        //                         r#"
+        // {}{}
+
+        // {}
+        //                     "#,
+        //                         "error: ".bright_red(),
+        //                         err,
+        //                         arg_message,
+        //                     ));
+        //                 }
+        //             }
+        //         }
     }
 
     /// 检查 子命令 的名字是否符合要求.

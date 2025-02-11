@@ -9,11 +9,11 @@ pub type PathMutiple = Vec<std::path::PathBuf>;
 pub type Bool = bool;
 pub type BoolMutiple = Vec<bool>;
 pub type Dialog = crate::question_and_anser::DialogGenerator;
-// pub type Empty = self::Empty;
+// pub type Empty = self::EmptyArg;
 
 /// 用来表示这个 subcommand 不需要参数.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Empty {}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Empty;
 
 impl Empty {
     pub fn new() -> Self {
