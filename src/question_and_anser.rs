@@ -1,17 +1,17 @@
-use crate::helper::*;
 use crate::vec_string::VecString;
+use crate::{helper::*, vec_string::ReplArgType};
 use owo_colors::OwoColorize;
 use std::{num::ParseIntError, path::Path, vec};
 
 use super::*;
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Debug)]
+#[derive(Debug)]
 /// ArgType::Repl(_) 需要用到 ReplQuestions.  
 pub struct DialogGenerator {
     /// 从 json_str 转换过来的 Vec<String>.
     /// 也可能是通过 问答式命令行交互 获取到的 Vec<String>.
     pub arguments: Vec<String>,
-
+    // pub arguments: ReplArgType,
     /// 当 Self 是从 json_str 转换过来的 Vec<String> 时,
     /// 这个用户标记读取到了哪一个参数.
     pub index: usize,
@@ -71,12 +71,16 @@ impl DialogGenerator {
     }
 }
 
+fn key_gen(index: usize, prompt: &str) {}
+
 impl DialogGenerator {
     // _string
     pub fn string(&mut self, prompt: &str) -> &arg_type::String {
         if self.is_from_json {
             let val = self.arguments.get(self.index);
-
+            
+            key_gen(self.index, prompt);
+            
             match val {
                 Some(str) => {
                     // 成功获取到了需要的参数
@@ -332,7 +336,6 @@ impl DialogGenerator {
 
     pub fn finesh(&mut self, app_name: &String, command_name: &String) {
         println!("runing command: {app_name} {command_name} stdin << '###_marker_###'\n{}\n###_marker_###", self.to_json_str());
-     
     }
 }
 
