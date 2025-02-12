@@ -6,8 +6,8 @@ impl VecString {
 
     pub(crate) fn vec_to_json(vec: &Vec<String>) -> String {
         let json_value = serde_json::json!(vec);
-        // return serde_json::to_string_pretty(&json_value).unwrap();
-        return json_value.to_string();
+        return serde_json::to_string_pretty(&json_value).unwrap();
+        // return json_value.to_string();
     }
 }
 

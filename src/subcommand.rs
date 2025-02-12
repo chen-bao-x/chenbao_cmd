@@ -300,15 +300,16 @@ Usage:
                 ArgAction::Bool(f) => run(v.get_bool(), need_to_run, f),
                 ArgAction::BoolMutiple(f) => run(v.get_vec_bool(), need_to_run, f),
                 ArgAction::Dialog(f) => run(v.get_repl(), need_to_run, &|s| match s {
-                    Some(str) => {
-                        let re = &mut arg_type::Dialog::new_from_jsonstr(str.as_str());
+                    Some(json_string) => {
+                        /* 收到了参数 "stdin" */
+                        let re = &mut arg_type::Dialog::new_from_jsonstr(json_string.as_str());
                         match re {
                             Ok(repl) => {
                                 f(repl);
-
-                                repl.finesh(app_name, &self._command_name);
+                                // repl.finesh(app_name, &self._command_name);
                             }
                             Err(_e) => {
+                                // json_string 解码为 Vec<String> 时发生错误.
                                 panic!(
                                     "\n参数不正确.\nsee {} {} {} for more infomation.\n",
                                     app_name.magenta(),
@@ -319,6 +320,8 @@ Usage:
                         }
                     }
                     None => {
+                        /* 该子命令没有收到参数 */
+
                         let mut repl = arg_type::Dialog::new();
                         f(&mut repl);
                         repl.finesh(app_name, &self._command_name);

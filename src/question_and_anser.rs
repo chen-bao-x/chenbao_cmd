@@ -331,7 +331,7 @@ impl DialogGenerator {
     }
 
     pub fn finesh(&mut self, app_name: &String, command_name: &String) {
-        println!("runing command: {app_name} {command_name} '{}'", self.to_json_str());
+        println!("runing command: {app_name} {command_name} stdin << '###_marker_###'\n{}\n###_marker_###", self.to_json_str());
      
     }
 }

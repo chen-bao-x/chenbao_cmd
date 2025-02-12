@@ -573,7 +573,7 @@ impl App {
     pub(crate) fn debug_check(&self) {
         let re = self.debug_duplicate_names_check();
         if let Err(duplicate_names) = re {
-            println!("{}", "有子命令的名称重复了:".bold());
+            println!("{}", "ERROR 有子命令的名称重复了:".red());
 
             duplicate_names.iter().for_each(|x| {
                 println!("{}", x);

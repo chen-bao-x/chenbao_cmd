@@ -359,23 +359,48 @@ impl SubcommandArgsValue {
 
     // pub fn get_repl(self) -> ParseResult<Option<String>> {
     pub fn get_repl(self) -> ParseResult<Option<String>> {
-        let args = self.subcommand_args;
+        let subcmd_args = self.subcommand_args; // 子命令的参数.
 
-        if args.len() == 0 {
+        if subcmd_args.len() == 0 {
             return Ok(None);
         }
 
-        if args.len() == 1 {
-            if let Some(str) = args.first() {
-                return Ok(Some(str.clone()));
+        if subcmd_args.len() == 1 {
+            if let Some(repl_first_arg) = subcmd_args.first() {
+                if repl_first_arg == "stdin" {
+                    let re = get_string_from();
+                    match re {
+                        Ok(json_string) => return Ok(Some(json_string)),
+                        Err(err) => {
+                            return Err(err);
+                        }
+                    }
+                }
             }
         }
 
         return Err(format!(
             "参数数量不正确: 需要 0 个 或者 1 个 参数, 实际接收到了 {} 个参数: {}",
-            args.len().styled_sub_command(),
-            serde_json::to_string(&args).unwrap().styled_arg(),
+            subcmd_args.len().styled_sub_command(),
+            serde_json::to_string(&subcmd_args).unwrap().styled_arg(),
         ));
+    }
+}
+
+fn get_string_from() -> ParseResult<String> {
+    use std::io::Read;
+
+    let mut buffer = String::new();
+
+    // get string from stdin
+    let a = std::io::stdin().read_to_string(&mut buffer);
+    match a {
+        Ok(_) => {
+            return Ok(buffer);
+        }
+        Err(_e) => {
+            return Err(format!("{}", _e));
+        }
     }
 }
 
