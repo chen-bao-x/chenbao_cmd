@@ -1,5 +1,5 @@
 use super::arg_type;
-use crate::{helper::StyledString, vec_string::VecString};
+use crate::helper::StyledString;
 use std::{default, num::ParseIntError, path::Path};
 
 pub type ParseResultMessage = String;
@@ -8,6 +8,7 @@ pub type ParseResult<T> = Result<T, ParseResultMessage>;
 /// 设置子命令的参数数量和参数类型, 以及·该子命令要执行的函数.
 #[derive(Clone)]
 pub enum ArgAction {
+    /// 表示这个子命令不需要参数
     Empty(&'static dyn Fn(arg_type::Empty) -> ()),
 
     String(&'static dyn Fn(arg_type::String) -> ()),
@@ -26,6 +27,7 @@ pub enum ArgAction {
 
     BoolMutiple(&'static dyn Fn(arg_type::BoolMutiple) -> ()),
 
+    /// 对话式交互.
     Dialog(&'static dyn Fn(&mut arg_type::Dialog) -> ()),
 }
 
@@ -303,11 +305,12 @@ impl SubcommandArgsValue {
                 }
 
                 return Err(format!(
-                    "参数不正确: 参数的类型是 {btype}, {btype} 类型的值可以是: {t}, {f}, 实际接收到的是: {args}",
+                    "参数不正确: 参数的类型是 {btype}, {btype} 类型的值可以是: {t}, {f}, 实际接收到的是: {args:?}",
                     btype = "bool".styled_arg_type(),
                     t = true.styled_arg(),
                     f = false.styled_arg(),
-                    args = VecString::vec_to_json(&s).styled_arg(),
+                    // args = VecString::vec_to_json(&s).styled_arg(),
+                    args = s,
                 ));
             } else {
                 return Err(format!(

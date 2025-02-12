@@ -115,7 +115,7 @@ pub struct App {
     pub _help_message: String,
 
     /// 此 app 的所有子命令.
-    pub _sub_commands: Vec<SubCommand>,
+    pub _commands: Vec<Cmd>,
 
     /// `let env_arg: Vec<String> = std::env::args().collect()`
     pub _env_arg: Vec<String>,
@@ -125,7 +125,7 @@ pub struct App {
     pub _examples: Examples,
 
     /// 子命令的 “参数”
-    pub _sub_command_arg: Vec<String>,
+    pub _commands_arg: Vec<String>,
 
     /// 只输入了程序名称没有子命令也没有任何 flag 时之行的 action.
     /// 默认是 AppDefaultAction::PrintHelpMessage;
@@ -141,21 +141,21 @@ impl App {
     ///     let app = chenbao_cmd::App::new("cmd");
     ///     app.run();
     /// ```
-    pub fn new(app_name: &str) -> App {
-        let mut cmd_name: String = app_name.to_string();
-
-        let arr: Vec<String> = std::env::args().collect();
-        if let Some(path) = arr.get(0) {
-            let p = std::path::Path::new(path).file_name();
-            if let Some(name) = p {
-                cmd_name = name.to_string_lossy().into_owned();
-            }
-        }
-
-        return Self {
-            _app_name: cmd_name,
+    // pub fn new(app_name: &str) -> App {
+    pub fn new() -> App {
+        Self {
             ..Default::default()
-        };
+        }
+    }
+
+    /// 在这里介绍这个程序是什么. 做什么用的
+    /// ```rs
+    /// let app = App::new().app_name(env!("CARGO_PKG_NAME"));
+    /// ```
+    pub fn app_name(self, app_name: &'static str) -> Self {
+        let mut re = self;
+        re._app_name = app_name.to_string();
+        return re;
     }
 
     /// 在这里介绍这个程序是什么. 做什么用的
@@ -179,9 +179,12 @@ impl App {
     /// 此程序的版本信息.  
     /// 当用户使用 `app --version` 时会打印在这里添加的版本信息.  
     /// 此 method 只需要调用一次.  
-    pub fn version_message(self, version: String) -> Self {
+    /// ```rs
+    /// let app = App::new().version_message(env!("CARGO_PKG_VERSION"));
+    /// ```
+    pub fn version_message(self, version_message: String) -> Self {
         let mut re = self;
-        re._app_version_message = version;
+        re._app_version_message = version_message;
         return re;
     }
 
@@ -204,11 +207,12 @@ impl App {
         return re;
     }
 
-    /// 为此 App 添加子命令
-    pub fn add_subcommand(self, command: SubCommand) -> Self {
+    /// add command
+    /// 为此 App 添加指令
+    pub fn add_command(self, command: Cmd) -> Self {
         let mut re = self;
 
-        re._sub_commands.push(command);
+        re._commands.push(command);
 
         return re;
     }
@@ -314,7 +318,7 @@ impl App {
         let mut table = table!();
         table.set_format(table_formater());
 
-        for x in &self._sub_commands {
+        for x in &self._commands {
             let short_name = if x._short_name == "" {
                 "".to_string()
             } else {
@@ -323,7 +327,7 @@ impl App {
                 format!("{}{}", &x._short_name, ", ",)
             };
 
-            let command_name = &x._command_name;
+            let command_name = &x._name;
 
             // TODO: 为 cmd_name 添加颜色.
             let cmd_name = format!(
@@ -382,7 +386,7 @@ impl App {
             let mut table = table!();
             table.set_format(table_formater());
 
-            for x in &self._sub_commands {
+            for x in &self._commands {
                 let rows = x.formated_command_example(&self._app_name);
 
                 rows.row_iter().for_each(|a| {
@@ -504,9 +508,9 @@ impl App {
     }
 
     fn _handle_commands(&self, command_name: &String) -> DidHandled {
-        for x in &self._sub_commands {
-            if command_name == &x._command_name || command_name == &x._short_name {
-                let cmd_args = &self._sub_command_arg;
+        for x in &self._commands {
+            if command_name == &x._name || command_name == &x._short_name {
+                let cmd_args = &self._commands_arg;
 
                 return x.run(&self._app_name, cmd_args);
             } else {
@@ -551,7 +555,7 @@ impl App {
             vec![]
         };
 
-        re._sub_command_arg = sub_cmd_arg;
+        re._commands_arg = sub_cmd_arg;
         re._env_arg = env_arg;
 
         let did_handled = re.try_run();
@@ -604,9 +608,9 @@ impl App {
             default_impls.insert("-e".to_string());
             default_impls.insert("--example".to_string());
         }
-        for x in &self._sub_commands {
+        for x in &self._commands {
             {
-                let name = &x._command_name;
+                let name = &x._name;
 
                 if set.contains(&name) || default_impls.contains(name) {
                     duplicated_names.insert(&name);
@@ -648,21 +652,26 @@ impl App {
 }
 impl Default for App {
     fn default() -> Self {
-        let env_arg: Vec<String> = std::env::args().collect();
+        let env_args: Vec<String> = std::env::args().collect();
 
-        let mut app_name: String = String::new();
-
-        let arr: Vec<String> = std::env::args().collect();
-        if let Some(path) = arr.get(0) {
-            let p = std::path::Path::new(path).file_name();
-            if let Some(name) = p {
-                app_name = name.to_string_lossy().into_owned();
-            }
-        }
+        let app_name = std::env::current_exe()
+            .map(|x| x.file_name().map(|x| x.to_string_lossy().into_owned())) // current_exe.file_name()
+            .unwrap_or(
+                env_args
+                    .first()
+                    .cloned()
+                    .map(|path| {
+                        std::path::Path::new(&path)
+                            .file_name()
+                            .map(|name| name.to_string_lossy().into_owned())
+                    })
+                    .unwrap_or(None),
+            )
+            .unwrap_or(String::new());
 
         // 第 2 个以及后面的所有.
-        let sub_cmd_arg: Vec<String> = if env_arg.len() > 2 {
-            env_arg[2..].to_vec()
+        let sub_cmd_arg: Vec<String> = if env_args.len() > 2 {
+            env_args[2..].to_vec()
         } else {
             vec![]
         };
@@ -673,84 +682,11 @@ impl Default for App {
             _author: Default::default(),
             _app_version_message: "0.0.1".to_string(),
             _help_message: Default::default(),
-            _sub_commands: Default::default(),
-            _env_arg: env_arg,
+            _commands: Default::default(),
+            _env_arg: env_args,
             _examples: Examples::new(),
-            _sub_command_arg: sub_cmd_arg,
+            _commands_arg: sub_cmd_arg,
             _app_default_action: Default::default(),
         }
     }
 }
-
-// struct Adasfdfas(Rc<dyn Fn() -> ()>);
-// struct Adasfdfaasdfadsfs((fn() -> ()));
-
-// fn adsfadsf(a: Adasfdfaasdfadsfs) {
-//     // a.0();
-//     let sadf = a.0();
-// }
-
-// #[derive(Clone)]
-// enum Adsfadsf<'a> {
-//     A(&'static dyn Fn() -> ()),
-//     B(&'a (dyn Fn(String) -> ())),
-//     C(&'a (dyn Fn(arg_type::StringMutiple) -> ())),
-//     D(&'a (dyn Fn(arg_type::Number) -> ())),
-// }
-
-// impl Drop for Adsfadsf<'_> {
-//     fn drop(&mut self) {
-//         println!("Adsfadsf 被清理掉了",);
-//     }
-// }
-
-// #[test]
-// fn testsadfasdfasdf() {
-//     let _asdf = Adasfdfas { 0: Rc::new(|| {}) };
-
-//     fn haha() {}
-
-//     let a = "";
-//     let mut b = "";
-//     let asdf = inout((a, &mut b), |x| x);
-
-//     let asdf = 3_i8;
-//     let asdf = inout(asdf, add_one);
-
-//     // let _asdfadsf = Adasfdfaasdfadsfs { 0: &|| {} };
-//     let _asdfadsf = Adasfdfaasdfadsfs { 0: || {} };
-//     let _asdfadsf = Adasfdfaasdfadsfs { 0: haha };
-//     let _asdfadsf = Adasfdfaasdfadsfs { 0: hehe };
-
-//     let adsfadsfadsf = || {
-//         b;
-//         println!();
-//     };
-//     // let _asdfadsf = Adasfdfaasdfadsfs { 0: adsfadsfadsf };
-
-//     let _asdfadsf = Adasfdfaasdfadsfs {
-//         0: || {
-//             println!();
-//         },
-//     };
-
-//     adsfadsf(_asdfadsf);
-
-//     let a = Adsfadsf::A(&|| {});
-// }
-
-// fn hehe() {
-//     println!();
-// }
-
-// type Dsafadsf<Input, Output> = (Input, fn(Input) -> Output);
-
-// type capture<Input, Output> = fn(val: Input, f: fn(Input) -> Output) -> Output;
-
-// fn inout<Input, Output>(capture: Input, function: fn(Input) -> Output) -> Output {
-//     function(capture)
-// }
-
-// fn add_one(a: i8) -> i8 {
-//     a + 1
-// }

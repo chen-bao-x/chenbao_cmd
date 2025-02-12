@@ -25,36 +25,122 @@ impl Empty {
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 #[serde(untagged)] // 使用 untagged enum
-enum ReplArg {
+pub enum ReplArg {
     Number(i64),
     NumberMultiple(Vec<i64>),
     String(String),
     StringMultiple(Vec<String>),
-    Path(std::path::PathBuf),
-    PathMultiple(Vec<std::path::PathBuf>),
+    // Path(String),
+    // PathMultiple(Vec<String>),
     Bool(bool),
     BoolMultiple(Vec<bool>),
 }
 
+impl ReplArg {
+    pub fn get_number(&self) -> i64 {
+        if let ReplArg::Number(val) = self {
+            return *val;
+        }
+        panic!("{:?}", self);
+    }
+    pub fn get_number_multiple(&self) -> Vec<i64> {
+        if let ReplArg::NumberMultiple(val) = self {
+            // if let ReplArg::StringMultiple(val) = self {
+            // return val.iter().map(|x| x.parse().unwrap()).collect();
+
+            return val.clone();
+        }
+        panic!("{:?}", self);
+    }
+    pub fn get_string(&self) -> String {
+        if let ReplArg::String(val) = self {
+            return val.to_string();
+        }
+        panic!("{:?}", self);
+    }
+    pub fn get_string_multiple(&self) -> Vec<String> {
+        if let ReplArg::StringMultiple(val) = self {
+            return val.to_vec();
+        }
+        panic!("{:?}", self);
+    }
+    pub fn get_path(&self) -> std::path::PathBuf {
+        if let ReplArg::String(val) = self {
+            return std::path::Path::new(val).to_path_buf();
+            // return val.to_path_buf();
+        }
+        panic!("{:?}", self);
+    }
+    pub fn get_path_multiple(&self) -> Vec<std::path::PathBuf> {
+        if let ReplArg::StringMultiple(val) = self {
+            return val
+                .iter()
+                .map(|x| std::path::Path::new(x).to_path_buf())
+                .collect();
+            // return val.to_vec();
+        }
+        panic!("{:?}", self);
+    }
+    pub fn get_bool(&self) -> bool {
+        if let ReplArg::Bool(val) = self {
+            return *val;
+        }
+        panic!("{:?}", self);
+    }
+    pub fn get_bool_multiple(&self) -> Vec<bool> {
+        if let ReplArg::BoolMultiple(val) = self {
+            return val.to_vec();
+        }
+        panic!("{:?}", self);
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-// #[serde(untagged)] // 使用 untagged enum
-struct ReplArgStore(std::collections::HashMap<String, ReplArg>);
+
+// pub struct ReplArgStore(std::collections::HashMap<String, ReplArg>);
+pub struct ReplArgStore(std::collections::BTreeMap<String, ReplArg>); // BTreeMap 是按照 key 来排序的,  HashMap 是无序的.
 impl ReplArgStore {
-    fn new() -> Self {
-        Self(std::collections::HashMap::new())
+    pub fn new() -> Self {
+        // Self(std::collections::HashMap::new())
+        Self(std::collections::BTreeMap::new())
     }
 
-    fn add(&mut self, index: usize, prompt: &str, v: ReplArg) -> Option<ReplArg> {
-        self.insert(ReplArgStore::key_gen(index, prompt), v)
+    pub fn from_str(s: &str) -> Result<Self, toml::de::Error> {
+        toml::from_str(s)
     }
 
-    fn insert(&mut self, k: String, v: ReplArg) -> Option<ReplArg> {
+    pub fn add(&mut self, index: usize, prompt: &str, v: ReplArg) -> Option<ReplArg> {
+        self.insert(key_gen(index, prompt), v)
+    }
+
+    pub fn insert(&mut self, k: String, v: ReplArg) -> Option<ReplArg> {
         self.0.insert(k, v)
     }
-
-    fn key_gen(index: usize, prompt: &str) -> String {
-        format!("{}_{}", index.to_string(), prompt)
+    pub fn get(&self, index: usize, prompt: &str) -> Option<&ReplArg> {
+        let key = key_gen(index, prompt);
+        return self.0.get(&key);
     }
+    pub fn remove(&mut self, index: usize, prompt: &str) -> Option<ReplArg> {
+        self.0.remove(&key_gen(index, prompt))
+    }
+
+    pub fn to_toml(&self) -> Result<String, toml::ser::Error> {
+        for (key, val) in &self.0 {
+            println!("key: {}, val: {:?}", key, val);
+        }
+
+        return toml::to_string_pretty(&self);
+    }
+
+    pub fn to_json(&self) -> String {
+        serde_json::to_string_pretty(self).unwrap()
+    }
+}
+
+/// ReplArgStore key generator.
+pub(crate) fn key_gen(index: usize, prompt: &str) -> String {
+    // 加数字是为了避免有相同的 key. 毕竟是存储在 BTreeMap 中的
+    format!("{:02}_{}", index, prompt)
 }
 
 impl Default for ReplArgStore {
@@ -65,7 +151,6 @@ impl Default for ReplArgStore {
 
 #[test]
 fn toml_vec_numbers() {
-    use std::path::Path;
     let val: Vec<ReplArg> = vec![
         ReplArg::String("string".to_string()),
         ReplArg::StringMultiple(vec![
@@ -78,13 +163,13 @@ fn toml_vec_numbers() {
         ReplArg::Bool(true),
         ReplArg::Bool(false),
         ReplArg::BoolMultiple(vec![true, false, true, false]),
-        ReplArg::Path(Path::new("./hello.txt").to_path_buf()),
-        ReplArg::PathMultiple(vec![
-            Path::new("./hello.txt").to_path_buf(),
-            Path::new("./hello.txt").to_path_buf(),
-            Path::new("./hello.txt").to_path_buf(),
-            Path::new("./hello.txt").to_path_buf(),
-            Path::new("./hello.txt").to_path_buf(),
+        ReplArg::String(("./hello.txt").to_string()),
+        ReplArg::StringMultiple(vec![
+            ("./hello.txt").to_string(),
+            ("./hello.txt").to_string(),
+            ("./hello.txt").to_string(),
+            ("./hello.txt").to_string(),
+            ("./hello.txt").to_string(),
         ]),
     ];
 

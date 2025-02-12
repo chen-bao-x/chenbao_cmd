@@ -10,12 +10,12 @@ use owo_colors::OwoColorize;
 use prettytable::{row, table, Table};
 use std::vec;
 
-/// 设置子命令的名称 功能和参数类型.  
+/// 子命令
 #[derive(Clone)]
-pub struct SubCommand {
-    /// 命令名   
+pub struct Cmd {
+    /// 子命令名   
     /// 命令的名称长度最好不要超过 20 个字符.
-    pub _command_name: String,
+    pub _name: String,
 
     /// 命令名的简写形式, 通常是一个字符  
     pub _short_name: String,
@@ -29,14 +29,14 @@ pub struct SubCommand {
 
     /// 自定义的帮助文档.
     /// 当用户使用 help 命令查询此命令时显示的帮助文档.
-    pub _help_document: Option<String>,
+    pub _help_message: Option<String>,
 
     /// 子命令需要的参数的类型以及该子命令的 action.
     /// 在打印子命令的帮助文档时需要用到此属性.
     pub _arg_type_with_action: ArgAction,
 }
 
-impl SubCommand {
+impl Cmd {
     /// 创建新的 SubCommand.  
     ///
     /// 这几个已经又了默认实现, 不能再作为子命令的名称:  
@@ -55,16 +55,16 @@ impl SubCommand {
     pub fn new(name: &str) -> Self {
         #[cfg(debug_assertions)]
         {
-            let re = SubCommand::command_name_check(name);
+            let re = Cmd::command_name_check(name);
             if let Err(s) = re {
                 panic!("{}", s);
             }
         }
 
-        return SubCommand {
-            _command_name: name.to_string(),
+        return Cmd {
+            _name: name.to_string(),
             _about: "".to_string(),
-            _help_document: None,
+            _help_message: None,
             _short_name: "".to_string(),
             _exaples: Examples::new(),
             _arg_type_with_action: ArgAction::default(),
@@ -72,7 +72,7 @@ impl SubCommand {
     }
 }
 
-impl SubCommand {
+impl Cmd {
     /// set `Command.short_name`
     pub fn short_name(self, short_name: &str) -> Self {
         let mut re = self;
@@ -99,7 +99,7 @@ impl SubCommand {
     /// set `Command.example`
     pub fn help_document(self, str: String) -> Self {
         let mut re = self;
-        re._help_document = Some(str);
+        re._help_message = Some(str);
 
         return re;
     }
@@ -117,7 +117,7 @@ impl SubCommand {
     }
 }
 
-impl SubCommand {
+impl Cmd {
     pub fn print_command_help(&self, app_name: &String) {
         println!("{}", self.formated_command_help(app_name));
     }
@@ -135,15 +135,15 @@ impl SubCommand {
         println!(
             "子命令 {} {} 的使用示例:",
             app_name,
-            self._command_name.styled_sub_command()
+            self._name.styled_sub_command()
         );
         println!();
         println!("{}", table);
     }
 }
-impl SubCommand {
+impl Cmd {
     fn formated_usage(&self, app_name: &String) -> String {
-        let command_name = self._command_name.styled_sub_command();
+        let command_name = self._name.styled_sub_command();
         let short_name = self._short_name.styled_sub_command();
 
         let arg_in_usage = match self._arg_type_with_action {
@@ -181,7 +181,7 @@ Usage:
 
     /// `app cmd -h` 时显示的帮助文档.
     pub fn formated_command_help(&self, app_name: &String) -> String {
-        if let Some(s) = &self._help_document {
+        if let Some(s) = &self._help_message {
             // 自定义了帮助文档的情况;
             return format!("{}", s);
         } else {
@@ -243,7 +243,7 @@ Usage:
             table.add_row(row![
                 format!(
                     "{app_name} {command_name} {arg}",
-                    command_name = self._command_name.styled_sub_command(),
+                    command_name = self._name.styled_sub_command(),
                 ),
                 self._about
             ]);
@@ -302,18 +302,19 @@ Usage:
                 ArgAction::Dialog(f) => run(v.get_repl(), need_to_run, &|s| match s {
                     Some(json_string) => {
                         /* 收到了参数 "stdin" */
-                        let re = &mut arg_type::Dialog::new_from_jsonstr(json_string.as_str());
+                        let re = &mut arg_type::Dialog::new_from_toml(json_string.as_str());
                         match re {
                             Ok(repl) => {
                                 f(repl);
                                 // repl.finesh(app_name, &self._command_name);
                             }
-                            Err(_e) => {
+                            Err(err) => {
+                                eprintln!("{}", err);
                                 // json_string 解码为 Vec<String> 时发生错误.
                                 panic!(
                                     "\n参数不正确.\nsee {} {} {} for more infomation.\n",
                                     app_name.magenta(),
-                                    self._command_name.styled_sub_command(),
+                                    self._name.styled_sub_command(),
                                     "-h".styled_arg()
                                 );
                             }
@@ -324,7 +325,7 @@ Usage:
 
                         let mut repl = arg_type::Dialog::new();
                         f(&mut repl);
-                        repl.finesh(app_name, &self._command_name);
+                        repl.finesh(app_name, &self._name);
                     }
                 }),
             };

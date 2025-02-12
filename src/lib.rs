@@ -97,7 +97,7 @@ pub use action::ArgAction;
 pub use application::App;
 pub use application::DidHandled;
 pub mod arg_type;
-pub use subcommand::SubCommand;
+pub use subcommand::Cmd;
 
 // ------- Private -------
 
@@ -107,4 +107,3 @@ mod examples_types;
 mod helper;
 mod question_and_anser;
 mod subcommand;
-mod vec_string;
