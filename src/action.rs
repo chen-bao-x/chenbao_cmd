@@ -9,41 +9,41 @@ pub type ParseResult<T> = Result<T, ParseResultMessage>;
 #[derive(Clone)]
 pub enum ArgAction {
     /// 表示这个子命令不需要参数
-    Empty(&'static dyn Fn(arg_type::Empty) -> ()),
+    Empty(&'static dyn Fn(arg_type::Empty)),
 
-    String(&'static dyn Fn(arg_type::String) -> ()),
+    String(&'static dyn Fn(arg_type::String)),
 
-    StringMutiple(&'static dyn Fn(arg_type::StringMutiple) -> ()),
+    StringMutiple(&'static dyn Fn(arg_type::StringMutiple)),
 
-    Number(&'static dyn Fn(arg_type::Number) -> ()),
+    Number(&'static dyn Fn(arg_type::Number)),
 
-    NumberMutiple(&'static dyn Fn(arg_type::NumberMutiple) -> ()),
+    NumberMutiple(&'static dyn Fn(arg_type::NumberMutiple)),
 
-    Path(&'static dyn Fn(arg_type::Path) -> ()),
+    Path(&'static dyn Fn(arg_type::Path)),
 
-    PathMutiple(&'static dyn Fn(arg_type::PathMutiple) -> ()),
+    PathMutiple(&'static dyn Fn(arg_type::PathMutiple)),
 
-    Bool(&'static dyn Fn(arg_type::Bool) -> ()),
+    Bool(&'static dyn Fn(arg_type::Bool)),
 
-    BoolMutiple(&'static dyn Fn(arg_type::BoolMutiple) -> ()),
+    BoolMutiple(&'static dyn Fn(arg_type::BoolMutiple)),
 
     /// 对话式交互.
-    Dialog(&'static dyn Fn(&mut arg_type::Dialog) -> ()),
+    Dialog(&'static dyn Fn(&mut arg_type::Dialog)),
 }
 
 impl std::fmt::Display for ArgAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ArgAction::Empty(_) => write!(f, "{}", "ArgType::Empty"),
-            ArgAction::String(_) => write!(f, "{}", "ArgType::String"),
-            ArgAction::StringMutiple(_) => write!(f, "{}", "ArgType::VecString"),
-            ArgAction::Number(_) => write!(f, "{}", "ArgType::Number"),
-            ArgAction::NumberMutiple(_) => write!(f, "{}", "ArgType::VecNumber"),
-            ArgAction::Path(_) => write!(f, "{}", "ArgType::Path"),
-            ArgAction::PathMutiple(_) => write!(f, "{}", "ArgType::VecPath"),
-            ArgAction::Bool(_) => write!(f, "{}", "ArgType::Bool"),
-            ArgAction::BoolMutiple(_) => write!(f, "{}", "ArgType::VecBool"),
-            ArgAction::Dialog(_) => write!(f, "{}", "ArgType::Repl"),
+            ArgAction::Empty(_) => write!(f, "ArgType::Empty"),
+            ArgAction::String(_) => write!(f, "ArgType::String"),
+            ArgAction::StringMutiple(_) => write!(f, "ArgType::VecString"),
+            ArgAction::Number(_) => write!(f, "ArgType::Number"),
+            ArgAction::NumberMutiple(_) => write!(f, "ArgType::VecNumber"),
+            ArgAction::Path(_) => write!(f, "ArgType::Path"),
+            ArgAction::PathMutiple(_) => write!(f, "ArgType::VecPath"),
+            ArgAction::Bool(_) => write!(f, "ArgType::Bool"),
+            ArgAction::BoolMutiple(_) => write!(f, "ArgType::VecBool"),
+            ArgAction::Dialog(_) => write!(f, "ArgType::Repl"),
         }
     }
 }
@@ -116,7 +116,7 @@ impl ArgAction {
             ArgAction::Dialog(_) => "".to_string(),
         };
 
-        return format!("    {}", arg_tips);
+        format!("    {}", arg_tips)
     }
 
     // /// 遇到参数类型错误时告诉用户如何输入正确的参数.
@@ -158,7 +158,7 @@ impl ArgAction {
             ArgAction::Dialog(_) => "",
         };
 
-        return re.to_string();
+        re.to_string()
     }
 }
 
@@ -184,11 +184,11 @@ impl SubcommandArgsValue {
         if self.subcommand_args.is_empty() {
             return Ok(arg_type::Empty::new());
         }
-        return Err(format!(
+        Err(format!(
             "参数数量不正确: 此子命令不需要参数, 实际接收到了 {} 个参数: {:?}",
             self.subcommand_args.len().styled_sub_command(),
             self.subcommand_args,
-        ));
+        ))
     }
 
     pub fn get_string(self) -> ParseResult<String> {
@@ -199,15 +199,15 @@ impl SubcommandArgsValue {
                 return ParseResult::Ok(str.clone());
             }
         }
-        return Err(format!(
+        Err(format!(
             "参数数量不正确: 需要 1 个参数, 实际接收到了 {} 个参数: {:?}",
             s.len().styled_sub_command(),
             format!("{:?}", s).styled_arg(),
-        ));
+        ))
     }
 
     pub fn get_vec_string(self) -> ParseResult<Vec<String>> {
-        return Ok(self.subcommand_args);
+        Ok(self.subcommand_args)
     }
 
     pub fn get_number(self) -> ParseResult<arg_type::Number> {
@@ -230,7 +230,7 @@ impl SubcommandArgsValue {
                 format!("{:?}", s).styled_arg(),
             ));
         }
-        return Err("()".to_string());
+        Err("()".to_string())
     }
 
     pub fn get_vec_number(self) -> ParseResult<arg_type::NumberMutiple> {
@@ -250,7 +250,7 @@ impl SubcommandArgsValue {
             }
         }
 
-        return Ok(re);
+        Ok(re)
     }
 
     pub fn get_path(self) -> ParseResult<arg_type::Path> {
@@ -270,7 +270,7 @@ impl SubcommandArgsValue {
                 format!("{:?}", s).styled_arg(),
             ));
         }
-        return Err("()".to_string());
+        Err("()".to_string())
     }
 
     pub fn get_vec_path(self) -> ParseResult<arg_type::PathMutiple> {
@@ -283,7 +283,7 @@ impl SubcommandArgsValue {
             re.push(path_buf);
         }
 
-        return Ok(re);
+        Ok(re)
     }
 
     pub fn get_bool(self) -> ParseResult<bool> {
@@ -304,31 +304,31 @@ impl SubcommandArgsValue {
                     }
                 }
 
-                return Err(format!(
+                Err(format!(
                     "参数不正确: 参数的类型是 {btype}, {btype} 类型的值可以是: {t}, {f}, 实际接收到的是: {args:?}",
                     btype = "bool".styled_arg_type(),
                     t = true.styled_arg(),
                     f = false.styled_arg(),
                     // args = VecString::vec_to_json(&s).styled_arg(),
                     args = s,
-                ));
+                ))
             } else {
-                return Err(format!(
+                Err(format!(
                     "参数数量不正确: 需要 1 个 {} 类型的参数, 实际接收到了 {} 个参数: {}",
                     "bool".styled_arg_type(),
                     s.len().styled_sub_command(),
                     // s.styled_arg(),
                     format!("{:?}", s).styled_arg(),
-                ));
+                ))
             }
         } else {
-            return Err(format!(
+            Err(format!(
                 "参数数量不正确: 需要 1 个 {} 类型的参数, 实际接收到了 {} 个参数: {}",
                 "bool".styled_arg_type(),
                 s.len().styled_sub_command(),
                 // s.styled_arg(),
                 format!("{:?}", s).styled_arg(),
-            ));
+            ))
         }
     }
 
@@ -352,19 +352,19 @@ impl SubcommandArgsValue {
                 }
             }
 
-            return Err(format!(
-                "参数不正确: 参数的类型是 bool.\nbool 类型的值可以是: true , false ",
-            ));
+            return Err(
+                "参数不正确: 参数的类型是 bool.\nbool 类型的值可以是: true , false ".to_string(),
+            );
         }
 
-        return Ok(re);
+        Ok(re)
     }
 
     // pub fn get_repl(self) -> ParseResult<Option<String>> {
     pub fn get_repl(self) -> ParseResult<Option<String>> {
         let subcmd_args = self.subcommand_args; // 子命令的参数.
 
-        if subcmd_args.len() == 0 {
+        if subcmd_args.is_empty() {
             return Ok(None);
         }
 
@@ -382,11 +382,11 @@ impl SubcommandArgsValue {
             }
         }
 
-        return Err(format!(
+        Err(format!(
             "参数数量不正确: 需要 0 个 或者 1 个 参数, 实际接收到了 {} 个参数: {}",
             subcmd_args.len().styled_sub_command(),
             serde_json::to_string(&subcmd_args).unwrap().styled_arg(),
-        ));
+        ))
     }
 }
 
@@ -398,12 +398,8 @@ fn get_string_from() -> ParseResult<String> {
     // get string from stdin
     let a = std::io::stdin().read_to_string(&mut buffer);
     match a {
-        Ok(_) => {
-            return Ok(buffer);
-        }
-        Err(_e) => {
-            return Err(format!("{}", _e));
-        }
+        Ok(_) => Ok(buffer),
+        Err(_e) => Err(format!("{}", _e)),
     }
 }
 
@@ -532,7 +528,7 @@ mod arg_check {
         let re = v.get_empty();
 
         // shold be Err, not ok.
-        if let Ok(_) = re {
+        if re.is_ok() {
             panic!("");
         }
     }
@@ -543,7 +539,7 @@ mod arg_check {
         let re = v.get_bool();
 
         // shold be Err, not ok.
-        if let Ok(_) = re {
+        if re.is_ok() {
             panic!("");
         }
     }
@@ -565,7 +561,7 @@ mod arg_check {
         let re = v.get_number();
 
         // shold be Err, not ok.
-        if let Ok(_) = re {
+        if re.is_ok() {
             panic!("");
         }
     }
@@ -576,7 +572,7 @@ mod arg_check {
         let re = v.get_bool();
 
         // shold be Err, not ok.
-        if let Ok(_) = re {
+        if re.is_ok() {
             panic!("");
         }
     }
@@ -587,7 +583,7 @@ mod arg_check {
         let re = v.get_number();
 
         // shold be Err, not ok.
-        if let Ok(_) = re {
+        if re.is_ok() {
             panic!("");
         }
     }
@@ -609,7 +605,7 @@ mod arg_check {
         let re = v.get_bool();
 
         // shold be Err, not ok.
-        if let Ok(_) = re {
+        if re.is_ok() {
             panic!("");
         }
     }

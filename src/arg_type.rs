@@ -21,6 +21,12 @@ impl Empty {
     }
 }
 
+impl Default for Empty {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 // -------
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -105,7 +111,7 @@ impl ReplArgStore {
         Self(std::collections::BTreeMap::new())
     }
 
-    pub fn from_str(s: &str) -> Result<Self, toml::de::Error> {
+    pub fn from_toml(s: &str) -> Result<Self, toml::de::Error> {
         toml::from_str(s)
     }
 
@@ -118,7 +124,7 @@ impl ReplArgStore {
     }
     pub fn get(&self, index: usize, prompt: &str) -> Option<&ReplArg> {
         let key = key_gen(index, prompt);
-        return self.0.get(&key);
+        self.0.get(&key)
     }
     pub fn remove(&mut self, index: usize, prompt: &str) -> Option<ReplArg> {
         self.0.remove(&key_gen(index, prompt))
@@ -129,7 +135,7 @@ impl ReplArgStore {
             println!("key: {}, val: {:?}", key, val);
         }
 
-        return toml::to_string_pretty(&self);
+        toml::to_string_pretty(&self)
     }
 
     pub fn to_json(&self) -> String {
@@ -176,7 +182,7 @@ fn toml_vec_numbers() {
     let mut toml_store: ReplArgStore = ReplArgStore::new();
     let mut index = 0_usize;
     val.iter().for_each(|x| {
-        let key = format!("{}", "key");
+        let key = "key".to_string();
         toml_store.add(index, &key, x.clone());
         index += 1;
     });

@@ -7,85 +7,79 @@ fn it_works() {
     // ------- 基础 API 测试 -------
     println!("--------hello--------");
 
-    let app = App::new()
-        .about("这个程序主要是为了测试我写的 cmd crate")
-        .author("chen bao")
-        .version_message("0.0.1".to_string())
-        .add_command(
-            Cmd::new("run")
-                .about("运行程序")
-                .action(ArgAction::Empty(&|_x| {
-                    print!(r#"runing commmand: "run""#);
-                })),
-        )
-        .add_command(
-            Cmd::new("help")
-                .about("运行程序")
-                .action(ArgAction::Empty(&(|_x| {}))),
-        )
-        .add_command(
-            Cmd::new("build")
-                .short_name("b")
-                .about("编译项目")
-                .action(ArgAction::Bool(&|_x| {
-                    print!("command \"run\"{:?}\n", _x);
-                })),
-        )
-        .add_command(
-            Cmd::new("empty")
-                .about("用来测试 ArgCount::Zero ")
-                .action(ArgAction::Empty(&|_x| {
+    let app =
+        App::new()
+            .about("这个程序主要是为了测试我写的 cmd crate")
+            .author("chen bao")
+            .version_message("0.0.1".to_string())
+            .add_command(
+                Cmd::new("run")
+                    .about("运行程序")
+                    .action(ArgAction::Empty(&|_x| {
+                        print!(r#"runing commmand: "run""#);
+                    })),
+            )
+            .add_command(
+                Cmd::new("help")
+                    .about("运行程序")
+                    .action(ArgAction::Empty(&(|_x| {}))),
+            )
+            .add_command(Cmd::new("build").short_name("b").about("编译项目").action(
+                ArgAction::Bool(&|_x| {
+                    println!("command \"run\"{:?}", _x);
+                }),
+            ))
+            .add_command(Cmd::new("empty").about("用来测试 ArgCount::Zero ").action(
+                ArgAction::Empty(&|_x| {
                     print!("testing arg_zero");
-                })),
-        )
-        .add_command(
-            Cmd::new("number")
-                .about("用来测试 ArgCount::Zero ")
-                .action(ArgAction::Number(&|_x| {
+                }),
+            ))
+            .add_command(Cmd::new("number").about("用来测试 ArgCount::Zero ").action(
+                ArgAction::Number(&|_x| {
                     print!("testing arg_zero");
-                })),
-        )
-        .add_command(
-            Cmd::new("vecnumber")
-                .about("用来测试 ArgCount::Zero ")
-                .action(ArgAction::NumberMutiple(&|_x| {
-                    print!("testing arg_zero");
-                })),
-        )
-        .add_command(
-            Cmd::new("vecbool")
-                .about("用来测试 ArgCount::Zero ")
-                .action(ArgAction::BoolMutiple(&|_x| {
-                    print!("testing arg_zero");
-                })),
-        )
-        .add_command(
-            Cmd::new("vecstring")
-                .about("用来测试 ArgCount::Zero ")
-                .action(ArgAction::StringMutiple(&|_x| {
-                    print!("testing arg_zero");
-                })),
-        )
-        .add_command(
-            Cmd::new("repl")
-                .about("用来测试 ArgCount::Repl(_) ")
-                .action(ArgAction::Dialog(
-                    &(|r| {
-                        let items = vec!["one", "two", "tree", "four"];
+                }),
+            ))
+            .add_command(
+                Cmd::new("vecnumber")
+                    .about("用来测试 ArgCount::Zero ")
+                    .action(ArgAction::NumberMutiple(&|_x| {
+                        print!("testing arg_zero");
+                    })),
+            )
+            .add_command(
+                Cmd::new("vecbool")
+                    .about("用来测试 ArgCount::Zero ")
+                    .action(ArgAction::BoolMutiple(&|_x| {
+                        print!("testing arg_zero");
+                    })),
+            )
+            .add_command(
+                Cmd::new("vecstring")
+                    .about("用来测试 ArgCount::Zero ")
+                    .action(ArgAction::StringMutiple(&|_x| {
+                        print!("testing arg_zero");
+                    })),
+            )
+            .add_command(
+                Cmd::new("repl")
+                    .about("用来测试 ArgCount::Repl(_) ")
+                    .action(ArgAction::Dialog(
+                        &(|r| {
+                            let items = vec!["one", "two", "tree", "four"];
 
-                        let _req_bool = r.number("你要吃几个汉堡包?");
-                        let _你要吃几个汉堡包 = r.number_multiple("多个 number");
-                        let _多个_number = r.string("string");
-                        let _string = r.string_multiple("string_multiple");
-                        let _string_multiple = r.yes_or_no("bool");
-                        let _path = r.path("path");
-                        let _path_multiple = r.path_multiple("path");
-                        let _seleted = r.select("selete", &items);
-                        let _seleted = r.select_multiple("selete", &items);
-                        // .yes_or_no_multiple(&mut req_bool_multiple, "bool mutiple")
-                    }),
-                )),
-        );
+                            let _req_bool = r.number("你要吃几个汉堡包?");
+                            let _你要吃几个汉堡包 = r.number_multiple("多个 number");
+                            let _多个_number = r.string("string");
+                            let _string = r.string_multiple("string_multiple");
+                            let _string_multiple = r.yes_or_no("bool");
+                            let _path = r.path("path");
+                            let _path_multiple = r.path_multiple("path");
+                            let _seleted = r.select("selete", &items);
+                            let _seleted = r.select_multiple("selete", &items);
+                            // .yes_or_no_multiple(&mut req_bool_multiple, "bool mutiple")
+                        }),
+                    )),
+            );
 
     // let re = app.debug_duplicate_names_check();
     // match re {
@@ -122,4 +116,20 @@ fn maadsfin() {
         .expect("读取输入失败");
 
     println!("你输入了：{}", input.trim());
+}
+
+use std::backtrace::Backtrace;
+
+fn foo() {
+    let backtrace = Backtrace::capture();
+    println!("{:?}", backtrace);
+}
+
+fn bar() {
+    foo();
+}
+
+#[test]
+fn msadfdsafain() {
+    bar();
 }

@@ -10,7 +10,7 @@ pub enum AppDefaultAction {
     PrintHelpMessage,
 
     /// 如果想读取命令行参数, 请使用:   `let env_arg: Vec<String> = env::args().collect();`
-    CustomAction(&'static dyn Fn() -> ()),
+    CustomAction(&'static dyn Fn()),
 }
 
 impl Default for AppDefaultAction {
@@ -43,7 +43,7 @@ pub enum DidHandled {
 ///            SubCommand::new("run")
 ///                .about("运行程序")
 ///                .action(ArgAction::Empty(Rc::new(|| {
-///                    print!(r#"runing commmand: "run""#);
+///                    println!(r#"ning commmand: "run""#);
 ///                }))),
 ///        )
 ///        .add_subcommand(
@@ -56,42 +56,42 @@ pub enum DidHandled {
 ///                .short_name("b")
 ///                .about("编译项目")
 ///                .action(ArgAction::Bool(Rc::new(|_x| {
-///                    print!("command \"run\"{:?}\n", _x);
+///                    println!("coand \"run\"{:?}\n", _x);
 ///                }))),
 ///        )
 ///        .add_subcommand(
 ///            SubCommand::new("empty")
 ///                .about("用来测试 ArgCount::Zero ")
 ///                .action(ArgAction::Empty(Rc::new(|| {
-///                    print!("testing arg_zero");
+///                    println!("teing arg_zero");
 ///                }))),
 ///        )
 ///        .add_subcommand(
 ///            SubCommand::new("number")
 ///                .about("用来测试 ArgCount::Zero ")
 ///                .action(ArgAction::Number(Rc::new(|_x| {
-///                    print!("testing arg_zero");
+///                    println!("teing arg_zero");
 ///                }))),
 ///        )
 ///        .add_subcommand(
 ///            SubCommand::new("vecnumber")
 ///                .about("用来测试 ArgCount::Zero ")
 ///                .action(ArgAction::NumberMutiple(Rc::new(|_x| {
-///                    print!("testing arg_zero");
+///                    println!("teing arg_zero");
 ///                }))),
 ///        )
 ///        .add_subcommand(
 ///            SubCommand::new("vecbool")
 ///                .about("用来测试 ArgCount::Zero ")
 ///                .action(ArgAction::BoolMutiple(Rc::new(|_x| {
-///                    print!("testing arg_zero");
+///                    println!("teing arg_zero");
 ///                }))),
 ///        )
 ///        .add_subcommand(
 ///            SubCommand::new("vecstring")
 ///                .about("用来测试 ArgCount::Zero ")
 ///                .action(ArgAction::StringMutiple(Rc::new(|_x| {
-///                    print!("testing arg_zero");
+///                    println!("teing arg_zero");
 ///                }))),
 ///        );
 ///    app.run();
@@ -155,14 +155,14 @@ impl App {
     pub fn app_name(self, app_name: &'static str) -> Self {
         let mut re = self;
         re._app_name = app_name.to_string();
-        return re;
+        re
     }
 
     /// 在这里介绍这个程序是什么. 做什么用的
     pub fn about(self, about: &'static str) -> Self {
         let mut re = self;
         re._about = about;
-        return re;
+        re
     }
 
     /// 使用此程序的一些示例,  
@@ -173,7 +173,7 @@ impl App {
 
         re._examples.add_single_example(command, description);
 
-        return re;
+        re
     }
 
     /// 此程序的版本信息.  
@@ -185,7 +185,7 @@ impl App {
     pub fn version_message(self, version_message: String) -> Self {
         let mut re = self;
         re._app_version_message = version_message;
-        return re;
+        re
     }
 
     /// 此程序的版本信息.  
@@ -194,17 +194,17 @@ impl App {
     pub fn author(self, author: &'static str) -> Self {
         let mut re = self;
         re._author = author;
-        return re;
+        re
     }
 
     ///
     /// 设置只有 程序名, 没有任何子命令也没有任何参数时执行的 action.  
     /// 默认情况下是打印此程序的帮助信息.  
     /// `app_default_action` 有默认实现, 可以不用设置.
-    pub fn app_default_action(self, action: &'static dyn Fn() -> ()) -> Self {
+    pub fn app_default_action(self, action: &'static dyn Fn()) -> Self {
         let mut re = self;
         re._app_default_action = AppDefaultAction::CustomAction(action);
-        return re;
+        re
     }
 
     /// add command
@@ -214,7 +214,7 @@ impl App {
 
         re._commands.push(command);
 
-        return re;
+        re
     }
 
     /// 自定义帮助信息.  
@@ -223,7 +223,7 @@ impl App {
         let mut re = self;
         re._help_message = message;
 
-        return re;
+        re
     }
 
     /// ```rust
@@ -235,7 +235,7 @@ impl App {
     ///         chenbao_cmd::SubCommand::new("run")
     ///          .about("运行程序")
     ///          .action(chenbao_cmd::ArgAction::Empty(std::rc::Rc::new(|| {
-    ///              print!(r#"runing commmand: "run""#);
+    ///              println!(r#"ning commmand: "run""#);
     ///          }))),
     ///     );
     ///     app.run();
@@ -263,7 +263,7 @@ impl App {
             None => {
                 //只输入了程序名称没有子命令也没有任何 flag
 
-                return self._handle_app_default_acton();
+                self._handle_app_default_acton()
             }
             Some(command_name) => {
                 {
@@ -293,10 +293,10 @@ impl App {
                 {
                     let re = self._handle_commands(command_name);
                     match re {
-                        DidHandled::Handled => return re,
+                        DidHandled::Handled => re,
                         DidHandled::Failed(_x) => {
                             /* 这是最后一个 handle 项目了, 直接返回. */
-                            return DidHandled::Failed(_x);
+                            DidHandled::Failed(_x)
                         }
                     }
                 }
@@ -311,7 +311,7 @@ impl App {
     pub fn print_app_help(&self) {
         if self._help_message.trim() != "" {
             // 有自定义的帮助文档.
-            print!("{}", self._help_message);
+            println!("{}", self._help_message);
             return;
         }
 
@@ -319,7 +319,7 @@ impl App {
         table.set_format(table_formater());
 
         for x in &self._commands {
-            let short_name = if x._short_name == "" {
+            let short_name = if x._short_name.is_empty() {
                 "".to_string()
             } else {
                 // ", ".to_string() + &x.short_name
@@ -359,8 +359,14 @@ impl App {
 
         // TODO: 让打印的信息更优美.
         let flag_message = format!("{}\n    {help}\t\t显示此命令的帮助.\n    {ver}\t查看此程序的版本.\n    {example}\t查看示例.\n" , "Flags:".bright_green());
-
-        let message = format!(
+        let author = if self._author.is_empty() {
+            "".to_string()
+        } else {
+            format!("{} {}", "Author:", self._author)
+        };
+        let commands = format!("{}\n{}", "Commands:".bright_green(), all_commands_about);
+        
+        println!(
             r#"
 {about}
 {author}
@@ -368,15 +374,8 @@ impl App {
 {commands}
 "#,
             about = self._about,
-            author = if self._author == "" {
-                "".to_string()
-            } else {
-                format!("{} {}", "Author:", self._author)
-            },
             // version = self.app_versioCn_message,
-            commands = format!("{}\n{}", "Commands:".bright_green(), all_commands_about),
         );
-        print!("{}", message);
     }
 
     /// 打印 App 的示例.  
@@ -416,14 +415,14 @@ impl App {
     fn _handle_app_help(&self) -> DidHandled {
         let command_name = &*self._env_arg[1];
         // let arr = vec!["-h", "--help", "help", "h"];
-        let arr = vec!["-h", "--help"];
+        let arr = ["-h", "--help"];
 
         if arr.contains(&command_name) {
             // 打印 App 的帮助信息.
             self.print_app_help();
-            return DidHandled::Handled;
+            DidHandled::Handled
         } else {
-            return DidHandled::Failed(r#"不是 "-h" or "--help""#.to_string());
+            DidHandled::Failed(r#"不是 "-h" or "--help""#.to_string())
         }
 
         // if !(command_name == "-h" || command_name == "--help") {
@@ -468,9 +467,9 @@ impl App {
         if command_name == "-v" || command_name == "--version" {
             println!("{}", self._app_version_message);
 
-            return DidHandled::Handled;
+            DidHandled::Handled
         } else {
-            return DidHandled::Failed("不是 version 命令".to_string());
+            DidHandled::Failed("不是 version 命令".to_string())
         }
     }
 
@@ -491,37 +490,42 @@ impl App {
 
     /// 处理只输入了程序名称没有子命令也没有任何 flag 的情况.
     fn _handle_app_default_acton(&self) -> DidHandled {
-        if self._env_arg.len() == 1 {
-            match &self._app_default_action {
-                AppDefaultAction::PrintHelpMessage => {
-                    (&self).print_app_help();
-                    return DidHandled::Handled;
-                }
-                AppDefaultAction::CustomAction(f) => {
-                    f();
+        {
+            if self._env_arg.len() == 1 {
+                match &self._app_default_action {
+                    AppDefaultAction::PrintHelpMessage => {
+                        self.print_app_help();
+                        return DidHandled::Handled;
+                    }
+                    AppDefaultAction::CustomAction(f) => {
+                        f();
 
-                    return DidHandled::Handled;
+                        return DidHandled::Handled;
+                    }
                 }
-            }
-        };
-        return DidHandled::Failed("有子命令或者 flag, 不是 app_default_acton".to_string());
+            };
+        }
+        // return DidHandled::Failed("有子命令或者 flag, 不是 app_default_acton".to_string());
+        DidHandled::Failed("有子命令或者 flag, 不是 app_default_acton".to_string())
     }
 
     fn _handle_commands(&self, command_name: &String) -> DidHandled {
-        for x in &self._commands {
-            if command_name == &x._name || command_name == &x._short_name {
-                let cmd_args = &self._commands_arg;
+        {
+            for x in &self._commands {
+                if command_name == &x._name || command_name == &x._short_name {
+                    let cmd_args = &self._commands_arg;
 
-                return x.run(&self._app_name, cmd_args);
-            } else {
-                continue;
+                    return x.run(&self._app_name, cmd_args);
+                } else {
+                    continue;
+                }
             }
         }
 
-        return DidHandled::Failed(format!(
+        DidHandled::Failed(format!(
             "未知命令: {:?}\n\n输入 {} -h 查看帮助",
             self._env_arg, self._app_name
-        ));
+        ))
     }
 
     fn _handle_app_example(&self) -> DidHandled {
@@ -530,9 +534,9 @@ impl App {
         if command_name == "-e" || command_name == "--example" {
             self.print_app_examples();
 
-            return DidHandled::Handled;
+            DidHandled::Handled
         } else {
-            return DidHandled::Failed("不是 version 命令".to_string());
+            DidHandled::Failed("不是 version 命令".to_string())
         }
     }
 }
@@ -563,11 +567,11 @@ impl App {
         match did_handled {
             DidHandled::Handled => { /* runs perfact. */ }
             DidHandled::Failed(err_message) => {
-                print!("{}\n", err_message);
+                println!("{}", err_message);
             }
         }
 
-        return self;
+        self
     }
 
     /// 检查子命令示example是否能正确的被解析
@@ -593,6 +597,7 @@ impl App {
         use std::collections::HashSet;
 
         // 重复了的子命令名称.
+
         let mut duplicated_names: HashSet<&String> = HashSet::new();
 
         // 子命令的名字合集.
@@ -613,7 +618,7 @@ impl App {
                 let name = &x._name;
 
                 if set.contains(&name) || default_impls.contains(name) {
-                    duplicated_names.insert(&name);
+                    duplicated_names.insert(name);
 
                     println!(
                         "name:{:?}\nduplicated_names:{:?}\nset: {:?}",
@@ -627,7 +632,7 @@ impl App {
             {
                 let short_name = &x._short_name;
 
-                if short_name == "" {
+                if short_name.is_empty() {
                     continue;
                 }
 
@@ -640,9 +645,9 @@ impl App {
         }
 
         if duplicated_names.is_empty() {
-            return Ok(());
+            Ok(())
         } else {
-            return Err(duplicated_names);
+            Err(duplicated_names)
         }
     }
 
@@ -667,7 +672,7 @@ impl Default for App {
                     })
                     .unwrap_or(None),
             )
-            .unwrap_or(String::new());
+            .unwrap_or_default();
 
         // 第 2 个以及后面的所有.
         let sub_cmd_arg: Vec<String> = if env_args.len() > 2 {

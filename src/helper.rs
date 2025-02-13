@@ -1,6 +1,3 @@
-use std::fmt;
-
-use dialoguer::theme::Theme;
 use owo_colors::OwoColorize;
 use prettytable::format::TableFormat;
 
@@ -70,10 +67,12 @@ fn test_parse_string() {
 
 pub(crate) fn table_formater() -> TableFormat {
     let mut f = TableFormat::new();
-    f.column_separator(' ');
-    f.padding(4, 0);
+    {
+        f.column_separator(' ');
+        f.padding(4, 0);
+    }
 
-    return f;
+    f
 }
 
 pub(crate) trait StyledString {
@@ -81,9 +80,9 @@ pub(crate) trait StyledString {
     fn styled_arg_type(&self) -> String;
     fn styled_arg(&self) -> String;
 
-    fn styled_repl_prompt(&self) -> String;
-    fn styled_repl_input(&self) -> String;
-    fn styled_repl_selected(&self) -> String;
+    // fn styled_repl_prompt(&self) -> String;
+    // fn styled_repl_input(&self) -> String;
+    // fn styled_repl_selected(&self) -> String;
 }
 
 impl<T: ToString> StyledString for T {
@@ -109,127 +108,127 @@ impl<T: ToString> StyledString for T {
         }
     }
 
-    fn styled_repl_prompt(&self) -> String {
-        if self.to_string().is_empty() {
-            String::new()
-        } else {
-            self.to_string()
-        }
-    }
+    // fn styled_repl_prompt(&self) -> String {
+    //     if self.to_string().is_empty() {
+    //         String::new()
+    //     } else {
+    //         self.to_string()
+    //     }
+    // }
 
-    fn styled_repl_input(&self) -> String {
-        if self.to_string().is_empty() {
-            String::new()
-        } else {
-            self.to_string().bright_green().to_string()
-        }
-    }
+    // fn styled_repl_input(&self) -> String {
+    //     if self.to_string().is_empty() {
+    //         String::new()
+    //     } else {
+    //         self.to_string().bright_green().to_string()
+    //     }
+    // }
 
-    fn styled_repl_selected(&self) -> String {
-        if self.to_string().is_empty() {
-            String::new()
-        } else {
-            self.to_string().bright_magenta().to_string()
-        }
-    }
+    // fn styled_repl_selected(&self) -> String {
+    //     if self.to_string().is_empty() {
+    //         String::new()
+    //     } else {
+    //         self.to_string().bright_magenta().to_string()
+    //     }
+    // }
 }
 
-pub(crate) struct ColoredTheme {}
-impl ColoredTheme {
-    pub fn new() -> dialoguer::theme::ColorfulTheme {
-        dialoguer::theme::ColorfulTheme::default()
-    }
-}
-impl Theme for ColoredTheme {
-    /// Formats a confirm prompt.
-    fn format_confirm_prompt(
-        &self,
-        f: &mut dyn fmt::Write,
-        prompt: &str,
-        default: Option<bool>,
-    ) -> fmt::Result {
-        if !prompt.is_empty() {
-            write!(f, "{} ", &prompt)?;
-        }
-        match default {
-            None => write!(f, "[y/n] ")?,
-            Some(true) => write!(f, "[{}/n] ", " Yes ".styled_arg())?,
-            Some(false) => write!(f, "[y/{}]", " No ".styled_arg())?,
-        }
-        Ok(())
-    }
+// pub(crate) struct ColoredTheme {}
+// impl ColoredTheme {
+//     pub fn new() -> dialoguer::theme::ColorfulTheme {
+//         dialoguer::theme::ColorfulTheme::default()
+//     }
+// }
+// impl Theme for ColoredTheme {
+//     /// Formats a confirm prompt.
+//     fn format_confirm_prompt(
+//         &self,
+//         f: &mut dyn fmt::Write,
+//         prompt: &str,
+//         default: Option<bool>,
+//     ) -> fmt::Result {
+//         if !prompt.is_empty() {
+//             write!(f, "{} ", &prompt)?;
+//         }
+//         match default {
+//             None => write!(f, "[y/n] ")?,
+//             Some(true) => write!(f, "[{}/n] ", " Yes ".styled_arg())?,
+//             Some(false) => write!(f, "[y/{}]", " No ".styled_arg())?,
+//         }
+//         Ok(())
+//     }
 
-    /// Formats an input prompt.
-    fn format_input_prompt(
-        &self,
-        f: &mut dyn fmt::Write,
-        prompt: &str,
-        default: Option<&str>,
-    ) -> fmt::Result {
-        let prompt = prompt.styled_repl_prompt();
+//     /// Formats an input prompt.
+//     fn format_input_prompt(
+//         &self,
+//         f: &mut dyn fmt::Write,
+//         prompt: &str,
+//         default: Option<&str>,
+//     ) -> fmt::Result {
+//         let prompt = prompt.styled_repl_prompt();
 
-        match default {
-            Some(default) if prompt.is_empty() => {
-                write!(f, "[{}]: \n", default.styled_repl_input())
-            }
-            Some(default) => write!(f, "{} [{}]: ", prompt, default.styled_repl_input()),
-            None => write!(f, "{}: ", prompt),
-        }
-    }
+//         match default {
+//             Some(default) if prompt.is_empty() => {
+//                 writeln!!(f, "[{}]: \n", default.styled_repl_input())
+//             }
+//             Some(default) => write!(f, "{} [{}]: ", prompt, default.styled_repl_input()),
+//             None => write!(f, "{}: ", prompt),
+//         }
+//     }
 
-    /// Formats an input prompt after selection.
-    fn format_input_prompt_selection(
-        &self,
-        f: &mut dyn fmt::Write,
-        prompt: &str,
-        sel: &str,
-    ) -> fmt::Result {
-        write!(f, "{}: {}", prompt, sel.styled_repl_input())
-    }
+//     /// Formats an input prompt after selection.
+//     fn format_input_prompt_selection(
+//         &self,
+//         f: &mut dyn fmt::Write,
+//         prompt: &str,
+//         sel: &str,
+//     ) -> fmt::Result {
+//         write!(f, "{}: {}", prompt, sel.styled_repl_input())
+//     }
 
-    /// Formats a select prompt item.
-    fn format_select_prompt_item(
-        &self,
-        f: &mut dyn fmt::Write,
-        text: &str,
-        active: bool,
-    ) -> fmt::Result {
-        write!(
-            f,
-            "{} {}",
-            if active { ">" } else { " " },
-            // text.bright_green(),
-            if active {
-                text.styled_repl_selected()
-            } else {
-                text.to_string()
-            }
-        )
-    }
+//     /// Formats a select prompt item.
+//     fn format_select_prompt_item(
+//         &self,
+//         f: &mut dyn fmt::Write,
+//         text: &str,
+//         active: bool,
+//     ) -> fmt::Result {
+//         write!(
+//             f,
+//             "{} {}",
+//             if active { ">" } else { " " },
+//             // text.bright_green(),
+//             if active {
+//                 text.styled_repl_selected()
+//             } else {
+//                 text.to_string()
+//             }
+//         )
+//     }
 
-    /// Formats a multi select prompt item.
-    fn format_multi_select_prompt_item(
-        &self,
-        f: &mut dyn fmt::Write,
-        text: &str,
-        checked: bool,
-        active: bool,
-    ) -> fmt::Result {
-        write!(
-            f,
-            "{} {}",
-            match (checked, active) {
-                (true, true) => "> [x]",
-                (true, false) => "  [x]",
-                (false, true) => "> [ ]",
-                (false, false) => "  [ ]",
-            },
-            // text
-            if checked {
-                text.styled_repl_selected()
-            } else {
-                text.to_string()
-            }
-        )
-    }
-}
+//     /// Formats a multi select prompt item.
+//     fn format_multi_select_prompt_item(
+//         &self,
+//         f: &mut dyn fmt::Write,
+//         text: &str,
+//         checked: bool,
+//         active: bool,
+//     ) -> fmt::Result {
+//         write!(
+//             f,
+//             "{} {}",
+//             match (checked, active) {
+//                 (true, true) => "> [x]",
+//                 (true, false) => "  [x]",
+//                 (false, true) => "> [ ]",
+//                 (false, false) => "  [ ]",
+//             },
+//             // text
+//             if checked {
+//                 text.styled_repl_selected()
+//             } else {
+//                 text.to_string()
+//             }
+//         )
+//     }
+// }

@@ -61,14 +61,14 @@ impl Cmd {
             }
         }
 
-        return Cmd {
+        Cmd {
             _name: name.to_string(),
             _about: "".to_string(),
             _help_message: None,
             _short_name: "".to_string(),
             _exaples: Examples::new(),
             _arg_type_with_action: ArgAction::default(),
-        };
+        }
     }
 }
 
@@ -77,14 +77,14 @@ impl Cmd {
     pub fn short_name(self, short_name: &str) -> Self {
         let mut re = self;
         re._short_name = short_name.to_string();
-        return re;
+        re
     }
 
     /// set `SubCommand.about`
     pub fn about(self, about: &str) -> Self {
         let mut re = self;
         re._about = about.to_string();
-        return re;
+        re
     }
 
     pub fn add_example(self, command: &'static str, description: &'static str) -> Self {
@@ -93,7 +93,7 @@ impl Cmd {
         let mut re = self;
         re._exaples.add_single_example(command, description);
 
-        return re;
+        re
     }
 
     /// set `Command.example`
@@ -101,7 +101,7 @@ impl Cmd {
         let mut re = self;
         re._help_message = Some(str);
 
-        return re;
+        re
     }
 
     /// set `Command.action`
@@ -109,10 +109,10 @@ impl Cmd {
         let mut re = self;
         re._arg_type_with_action = need_arg_type;
 
-        return re;
+        re
     }
 
-    pub fn run(&self, app_name: &String, cmd_args: &Vec<String>) -> DidHandled {
+    pub fn run(&self, app_name: &String, cmd_args: &[String]) -> DidHandled {
         self.try_run(app_name, cmd_args, true)
     }
 }
@@ -149,10 +149,14 @@ impl Cmd {
         let arg_in_usage = match self._arg_type_with_action {
             ArgAction::Empty(_) => "".to_string(),
 
-            ArgAction::String(_) => format!(r#"{}"#, "String".styled_arg_type()),
-            ArgAction::Number(_) => format!(r#"{}"#, "Number".styled_arg_type()),
-            ArgAction::Path(_) => format!(r#"{}"#, "Path".styled_arg_type()),
-            ArgAction::Bool(_) => format!(r#"{}"#, "Bool".styled_arg_type()),
+            // ArgAction::String(_) => format!(r#"{}"#, "String".styled_arg_type()),
+            // ArgAction::Number(_) => format!(r#"{}"#, "Number".styled_arg_type()),
+            // ArgAction::Path(_) => format!(r#"{}"#, "Path".styled_arg_type()),
+            // ArgAction::Bool(_) => format!(r#"{}"#, "Bool".styled_arg_type()),
+            ArgAction::String(_) => "String".styled_arg_type().to_string(),
+            ArgAction::Number(_) => "Number".styled_arg_type().to_string(),
+            ArgAction::Path(_) => "Path".styled_arg_type().to_string(),
+            ArgAction::Bool(_) => "Bool".styled_arg_type().to_string(),
 
             ArgAction::StringMutiple(_) => format!(r#"{}..."#, "String".styled_arg_type()),
             ArgAction::NumberMutiple(_) => format!(r#"{}..."#, "Number".styled_arg_type()),
@@ -162,20 +166,25 @@ impl Cmd {
             ArgAction::Dialog(_) => "".to_string(),
         };
 
-        let arg_in_usage = arg_in_usage;
-        if self._short_name == "" {
-            return format!(
-                r#"
+        // let arg_in_usage = arg_in_usage;
+
+        let a = format!(
+            r#"
 Usage: 
-    {app_name} {command_name} {arg_in_usage}"#
-            );
+{app_name} {command_name} {arg_in_usage}"#
+        );
+
+        let b = format!(
+            r#"
+Usage: 
+{app_name} {command_name} {arg_in_usage}
+{app_name} {short_name} {arg_in_usage}"#
+        );
+
+        if self._short_name.is_empty() {
+            a
         } else {
-            return format!(
-                r#"
-Usage: 
-    {app_name} {command_name} {arg_in_usage}
-    {app_name} {short_name} {arg_in_usage}"#
-            );
+            b
         }
     }
 
@@ -183,11 +192,11 @@ Usage:
     pub fn formated_command_help(&self, app_name: &String) -> String {
         if let Some(s) = &self._help_message {
             // 自定义了帮助文档的情况;
-            return format!("{}", s);
+            s.to_string()
         } else {
             // 自动生成这个 Command 的帮助文档
 
-            let arg_message: String = if self._arg_type_with_action.arg_message() == "" {
+            let arg_message: String = if self._arg_type_with_action.arg_message().is_empty() {
                 format!(
                     r#"
                 {}{}"#,
@@ -221,10 +230,10 @@ Usage:
 "#,
                 about = self._about,
                 // command_name = self.command_name.styled_sub_command(),
-                Usage = self.formated_usage(&app_name),
+                Usage = self.formated_usage(app_name),
             );
 
-            return message;
+            message
         }
     }
 
@@ -232,25 +241,27 @@ Usage:
     pub fn formated_command_example(&self, app_name: &String) -> Table {
         if self._exaples.is_empty() {
             let mut table = table!();
-            table.set_format(helper::table_formater());
+            {
+                table.set_format(helper::table_formater());
 
-            let arg = self
-                ._arg_type_with_action
-                .value_example()
-                .bright_green()
-                .to_string();
+                let arg = self
+                    ._arg_type_with_action
+                    .value_example()
+                    .bright_green()
+                    .to_string();
 
-            table.add_row(row![
-                format!(
-                    "{app_name} {command_name} {arg}",
-                    command_name = self._name.styled_sub_command(),
-                ),
-                self._about
-            ]);
+                table.add_row(row![
+                    format!(
+                        "{app_name} {command_name} {arg}",
+                        command_name = self._name.styled_sub_command(),
+                    ),
+                    self._about
+                ]);
+            }
 
-            return table;
+            table
         } else {
-            return self._exaples.pretty_formated();
+            self._exaples.pretty_formated()
         }
     }
 
@@ -262,7 +273,7 @@ Usage:
     //     self.try_run(app_name, cmd_args, false)
     // }
 
-    fn try_run(&self, app_name: &String, cmd_args: &Vec<String>, need_to_run: bool) -> DidHandled {
+    fn try_run(&self, app_name: &String, cmd_args: &[String], need_to_run: bool) -> DidHandled {
         {
             // 处理当前 子命令 的 flag.
             if let Some(first_arg) = cmd_args.first() {
@@ -287,7 +298,7 @@ Usage:
         {
             let arg_message = self._arg_type_with_action.arg_message();
             // let n = need_to_run;
-            let v = SubcommandArgsValue::new(cmd_args.clone());
+            let v = SubcommandArgsValue::new(cmd_args.to_owned());
 
             let re = match &self._arg_type_with_action {
                 ArgAction::Empty(f) => run(v.get_empty(), need_to_run, f),
@@ -321,7 +332,7 @@ Usage:
                         }
                     }
                     None => {
-                        /* 该子命令没有收到参数 */
+                        /* 该子命令没有收到参数, 启动问答式交互 */
 
                         let mut repl = arg_type::Dialog::new();
                         f(&mut repl);
@@ -348,16 +359,16 @@ Usage:
             fn run<T>(
                 result: ParseResult<T>,
                 need_run_action: bool,
-                func: &dyn Fn(T) -> (),
+                func: &dyn Fn(T),
             ) -> DidHandled {
                 match result {
                     Ok(s) => {
                         if need_run_action {
                             func(s);
                         }
-                        return DidHandled::Handled;
+                        DidHandled::Handled
                     }
-                    Err(err) => return DidHandled::Failed(err),
+                    Err(err) => DidHandled::Failed(err),
                 }
             }
         }
@@ -366,7 +377,7 @@ Usage:
     /// 检查 子命令 的名字是否符合要求.
     #[cfg(debug_assertions)] // 只在 debug 模式下使用
     fn command_name_check(name: &str) -> Result<(), String> {
-        if name == "" {
+        if name.is_empty() {
             let msg = format!(
                 r#"
     {error}: name 不能是空字符串 "", name 的值至少需要一个字符.
@@ -384,7 +395,7 @@ Usage:
             return Err(msg);
         }
 
-        let arr = vec!["-h", "--help", "-e", "--example", "-v", "--version"];
+        let arr = ["-h", "--help", "-e", "--example", "-v", "--version"];
 
         if arr.contains(&name) {
             let msg = format!(
@@ -397,6 +408,6 @@ Usage:
             return Err(msg);
         }
 
-        return Ok(());
+        Ok(())
     }
 }

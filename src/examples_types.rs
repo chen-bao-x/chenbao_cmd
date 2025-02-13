@@ -14,7 +14,7 @@ use crate::helper;
 ///
 
 // ------- Examples -------
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash)]
 pub struct Examples {
     pub(crate) val: Vec<SingleExample>,
 }
@@ -24,7 +24,11 @@ impl std::fmt::Display for Examples {
         write!(f, "{}", self.formated())
     }
 }
-
+impl Default for Examples {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl Examples {
     pub fn new() -> Self {
         Self { val: vec![] }
@@ -41,7 +45,7 @@ impl Examples {
             re = re + &x.formated();
         }
 
-        return re;
+       re
     }
 
     pub fn pretty_formated(&self) -> Table {
@@ -52,7 +56,7 @@ impl Examples {
             table.add_row(row![x.formated()]);
         }
 
-        return table;
+        table
     }
 
     pub fn add_single_example(&mut self, command: &'static str, description: &'static str) {
@@ -67,7 +71,7 @@ impl Examples {
 
 // ------- SingleExample -------
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash)]
 pub(crate) struct SingleExample {
     pub command: &'static str,
     pub description: &'static str,

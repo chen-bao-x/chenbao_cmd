@@ -7,7 +7,7 @@ use super::*;
 use arg_type::key_gen;
 
 const DEFAULTINDEX: usize = 1;
-#[derive(Debug)]
+// #[derive(Debug)]
 /// ArgType::Repl(_) 需要用到 ReplQuestions.  
 pub struct DialogGenerator {
     /// 从 json_str 转换过来的 Vec<String>.
@@ -20,8 +20,14 @@ pub struct DialogGenerator {
 
     /// 是否是从 json_str 转换过来的?
     pub is_from_json: bool,
-}
 
+    theme: dialoguer::theme::ColorfulTheme,
+}
+impl Default for DialogGenerator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl DialogGenerator {
     /* private */
 
@@ -38,6 +44,7 @@ impl DialogGenerator {
             arguments: ReplArgStore::new(),
             index: DEFAULTINDEX,
             is_from_json: false,
+            theme: dialoguer::theme::ColorfulTheme::default(),
         }
     }
 
@@ -45,21 +52,14 @@ impl DialogGenerator {
     /// let cmd = crate::DialogGenerator::new_from_jsonstr(r#"["hello"]"#);
     /// ```
     pub fn new_from_toml(str: &str) -> Result<Self, String> {
-        let parse_result = ReplArgStore::from_str(&str);
-
-        match parse_result {
-            Ok(art_store) => {
-                let d = Self {
-                    arguments: art_store,
-                    index: DEFAULTINDEX,
-                    is_from_json: true,
-                };
-                return Ok(d);
-            }
-            Err(_e) => {
-                return Err(format!("{}{}转换为 json 时出错: {}", file!(), line!(), _e,));
-            }
-        }
+        ReplArgStore::from_toml(str)
+            .map(|art_store| Self {
+                arguments: art_store,
+                index: DEFAULTINDEX,
+                is_from_json: true,
+                theme: dialoguer::theme::ColorfulTheme::default(),
+            })
+            .map_err(|_e| format!("{}{}转换为 json 时出错: {}", file!(), line!(), _e))
     }
 
     /// 转换为 json 字符串.
@@ -77,16 +77,17 @@ impl DialogGenerator {
     pub fn string(&mut self, prompt: &str) -> arg_type::String {
         if self.is_from_json {
             let result_value = self.arguments.get(self.index, prompt).unwrap().get_string();
-            return self.ret(result_value);
+
+            self.ret(result_value)
         } else {
-            let result_value = DialogerWraper::get_string(prompt);
+            let result_value = DialogerWraper::get_string(prompt, &self.theme);
 
             self.arguments.add(
                 self.index,
                 prompt,
                 arg_type::ReplArg::String(result_value.clone()),
             );
-            return self.ret(result_value);
+            self.ret(result_value)
         }
     }
     // _string_multiple
@@ -95,23 +96,20 @@ impl DialogGenerator {
             let result_value = self
                 .arguments
                 .get(self.index, prompt)
-                .expect(&format!(
-                    "没找到需要的参数: {}",
-                    key_gen(self.index, prompt)
-                ))
+                .unwrap_or_else(|| panic!("没找到需要的参数: {}", key_gen(self.index, prompt)))
                 // .unwrap()
                 .get_string_multiple();
 
-            return self.ret(result_value);
+            self.ret(result_value)
         } else {
-            let result_value = DialogerWraper::get_string_multiple(prompt);
+            let result_value = DialogerWraper::get_string_multiple(prompt, &self.theme);
 
             self.arguments.add(
                 self.index,
                 prompt,
                 arg_type::ReplArg::StringMultiple(result_value.clone()),
             );
-            return self.ret(result_value);
+            self.ret(result_value)
         }
     }
 
@@ -133,12 +131,12 @@ impl DialogGenerator {
         } else {
             // get value from REPL.
 
-            let result_value = DialogerWraper::get_number(prompt);
+            let result_value = DialogerWraper::get_number(prompt, &self.theme);
             // let string = serde_json::to_string(&result_value).unwrap();
 
             self.arguments
                 .add(self.index, prompt, arg_type::ReplArg::Number(result_value));
-            return self.ret(result_value);
+            self.ret(result_value)
         }
     }
     // _number_multiple
@@ -147,11 +145,12 @@ impl DialogGenerator {
             let result_value = self
                 .arguments
                 .get(self.index, prompt)
-                .expect(&format!("{:?}", key_gen(self.index, prompt)))
+                // .expect(&format!("{:?}", key_gen(self.index, prompt)))
+                .unwrap_or_else(|| panic!("{:?}", key_gen(self.index, prompt)))
                 .get_number_multiple();
-            return self.ret(result_value);
+            self.ret(result_value)
         } else {
-            let multiple_string = DialogerWraper::get_string_multiple(prompt);
+            let multiple_string = DialogerWraper::get_string_multiple(prompt, &self.theme);
 
             let mut result_value: Vec<arg_type::Number> = vec![];
             {
@@ -176,22 +175,22 @@ impl DialogGenerator {
                 prompt,
                 arg_type::ReplArg::NumberMultiple(result_value.clone()),
             );
-            return self.ret(result_value);
+            self.ret(result_value)
         }
     }
     // _yes_or_no
     pub fn yes_or_no(&mut self, prompt: &str) -> arg_type::Bool {
         if self.is_from_json {
             let result_value = self.arguments.get(self.index, prompt).unwrap().get_bool();
-            return self.ret(result_value);
+            self.ret(result_value)
         } else {
             // get value from REPL.
 
-            let result_value = DialogerWraper::get_bool(prompt);
+            let result_value = DialogerWraper::get_bool(prompt, &self.theme);
 
             self.arguments
                 .add(self.index, prompt, arg_type::ReplArg::Bool(result_value)); // -> "true" or "false"
-            return self.ret(result_value);
+            self.ret(result_value)
         }
     }
     // _path
@@ -206,13 +205,13 @@ impl DialogGenerator {
         } else {
             // get value from REPL.
 
-            let str = DialogerWraper::get_string(prompt);
+            let str = DialogerWraper::get_string(prompt, &self.theme);
 
             let result_value = Path::new(&str).to_path_buf();
 
             self.arguments
                 .add(self.index, prompt, arg_type::ReplArg::String(str));
-            return self.ret(result_value);
+            self.ret(result_value)
         }
     }
     // _path_multiple
@@ -224,9 +223,9 @@ impl DialogGenerator {
                 .unwrap()
                 .get_path_multiple();
 
-            return self.ret(result_value);
+            self.ret(result_value)
         } else {
-            let multiple_string = DialogerWraper::get_string_multiple(prompt);
+            let multiple_string = DialogerWraper::get_string_multiple(prompt, &self.theme);
 
             let result_value: arg_type::PathMutiple = multiple_string
                 .iter()
@@ -238,23 +237,23 @@ impl DialogGenerator {
                 prompt,
                 arg_type::ReplArg::StringMultiple(multiple_string),
             );
-            return self.ret(result_value);
+            self.ret(result_value)
         }
     }
     // _select
     pub fn select(&mut self, prompt: &str, items: &Vec<&str>) -> arg_type::String {
         if self.is_from_json {
             let result_value = self.arguments.get(self.index, prompt).unwrap().get_string();
-            return self.ret(result_value);
+            self.ret(result_value)
         } else {
             // get value from REPL.
 
-            let str = DialogerWraper::get_single_selected(prompt, items);
+            let str = DialogerWraper::get_single_selected(prompt, items, &self.theme);
 
             let result_value = arg_type::ReplArg::String(str.to_string());
 
             self.arguments.add(self.index, prompt, result_value);
-            return self.ret(str.to_string());
+            self.ret(str.to_string())
         }
     }
     // _select_multiple
@@ -266,20 +265,21 @@ impl DialogGenerator {
                 .unwrap()
                 .get_string_multiple();
 
-            return self.ret(result_value);
+            self.ret(result_value)
         } else {
             // get value from REPL.
 
-            let result_value: Vec<String> = DialogerWraper::get_multiple_selected(prompt, &items)
-                .iter()
-                .map(|x| x.to_string())
-                .collect();
+            let result_value: Vec<String> =
+                DialogerWraper::get_multiple_selected(prompt, items, &self.theme)
+                    .iter()
+                    .map(|x| x.to_string())
+                    .collect();
 
             let arg = arg_type::ReplArg::StringMultiple(result_value.clone());
 
             self.arguments.add(self.index, prompt, arg);
 
-            return self.ret(result_value);
+            self.ret(result_value)
         }
     }
     // _editor
@@ -302,7 +302,7 @@ impl DialogGenerator {
 
             panic!();
         } else {
-            let result_value = DialogerWraper::editor(prompt);
+            let result_value = DialogerWraper::get_string_from_editor(prompt);
 
             self.arguments.add(
                 self.index,
@@ -310,7 +310,7 @@ impl DialogGenerator {
                 arg_type::ReplArg::String(result_value.clone()),
             );
 
-            return self.ret(result_value);
+            self.ret(result_value)
         }
     }
     // _password
@@ -318,12 +318,12 @@ impl DialogGenerator {
     pub fn password(&mut self, prompt: &str) -> String {
         // 密码不应该被输出到 self.arguments 里面.
 
-        DialogerWraper::password(prompt)
+        DialogerWraper::password(prompt, &self.theme)
     }
 
     // _password_with_confirmation
-    pub fn password_with_confirmation(mut self, prompt: &str) -> String {
-        self.index = self.index;
+    pub fn password_with_confirmation(&mut self, prompt: &str) -> String {
+        _ = self;
 
         // 密码不应该被输出到 self.arguments 里面.
         DialogerWraper::password_with_confirmation(prompt)
@@ -347,7 +347,7 @@ Executed command: {app_name} {command_name} stdin << '{marker}'
 
     fn ret<T>(&mut self, result_value: T) -> T {
         self.index += 1;
-        return result_value;
+        result_value
     }
 }
 
@@ -369,7 +369,7 @@ mod test_repl_new_api_style {
         };
         let x = f(&mut repl);
 
-        let is_from_json = if let Some(_) = val { true } else { false };
+        let is_from_json = val.is_some();
 
         println!("输入的是: {:?}", x);
         println!("json_str: {}", repl.to_toml());
@@ -420,7 +420,7 @@ mod test_repl_new_api_style {
 
         // form json string.
         dialog_generator_tester(Some(r#"     ["sadfdsaf dsf sad f"]    "#), |x| {
-            return x.string("string").to_string();
+            x.string("string").to_string()
         });
     }
 
@@ -435,7 +435,7 @@ mod test_repl_new_api_style {
 
         // form json string.
         dialog_generator_tester(Some(r#"   ["[\"sadfdsafsadf\",\"sdaf\"]"]   "#), |x| {
-            return x.string_multiple("prompt");
+            x.string_multiple("prompt")
         });
     }
 
@@ -450,7 +450,7 @@ mod test_repl_new_api_style {
 
         // form json string.
         dialog_generator_tester(Some(r#"       ["325435325"]      "#), |x| {
-            return x.number("prompt");
+            x.number("prompt")
         });
     }
 
@@ -467,7 +467,7 @@ mod test_repl_new_api_style {
         dialog_generator_tester(
             Some(r#"      ["[\"1\",\"2\",\"3\",\"4\",\"5\"]"]     "#),
             |x| {
-                return x.number_multiple("prompt");
+                x.number_multiple("prompt")
             },
         );
     }
@@ -483,7 +483,7 @@ mod test_repl_new_api_style {
 
         // form json string.
         dialog_generator_tester(Some(r#"      ["false"]     "#), |x| {
-            return x.yes_or_no("prompt");
+            x.yes_or_no("prompt")
         });
     }
 }
@@ -493,105 +493,106 @@ mod test_repl_new_api_style {
 /// 对 dialoguer crate 的二次封装.
 struct DialogerWraper();
 impl DialogerWraper {
-    fn get_string(prompt: &str) -> String {
-        let re = dialoguer::Input::<String>::with_theme(&crate::helper::ColoredTheme::new())
+    fn get_string(prompt: &str, theme: &dialoguer::theme::ColorfulTheme) -> String {
+        let re = dialoguer::Input::<String>::with_theme(theme)
             .with_prompt(prompt)
             .interact_text();
 
         match re {
-            Ok(s) => {
-                return s;
-            }
+            Ok(s) => s,
             Err(_e) => {
                 eprintln!("{}", _e.red());
-                return DialogerWraper::get_string(prompt); // 继续本次问题
+                DialogerWraper::get_string(prompt, theme) // 继续本次问题
             }
         }
     }
 
-    fn get_string_multiple(prompt: &str) -> Vec<String> {
-        let re = dialoguer::Input::<String>::with_theme(&crate::helper::ColoredTheme::new())
+    fn get_string_multiple(prompt: &str, theme: &dialoguer::theme::ColorfulTheme) -> Vec<String> {
+        let re = dialoguer::Input::<String>::with_theme(theme)
             .with_prompt(prompt)
             .interact_text();
 
         match re {
-            Ok(input) => {
-                return crate::helper::parse_arg_string(&input);
-            }
+            Ok(input) => crate::helper::parse_arg_string(&input),
             Err(_e) => {
                 eprintln!("{}", _e.red());
-                return DialogerWraper::get_string_multiple(prompt); // 继续本次问题
+                DialogerWraper::get_string_multiple(prompt, theme) // 继续本次问题
             }
         }
     }
 
-    fn get_number(prompt: &str) -> arg_type::Number {
-        let input = DialogerWraper::get_string(prompt);
+    fn get_number(prompt: &str, theme: &dialoguer::theme::ColorfulTheme) -> arg_type::Number {
+        let input = DialogerWraper::get_string(prompt, theme);
         let input = input.trim();
         // 用户说输入了某些东西
         let parse_result: Result<arg_type::Number, ParseIntError> = input.parse();
 
         match parse_result {
-            Ok(num) => {
-                return num;
-            }
+            Ok(num) => num,
             Err(_e) => {
                 let err_message = format!("{}", _e).red().to_string();
                 eprintln!("{}", err_message);
 
                 println!("需要输入一个数字, 示例: {x}", x = "123".styled_arg());
-                return DialogerWraper::get_number(prompt); // 继续本次问题
+
+                DialogerWraper::get_number(prompt, theme) // 继续本次问题
             }
-        };
+        }
     }
 
-    fn get_bool(prompt: &str) -> bool {
-        let re = dialoguer::Confirm::with_theme(&ColoredTheme::new())
+    fn get_bool(prompt: &str, theme: &dialoguer::theme::ColorfulTheme) -> bool {
+        let re = dialoguer::Confirm::with_theme(theme)
             // .with_prompt("Y 键 N 键选择, 回车键确认: ")
             .with_prompt(prompt)
             .wait_for_newline(true)
             .interact();
 
         match re {
-            Ok(b) => {
-                return b;
-            }
+            Ok(b) => b,
             Err(_e) => {
                 eprintln!("{}", _e.red());
-                return DialogerWraper::get_bool(prompt); // 继续本次问题
+                DialogerWraper::get_bool(prompt, theme) // 继续本次问题
             }
         }
     }
 
-    fn get_single_selected<'a, T>(prompt: &str, items: &'a [T]) -> &'a T
+    fn get_single_selected<'a, T>(
+        prompt: &str,
+        items: &'a [T],
+        theme: &dialoguer::theme::ColorfulTheme,
+    ) -> &'a T
     where
         T: ToString + Clone,
     {
-        let re = dialoguer::FuzzySelect::with_theme(&ColoredTheme::new())
+        let re = dialoguer::FuzzySelect::with_theme(theme)
             .with_prompt(prompt)
-            .items(&items)
+            .items(items)
             .default(0)
             .interact();
 
         match re {
-            Ok(selection) => {
-                return &(items[selection]);
-            }
+            Ok(selection) => &(items[selection]),
             Err(_e) => {
                 eprintln!("{}", _e.red());
-                return DialogerWraper::get_single_selected(prompt, &items); // 继续本次问题
+
+                // 继续本次问题
+                DialogerWraper::get_single_selected(prompt, items, theme)
             }
         }
     }
 
-    fn get_multiple_selected<T>(prompt: &str, items: &[T]) -> Vec<T>
+    fn get_multiple_selected<T>(
+        prompt: &str,
+        items: &[T],
+        theme: &dialoguer::theme::ColorfulTheme,
+    ) -> Vec<T>
     where
         T: ToString + Clone,
     {
-        let re = dialoguer::MultiSelect::with_theme(&ColoredTheme::new())
+        let re = dialoguer::MultiSelect::with_theme(theme)
             // .with_prompt("What do you choose?")
             .with_prompt(prompt)
-            .items(&items)
+            .items(items)
             .interact();
 
         match re {
@@ -602,47 +603,40 @@ impl DialogerWraper {
                     re.push(items[i].clone());
                 }
 
-                return re;
+                re
             }
             Err(_e) => {
                 eprintln!("{}", _e.red());
-                return DialogerWraper::get_multiple_selected(prompt, &items); // 继续本次问题
+                DialogerWraper::get_multiple_selected(prompt, items, theme) // 继续本次问题
             }
         }
     }
 
-    fn editor(prompt: &str) -> arg_type::String {
+    fn get_string_from_editor(prompt: &str) -> arg_type::String {
         let re = dialoguer::Editor::new().edit(prompt);
 
         match re {
-            Ok(ostr) => {
-                return ostr.unwrap_or("".to_string());
-            }
+            Ok(ostr) => ostr.unwrap_or("".to_string()),
             Err(_e) => {
-                eprintln!("{}", _e.red());
-                // panic!("---------------------");
-                return "".to_string();
+                panic!("{}", _e.red());
             }
         }
     }
 
-    fn password(prompt: &str) -> String {
-        let prompt_message = if prompt == "" {
+    fn password(prompt: &str, theme: &dialoguer::theme::ColorfulTheme) -> String {
+        let prompt_message = if prompt.is_empty() {
             "input password"
         } else {
             prompt
         };
 
-        let re = dialoguer::Password::with_theme(&ColoredTheme::new())
+        let re = dialoguer::Password::with_theme(theme)
             .with_prompt(prompt_message)
             .interact();
         match re {
-            Ok(password) => {
-                return password;
-            }
+            Ok(password) => password,
             Err(_e) => {
-                eprintln!("{}", _e.red());
-                panic!();
+                panic!("{}", _e.red());
             }
         }
     }
@@ -651,17 +645,16 @@ impl DialogerWraper {
         println!("{}", prompt.bright_green());
 
         let re = dialoguer::Password::new()
-            .with_prompt("New Password")
+            .with_prompt(if prompt.is_empty() {
+                "New Password"
+            } else {
+                prompt
+            })
             .with_confirmation("Confirm password", "Passwords mismatching")
             .interact();
         match re {
-            Ok(password) => {
-                return password;
-            }
-            Err(_e) => {
-                eprintln!("{}", _e.red());
-                panic!();
-            }
+            Ok(password) => password,
+            Err(_e) => panic!("{}", _e.red()),
         }
     }
 }
