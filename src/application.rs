@@ -1,13 +1,13 @@
 use core::fmt;
 
-use crate::{examples_types::Examples, helper::*};
-
 use super::*;
+use crate::subcommand::SubCommand;
+use crate::{examples_types::Examples, helper::*};
 use owo_colors::OwoColorize;
 use prettytable::{row, table, Table};
 
 #[derive(Clone)]
-pub enum AppDefaultAction {
+pub(crate) enum AppDefaultAction {
     /// 打印 app 的帮助文档
     PrintHelpMessage,
 
@@ -125,7 +125,7 @@ pub struct App {
     pub _help_message: String,
 
     /// 此 app 的所有子命令.
-    pub _commands: Vec<Cmd>,
+    pub _commands: Vec<SubCommand>,
 
     /// 使用此程序的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
@@ -136,7 +136,7 @@ pub struct App {
 
     /// 只输入了程序名称没有子命令也没有任何 flag 时之行的 action.
     /// 默认是 AppDefaultAction::PrintHelpMessage;
-    pub _app_default_action: AppDefaultAction,
+    _app_default_action: AppDefaultAction,
 
     /// `let env_arg: Vec<String> = std::env::args().collect()`
     _env_arg: Vec<String>,
@@ -219,7 +219,7 @@ impl App {
 
     /// add command
     /// 为此 App 添加指令
-    pub fn add_command(self, command: Cmd) -> Self {
+    pub fn add_command(self, command: SubCommand) -> Self {
         let mut re = self;
 
         re._commands.push(command);

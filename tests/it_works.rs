@@ -15,55 +15,55 @@ fn it_works() {
             .version_message("0.0.1".to_string())
             .app_name("app")
             .add_command(
-                Cmd::new("run")
+                SubCommand::create_an_sub_command("run")
                     .about("运行程序")
                     .action(ArgAction::Empty(&|_x| {
                         print!(r#"runing commmand: "run""#);
                     })),
             )
             .add_command(
-                Cmd::new("help")
+                SubCommand::create_an_sub_command("help")
                     .about("运行程序")
                     .action(ArgAction::Empty(&(|_x| {}))),
             )
-            .add_command(Cmd::new("build").short_name("b").about("编译项目").action(
+            .add_command(SubCommand::create_an_sub_command("build").short_name("b").about("编译项目").action(
                 ArgAction::Bool(&|_x| {
                     println!("command \"run\"{:?}", _x);
                 }),
             ))
-            .add_command(Cmd::new("empty").about("用来测试 ArgCount::Zero ").action(
+            .add_command(SubCommand::create_an_sub_command("empty").about("用来测试 ArgCount::Zero ").action(
                 ArgAction::Empty(&|_x| {
                     print!("testing arg_zero");
                 }),
             ))
-            .add_command(Cmd::new("number").about("用来测试 ArgCount::Zero ").action(
+            .add_command(SubCommand::create_an_sub_command("number").about("用来测试 ArgCount::Zero ").action(
                 ArgAction::Number(&|_x| {
                     print!("testing arg_zero");
                 }),
             ))
             .add_command(
-                Cmd::new("vecnumber")
+                SubCommand::create_an_sub_command("vecnumber")
                     .about("用来测试 ArgCount::Zero ")
                     .action(ArgAction::NumberMutiple(&|_x| {
                         print!("testing arg_zero");
                     })),
             )
             .add_command(
-                Cmd::new("vecbool")
+                SubCommand::create_an_sub_command("vecbool")
                     .about("用来测试 ArgCount::Zero ")
                     .action(ArgAction::BoolMutiple(&|_x| {
                         print!("testing arg_zero");
                     })),
             )
             .add_command(
-                Cmd::new("vecstring")
+                SubCommand::create_an_sub_command("vecstring")
                     .about("用来测试 ArgCount::Zero ")
                     .action(ArgAction::StringMutiple(&|_x| {
                         print!("testing arg_zero");
                     })),
             )
             .add_command(
-                Cmd::new("repl")
+                SubCommand::create_an_sub_command("repl")
                     .about("用来测试 ArgCount::Repl(_) ")
                     .action(ArgAction::Dialog(
                         &(|r| {
@@ -150,7 +150,7 @@ fn dsafdsaf() {
     .version_message("0.0.1".to_string())
 
     .add_command(
-        Cmd::new("-")
+        SubCommand::create_an_sub_command("-")
             .short_name("b")
             .about("编译项目")
             .action(ArgAction::String(&(|_x| {
@@ -158,7 +158,7 @@ fn dsafdsaf() {
             }))),
     )
     .add_command(
-        Cmd::new("build")
+        SubCommand::create_an_sub_command("build")
             .short_name("b")
             .about("编译项目")
             .action(ArgAction::Bool(&(|_x| {
@@ -166,7 +166,7 @@ fn dsafdsaf() {
             }))),
     )
     .add_command(
-        Cmd::new("empty")
+        SubCommand::create_an_sub_command("empty")
             .about("用来测试 ArgCount::Zero ")
             // .add_example("app arg_zero  ", "")
             .action(ArgAction::Empty(&(|_x| {
@@ -174,21 +174,21 @@ fn dsafdsaf() {
             }))),
     )
     .add_command(
-        Cmd::new("number")
+        SubCommand::create_an_sub_command("number")
             .about("用来测试 ArgCount::Zero ")
             .action(ArgAction::Number(&(|_x| {
                 print!("testing arg_zero");
             }))),
     )
     .add_command(
-        Cmd::new("vecnumber")
+        SubCommand::create_an_sub_command("vecnumber")
             .about("用来测试 ArgCount::Zero ")
             .action(ArgAction::NumberMutiple(&(|_x| {
                 println!("testing vec number {:?}", _x);
             }))),
     )
     .add_command(
-        Cmd::new("vecbool")
+        SubCommand::create_an_sub_command("vecbool")
             .about("用来测试 ArgCount::Zero ")
 
             .action(ArgAction::BoolMutiple(&(|_x| {
@@ -196,7 +196,7 @@ fn dsafdsaf() {
             }))),
     )
     .add_command(
-        Cmd::new("run")
+        SubCommand::create_an_sub_command("run")
             .about("运行程序")
             // .add_example("cmd run true", "description")
             // .add_example("cmd run", "description")
@@ -212,7 +212,7 @@ fn dsafdsaf() {
             }))),
     )
     .add_command(
-        Cmd::new("vecstring")
+        SubCommand::create_an_sub_command("vecstring")
             .short_name("vs")
             .about("用来测试 vecstring ")
             // .add_example("command", "description")

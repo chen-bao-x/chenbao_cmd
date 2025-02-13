@@ -12,7 +12,7 @@ use std::vec;
 
 /// 子命令
 #[derive(Clone, Debug)]
-pub struct Cmd {
+pub struct SubCommand {
     /// 子命令名   
     /// 命令的名称长度最好不要超过 20 个字符.
     pub _name: String,
@@ -36,7 +36,7 @@ pub struct Cmd {
     pub _arg_type_with_action: ArgAction,
 }
 
-impl Cmd {
+impl SubCommand {
     /// 创建新的 SubCommand.  
     ///
     /// 这几个已经又了默认实现, 不能再作为子命令的名称:  
@@ -52,16 +52,16 @@ impl Cmd {
     ///         print!("command \"run\"{:?}\n", _x);
     ///     })));
     /// ```
-    pub fn new(name: &str) -> Self {
+    pub fn create_an_sub_command(name: &str) -> Self {
         #[cfg(debug_assertions)]
         {
-            let re = Cmd::command_name_check(name);
+            let re = SubCommand::command_name_check(name);
             if let Err(s) = re {
                 panic!("{}", s);
             }
         }
 
-        Cmd {
+        SubCommand {
             _name: name.to_string(),
             _about: "".to_string(),
             _help_message: None,
@@ -72,7 +72,7 @@ impl Cmd {
     }
 }
 
-impl Cmd {
+impl SubCommand {
     /// set `Command.short_name`
     pub fn short_name(self, short_name: &str) -> Self {
         let mut re = self;
@@ -117,7 +117,7 @@ impl Cmd {
     }
 }
 
-impl Cmd {
+impl SubCommand {
     pub fn print_command_help(&self, app_name: &String) {
         println!("{}", self.formated_command_help(app_name));
     }
@@ -141,7 +141,7 @@ impl Cmd {
         println!("{}", table);
     }
 }
-impl Cmd {
+impl SubCommand {
     pub fn formated_usage(&self, app_name: &String) -> String {
         let command_name = self._name.styled_sub_command();
         let short_name = self._short_name.styled_sub_command();
@@ -418,7 +418,15 @@ Usage:
             return Err(msg);
         }
 
-        let arr = ["-h", "--help", "-e", "--example", "-v", "--version"];
+        let arr = [
+            "-h",
+            "--help",
+            "-e",
+            "--example",
+            "-v",
+            "--version",
+            "--list-all-commands",
+        ];
 
         if arr.contains(&name) {
             let msg = format!(

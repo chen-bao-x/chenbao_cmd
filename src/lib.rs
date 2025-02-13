@@ -96,8 +96,9 @@
 pub use action::ArgAction;
 pub use application::App;
 pub use application::DidHandled;
+pub use chenbao_cmd_macro::cmd;
 pub mod arg_type;
-pub use subcommand::Cmd;
+pub use subcommand::SubCommand;
 
 // ------- Private -------
 
