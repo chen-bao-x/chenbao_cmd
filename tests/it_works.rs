@@ -1,4 +1,5 @@
 use std::vec;
+use chenbao_cmd::*;
 
 #[test]
 fn it_works() {
@@ -12,6 +13,7 @@ fn it_works() {
             .about("这个程序主要是为了测试我写的 cmd crate")
             .author("chen bao")
             .version_message("0.0.1".to_string())
+            .app_name("app")
             .add_command(
                 Cmd::new("run")
                     .about("运行程序")
@@ -88,22 +90,20 @@ fn it_works() {
     // }
 
     let _ = app
-            // .deubg_run(vec!["cmd", "-e"])
-            // .deubg_run(vec!["cmd", "help"])
-            // .deubg_run(vec!["cmd", "-h"])
-            // .deubg_run(vec!["cmd", "b"])
-            .deubg_run(vec!["cmd", "build", "true"])
-            // .deubg_run(vec!["cmd", "build", "-h"])
-            // .deubg_run(vec!["cmd", "build", "-e"])
-            // .deubg_run(vec!["cmd", "run"])
-            // .deubg_run(vec!["cmd", "run", "3"])
-            // .deubg_run(vec!["cmd", "run", "3", "32"]) // 类型正确, 数量不正确
-            // .deubg_run(vec!["cmd", "run", "-h"])
-            // .deubg_run(vec!["cmd", "-h"])
-            // .deubg_run(vec!["cmd"])
-            // .deubg_run(vec!["cmd", "arg_one", "-h"])
-
-            ;
+        .deubug_run(vec!["cmd", "-e"])
+        .deubug_run(vec!["cmd", "help"])
+        .deubug_run(vec!["cmd", "-h"])
+        .deubug_run(vec!["cmd", "b"])
+        .deubug_run(vec!["cmd", "build", "true"])
+        .deubug_run(vec!["cmd", "build", "-h"])
+        .deubug_run(vec!["cmd", "build", "-e"])
+        .deubug_run(vec!["cmd", "run"])
+        .deubug_run(vec!["cmd", "run", "3"])
+        .deubug_run(vec!["cmd", "run", "3", "32"]) // 类型正确, 数量不正确
+        .deubug_run(vec!["cmd", "run", "-h"])
+        .deubug_run(vec!["cmd", "-h"])
+        .deubug_run(vec!["cmd"])
+        .deubug_run(vec!["cmd", "arg_one", "-h"]);
 }
 
 #[test]
@@ -132,4 +132,123 @@ fn bar() {
 #[test]
 fn msadfdsafain() {
     bar();
+}
+
+#[test]
+fn adsf() {
+    use chenbao_cmd::*;
+    println!("{:?}", ArgAction::Empty(&|_| {}));
+}
+
+#[test]
+fn dsafdsaf() {
+    let app = App::new( )
+    // .app_default_action(&|| { /* action */ })
+    .about("这个程序主要是为了测试我写的 cmd crate")
+    // .author("chen bao")
+    .app_name("app")
+    .version_message("0.0.1".to_string())
+
+    .add_command(
+        Cmd::new("-")
+            .short_name("b")
+            .about("编译项目")
+            .action(ArgAction::String(&(|_x| {
+                println!("command \"run\"{:?}", _x);
+            }))),
+    )
+    .add_command(
+        Cmd::new("build")
+            .short_name("b")
+            .about("编译项目")
+            .action(ArgAction::Bool(&(|_x| {
+                println!("command \"run\"{:?}", _x);
+            }))),
+    )
+    .add_command(
+        Cmd::new("empty")
+            .about("用来测试 ArgCount::Zero ")
+            // .add_example("app arg_zero  ", "")
+            .action(ArgAction::Empty(&(|_x| {
+                print!("testing arg_zero");
+            }))),
+    )
+    .add_command(
+        Cmd::new("number")
+            .about("用来测试 ArgCount::Zero ")
+            .action(ArgAction::Number(&(|_x| {
+                print!("testing arg_zero");
+            }))),
+    )
+    .add_command(
+        Cmd::new("vecnumber")
+            .about("用来测试 ArgCount::Zero ")
+            .action(ArgAction::NumberMutiple(&(|_x| {
+                println!("testing vec number {:?}", _x);
+            }))),
+    )
+    .add_command(
+        Cmd::new("vecbool")
+            .about("用来测试 ArgCount::Zero ")
+
+            .action(ArgAction::BoolMutiple(&(|_x| {
+                println!("testing vecbool {:?}", _x);
+            }))),
+    )
+    .add_command(
+        Cmd::new("run")
+            .about("运行程序")
+            // .add_example("cmd run true", "description")
+            // .add_example("cmd run", "description")
+            // .add_example("cmd run", "description description description description description description description ")
+            // .add_example("cmd run", "description")
+            // .add_example("cmd run", "description")
+            // .add_example("cmd run", "description")
+            // .add_example("cmd run", "description")
+            // .add_example("cmd run", "description")
+            // .add_example("cmd run", "description")
+            .action(ArgAction::Bool(&(|_x| {
+                println!("command \"run\"{:?}", _x);
+            }))),
+    )
+    .add_command(
+        Cmd::new("vecstring")
+            .short_name("vs")
+            .about("用来测试 vecstring ")
+            // .add_example("command", "description")
+            .help_document("str".to_string())
+            .action(ArgAction::StringMutiple(&(|_x| {
+                println!("testing vecstring {:?}", _x);
+            }))),
+    )
+     
+    ;
+
+    let _ = app
+        .deubug_run(vec!["app_name", "-e"])
+        // .deubug_run(vec!["app_name", "help"])
+        // .deubug_run(vec!["app_name", "-h"])
+        // .deubug_run(vec!["app_name", "b"])
+        // .deubug_run(vec!["app_name", "build"])
+        // .deubug_run(vec!["app_name", "build", "-h"])
+        // .deubug_run(vec!["app_name", "build", "-e"])
+        // .deubug_run(vec!["app_name", "run"])
+        // .deubug_run(vec!["app_name", "run", "3"])
+        // .deubug_run(vec!["app_name", "run", "3", "32"]) // 类型正确, 数量不正确
+        // .deubug_run(vec!["app_name", "run", "-h"])
+        // .deubug_run(vec!["app_name", "run", "-e"])
+        // .deubug_run(vec!["app_name", "-h"])
+        // .deubug_run(vec!["app_name"])
+        // .deubug_run(vec!["app_name", "repl"])
+        // .deubug_run(vec!["app_name", "run"])
+        // .deubug_run(vec!["app_name", "build"])
+        // .deubug_run(vec!["app_name", "empty"])
+        // .deubug_run(vec!["app_name", "number"])
+        // .deubug_run(vec!["app_name", "vecnumber"])
+        // .deubug_run(vec!["app_name", "vecbool"])
+        // .deubug_run(vec!["app_name", "vecstring"])
+        // .deubug_run(vec!["app_name", "repl"])
+        .deubug_run(vec!["app_name", "--list-all-commands"])
+        // 
+        ;
 }

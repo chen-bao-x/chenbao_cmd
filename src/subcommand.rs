@@ -7,11 +7,11 @@ use crate::{
 use super::*;
 use application::DidHandled;
 use owo_colors::OwoColorize;
-use prettytable::{row, table, Table};
+use prettytable::{row, table, Row, Table};
 use std::vec;
 
 /// 子命令
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Cmd {
     /// 子命令名   
     /// 命令的名称长度最好不要超过 20 个字符.
@@ -142,7 +142,7 @@ impl Cmd {
     }
 }
 impl Cmd {
-    fn formated_usage(&self, app_name: &String) -> String {
+    pub fn formated_usage(&self, app_name: &String) -> String {
         let command_name = self._name.styled_sub_command();
         let short_name = self._short_name.styled_sub_command();
 
@@ -235,6 +235,29 @@ Usage:
 
             message
         }
+    }
+
+    pub fn formated_row_in_list_all_command(&self) -> Vec<Row> {
+        let x = self;
+        let short_name = if x._short_name.is_empty() {
+            "".to_string()
+        } else {
+            format!("{}{}", &x._short_name, ", ")
+        };
+
+        let command_name = &x._name;
+
+        let mut result: Vec<Row> = vec![];
+
+        result.push(row![command_name.styled_sub_command(), x._about]);
+        if !x._short_name.is_empty() {
+            result.push(row![
+                short_name.styled_sub_command(),
+                format!("alias: {}", command_name)
+            ]);
+        }
+
+        result
     }
 
     /// 已经格式化好了, 直接放进 Table 打印就行.

@@ -1,5 +1,6 @@
 use super::arg_type;
 use crate::helper::StyledString;
+use core::fmt;
 use std::{default, num::ParseIntError, path::Path};
 
 pub type ParseResultMessage = String;
@@ -51,6 +52,22 @@ impl std::fmt::Display for ArgAction {
 impl default::Default for ArgAction {
     fn default() -> Self {
         Self::Empty(&|_x| {})
+    }
+}
+impl fmt::Debug for ArgAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Empty(_arg0) => f.debug_tuple("Empty(_)").finish(),
+            Self::String(_arg0) => f.debug_tuple("String(_)").finish(),
+            Self::StringMutiple(_arg0) => f.debug_tuple("StringMutiple(_)").finish(),
+            Self::Number(_arg0) => f.debug_tuple("Number(_)").finish(),
+            Self::NumberMutiple(_arg0) => f.debug_tuple("NumberMutiple(_)").finish(),
+            Self::Path(_arg0) => f.debug_tuple("Path(_)").finish(),
+            Self::PathMutiple(_arg0) => f.debug_tuple("PathMutiple(_)").finish(),
+            Self::Bool(_arg0) => f.debug_tuple("Bool(_)").finish(),
+            Self::BoolMutiple(_arg0) => f.debug_tuple("BoolMutiple(_)").finish(),
+            Self::Dialog(_arg0) => f.debug_tuple("Dialog(_)").finish(),
+        }
     }
 }
 
@@ -120,7 +137,7 @@ impl ArgAction {
     }
 
     // /// 遇到参数类型错误时告诉用户如何输入正确的参数.
-    // pub(crate) fn arg_type_tips(&self) -> String {
+    // pub(crate) fn type_error_tips(&self) -> String {
     //     let sdafdsaf: &str = match self {
     //         ArgAction::Empty(_) => "",
     //         ArgAction::String(_) => r#"参数类型: string, 示例: "string" -- 需要 1 个 "string""#,
@@ -135,13 +152,27 @@ impl ArgAction {
     //         ArgAction::PathMutiple(_) => {
     //             r#"参数类型: [path...], 示例: "/path/to/folder/" "./path/to/file.txt" "filename.txt""#
     //         }
-    //         ArgAction::Bool(_) => r#"参数类型: bool, 示例: "true""#,
+    //         ArgAction::Bool(_) => {
+    //             format!(
+    //                 "参数不正确: 参数的类型是 {btype}, {btype} 类型的值可以是: {t}, {f}, 实际接收到的是: {args:?}",
+    //                 btype = "bool".styled_arg_type(),
+    //                 t = true.styled_arg(),
+    //                 f = false.styled_arg(),
+    //                 // args = VecString::vec_to_json(&s).styled_arg(),
+    //                 args = self.arg_message(),
+    //             );
+
+    //             r#"参数类型: bool, 示例: "true""#
+    //         }
     //         ArgAction::BoolMutiple(_) => r#"参数类型: [bool...], 示例: true false true false"#,
     //         ArgAction::Dialog(_) => "",
     //     };
-    //
-    //     return sdafdsaf.to_string();
+
+    //     sdafdsaf.to_string()
     // }
+
+    // /// 参数的数量不正确时的报错信息
+    // pub(crate) fn cunt_error_tips(&self) {}
 
     /// 告诉用户某个类型的参数应该怎么正确填写.
     pub(crate) fn value_example(&self) -> String {
@@ -167,7 +198,6 @@ impl ArgAction {
 pub(crate) struct SubcommandArgsValue {
     /// 子命令的 参数
     pub subcommand_args: Vec<String>,
-    // pub need_arg_type: ArgType,
 }
 
 impl SubcommandArgsValue {
@@ -182,13 +212,14 @@ impl SubcommandArgsValue {
 
     pub fn get_empty(self) -> ParseResult<arg_type::Empty> {
         if self.subcommand_args.is_empty() {
-            return Ok(arg_type::Empty::new());
+            Ok(arg_type::Empty::new())
+        } else {
+            Err(format!(
+                "参数数量不正确: 此子命令不需要参数, 实际接收到了 {} 个参数: {:?}",
+                self.subcommand_args.len().styled_sub_command(),
+                self.subcommand_args,
+            ))
         }
-        Err(format!(
-            "参数数量不正确: 此子命令不需要参数, 实际接收到了 {} 个参数: {:?}",
-            self.subcommand_args.len().styled_sub_command(),
-            self.subcommand_args,
-        ))
     }
 
     pub fn get_string(self) -> ParseResult<String> {
@@ -200,7 +231,7 @@ impl SubcommandArgsValue {
             }
         }
         Err(format!(
-            "参数数量不正确: 需要 1 个参数, 实际接收到了 {} 个参数: {:?}",
+            "参数数量不正确: 需要 1 个参数, 实际接收到了 {} 个参数: {}",
             s.len().styled_sub_command(),
             format!("{:?}", s).styled_arg(),
         ))
@@ -224,7 +255,7 @@ impl SubcommandArgsValue {
             }
         } else {
             return Err(format!(
-                "参数数量不正确: 需要 1 个参数, 实际接收到了 {} 个参数: {:?}",
+                "参数数量不正确: 需要 1 个参数, 实际接收到了 {} 个参数: {}",
                 s.len().styled_sub_command(),
                 // s.green(),
                 format!("{:?}", s).styled_arg(),
@@ -264,7 +295,7 @@ impl SubcommandArgsValue {
             }
         } else {
             return Err(format!(
-                "参数数量不正确: 需要 1 个参数, 实际接收到了 {} 个参数: {:?}",
+                "参数数量不正确: 需要 1 个参数, 实际接收到了 {} 个参数: {}",
                 s.len().styled_sub_command(),
                 // s.green(),
                 format!("{:?}", s).styled_arg(),
@@ -310,7 +341,7 @@ impl SubcommandArgsValue {
                     t = true.styled_arg(),
                     f = false.styled_arg(),
                     // args = VecString::vec_to_json(&s).styled_arg(),
-                    args = s,
+                    args = format!("{:?}", s).styled_arg(),
                 ))
             } else {
                 Err(format!(

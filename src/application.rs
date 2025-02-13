@@ -1,8 +1,10 @@
+use core::fmt;
+
 use crate::{examples_types::Examples, helper::*};
 
 use super::*;
 use owo_colors::OwoColorize;
-use prettytable::{row, table};
+use prettytable::{row, table, Table};
 
 #[derive(Clone)]
 pub enum AppDefaultAction {
@@ -16,6 +18,14 @@ pub enum AppDefaultAction {
 impl Default for AppDefaultAction {
     fn default() -> Self {
         Self::PrintHelpMessage
+    }
+}
+impl fmt::Debug for AppDefaultAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::PrintHelpMessage => write!(f, "PrintHelpMessage"),
+            Self::CustomAction(_) => f.debug_tuple("CustomAction(_)").finish(),
+        }
     }
 }
 
@@ -96,10 +106,10 @@ pub enum DidHandled {
 ///        );
 ///    app.run();
 /// ```
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct App {
     /// 此程序的名称;  
-    /// 所有自动生成的帮助文档和示例都会使用到 {app_name}
+    /// 所有自动生成的帮助文档和示例都会使用到 self._app_name
     pub _app_name: String,
 
     /// 一句话介绍此程序.
@@ -117,9 +127,6 @@ pub struct App {
     /// 此 app 的所有子命令.
     pub _commands: Vec<Cmd>,
 
-    /// `let env_arg: Vec<String> = std::env::args().collect()`
-    pub _env_arg: Vec<String>,
-
     /// 使用此程序的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
     pub _examples: Examples,
@@ -130,6 +137,9 @@ pub struct App {
     /// 只输入了程序名称没有子命令也没有任何 flag 时之行的 action.
     /// 默认是 AppDefaultAction::PrintHelpMessage;
     pub _app_default_action: AppDefaultAction,
+
+    /// `let env_arg: Vec<String> = std::env::args().collect()`
+    _env_arg: Vec<String>,
 }
 
 impl App {
@@ -148,7 +158,7 @@ impl App {
         }
     }
 
-    /// 在这里介绍这个程序是什么. 做什么用的
+    /// 如果不设置 app_name(_), 则会使用编译后可执行文件的文件名字作为 app_name.
     /// ```rs
     /// let app = App::new().app_name(env!("CARGO_PKG_NAME"));
     /// ```
@@ -267,7 +277,7 @@ impl App {
             }
             Some(command_name) => {
                 {
-                    let re = self._heldle_app_version();
+                    let re = self._handle_app_version();
                     match re {
                         DidHandled::Handled => return re,
                         DidHandled::Failed(_x) => { /* continue. */ }
@@ -284,6 +294,13 @@ impl App {
 
                 {
                     let re = self._handle_app_example();
+                    match re {
+                        DidHandled::Handled => return re,
+                        DidHandled::Failed(_x) => { /* continue. */ }
+                    }
+                }
+                {
+                    let re = self._handle_list_all_command();
                     match re {
                         DidHandled::Handled => return re,
                         DidHandled::Failed(_x) => { /* continue. */ }
@@ -330,17 +347,23 @@ impl App {
             let command_name = &x._name;
 
             // TODO: 为 cmd_name 添加颜色.
-            let cmd_name = format!(
-                "{}{}",
-                short_name.styled_sub_command(),
-                command_name.styled_sub_command(),
-            );
+            let cmd_name = format!("{}{}", short_name, command_name,);
 
-            table.add_row(row![cmd_name, x._about]);
+            table.add_row(row![cmd_name.styled_sub_command(), x._about]);
         }
 
         let all_commands_about: String = table.to_string();
 
+        let app_usage = format!(
+            r#"
+Usage:
+
+    {app_name} {command} {arguments}
+"#,
+            app_name = self._app_name.cyan(),
+            command = "<command>".bright_cyan(),
+            arguments = "[arguments]".green(),
+        );
         let help = format!(
             "{}, {}",
             "-h".styled_sub_command(),
@@ -356,19 +379,22 @@ impl App {
             "-e".styled_sub_command(),
             "--example".styled_sub_command()
         );
+        let list_all_commands = "--list-all-commands".styled_sub_command().to_string();
 
         // TODO: 让打印的信息更优美.
-        let flag_message = format!("{}\n    {help}\t\t显示此命令的帮助.\n    {ver}\t查看此程序的版本.\n    {example}\t查看示例.\n" , "Flags:".bright_green());
+        let flag_message = format!("{}\n    {help}\t\t显示此命令的帮助.\n    {ver}\t查看此程序的版本.\n    {example}\t查看示例.\n    {list_all_commands}\t查看所有 command.\n" , "Flags:".bright_green());
         let author = if self._author.is_empty() {
             "".to_string()
         } else {
             format!("{} {}", "Author:", self._author)
         };
+
         let commands = format!("{}\n{}", "Commands:".bright_green(), all_commands_about);
-        
+
         println!(
             r#"
 {about}
+{app_usage}
 {author}
 {flag_message}
 {commands}
@@ -409,6 +435,8 @@ impl App {
 
 impl App {
     // -------- Private Part --------
+
+    fn _handle_defalt_implement(&self) {}
 
     /// app help 的默认实现;  
     /// // -h --help -v -version
@@ -459,7 +487,7 @@ impl App {
     }
 
     /// app version 命令的默认实现
-    fn _heldle_app_version(&self) -> DidHandled {
+    fn _handle_app_version(&self) -> DidHandled {
         // 处理 App 的flags.
         //  -v -version
         let command_name = self._env_arg[1].clone();
@@ -473,6 +501,32 @@ impl App {
         }
     }
 
+    fn _handle_list_all_command(&self) -> DidHandled {
+        let command_name = self._env_arg[1].clone();
+
+        if command_name == "--list-all-commands" {
+            {
+                // print all commands
+                let mut table = Table::new();
+                table.set_format(table_formater());
+
+                self._commands.iter().for_each(|x| {
+                    x.formated_row_in_list_all_command().iter().for_each(|x| {
+                        table.add_row(x.clone());
+                    });
+                });
+
+                println!("{}", table);
+            }
+
+            DidHandled::Handled
+        } else {
+            DidHandled::Failed(format!(
+                "不是 {} 命令",
+                "--list-all-commands".styled_sub_command()
+            ))
+        }
+    }
     // /// app version 命令的默认实现
     // fn _heldle_app_example(&self) -> DidHandled {
     //     // 处理 App 的flags.
@@ -523,8 +577,10 @@ impl App {
         }
 
         DidHandled::Failed(format!(
-            "未知命令: {:?}\n\n输入 {} -h 查看帮助",
-            self._env_arg, self._app_name
+            "未知命令: {}\n\n输入 {} {} 查看所有命令",
+            self._env_arg.join(" ").styled_sub_command(),
+            self._app_name.styled_sub_command(),
+            "--list-all-commands".styled_sub_command(),
         ))
     }
 
@@ -544,13 +600,17 @@ impl App {
 impl App {
     //  ------- Debug Functions -------
 
-    /// 在 debug 模式下强制使用 debug_run(env_args: Vec<&str>) 函数中的 env_args.
-    /// 此函数会忽略程序真正的 env_args.
-    pub fn deubg_run(self, env_args: Vec<&str>) -> Self {
-        println!("------- test_run: {:?} -------", env_args);
+    /// 模拟用户输入,  
+    /// 用来更方便的测试程序.  
+    // #[cfg(debug_assertions)]
+    pub fn deubug_run(self, virtual_env_args: Vec<&str>) -> Self {
+        println!(
+            "------- command testing for: {} ",
+            virtual_env_args.join(" ").styled_sub_command()
+        );
 
         let mut re = self.clone();
-        let env_arg: Vec<String> = env_args.iter().map(|x| x.to_string()).collect();
+        let env_arg: Vec<String> = virtual_env_args.iter().map(|x| x.to_string()).collect();
 
         // 第 2 个一级后面的所有.
         let sub_cmd_arg: Vec<String> = if env_arg.len() > 2 {
@@ -561,6 +621,9 @@ impl App {
 
         re._commands_arg = sub_cmd_arg;
         re._env_arg = env_arg;
+        if re._app_name.is_empty() {
+            re._app_name = env!("CARGO_PKG_NAME").to_string();
+        }
 
         let did_handled = re.try_run();
 
@@ -578,7 +641,9 @@ impl App {
     /// 检查子命令的名字是否重复.
     /// 命令人类友好度检查
     #[cfg(debug_assertions)] // 只在 debug 模式下使用
-    pub(crate) fn debug_check(&self) {
+    pub fn debug_check(&self) {
+        // TODO: 打印两个名称冲突的 Cmd
+
         let re = self.debug_duplicate_names_check();
         if let Err(duplicate_names) = re {
             println!("{}", "ERROR 有子命令的名称重复了:".red());
@@ -655,6 +720,7 @@ impl App {
 
     // pub(crate) fn debug_命令人类友好度检查(&self) {}
 }
+
 impl Default for App {
     fn default() -> Self {
         let env_args: Vec<String> = std::env::args().collect();
