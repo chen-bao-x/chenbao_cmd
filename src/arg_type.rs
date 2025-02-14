@@ -49,12 +49,14 @@ impl ReplArg {
         }
         panic!("{:?}", self);
     }
-    pub fn get_number_multiple(&self) -> Vec<i64> {
+    // pub fn get_number_multiple(&self) -> Vec<i64> {
+    pub fn get_number_multiple(&self) -> &Vec<i64> {
         if let ReplArg::NumberMultiple(val) = self {
             // if let ReplArg::StringMultiple(val) = self {
             // return val.iter().map(|x| x.parse().unwrap()).collect();
 
-            return val.clone();
+            // return val.clone();
+            return val;
         }
         panic!("{:?}", self);
     }
@@ -95,9 +97,10 @@ impl ReplArg {
         }
         panic!("{:?}", self);
     }
-    pub fn get_bool_multiple(&self) -> Vec<bool> {
+    // pub fn get_bool_multiple(&self) -> Vec<bool> {
+    pub fn get_bool_multiple(&self) -> &Vec<bool> {
         if let ReplArg::BoolMultiple(val) = self {
-            return val.to_vec();
+            return val;
         }
         panic!("{:?}", self);
     }

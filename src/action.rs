@@ -192,6 +192,23 @@ impl ArgAction {
 
         re.to_string()
     }
+
+    pub(crate) fn arg_type_display(&self) -> String {
+        let re = match self {
+            ArgAction::Empty(_) => "",
+            ArgAction::String(_) => r#"<String>"#,
+            ArgAction::StringMutiple(_) => r#"<String>..."#,
+            ArgAction::Number(_) => r#"<Number>"#,
+            ArgAction::NumberMutiple(_) => r#"<Number>"#,
+            ArgAction::Path(_) => r#"<Path>"#,
+            ArgAction::PathMutiple(_) => r#"<Path>..."#,
+            ArgAction::Bool(_) => r#"<bool>"#,
+            ArgAction::BoolMutiple(_) => r#"<bool>..."#,
+            ArgAction::Dialog(_) => "",
+        };
+
+        re.to_string()
+    }
 }
 
 /// 子命令实际接收到的参数
@@ -646,5 +663,6 @@ mod arg_check {
         if re.is_ok() {
             panic!("");
         }
+        panic!("");
     }
 }

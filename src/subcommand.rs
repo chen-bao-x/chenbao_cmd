@@ -1,3 +1,5 @@
+use std::vec;
+
 use crate::{
     action::{ArgAction, ParseResult, SubcommandArgsValue},
     examples_types::{Examples, SingleExample},
@@ -7,7 +9,7 @@ use crate::{
 use super::*;
 use application::DidHandled;
 use owo_colors::OwoColorize;
-use prettytable::{row, Row};
+use prettytable::{row, table, Row};
 
 /// 子命令
 #[derive(Clone, Debug)]
@@ -58,7 +60,7 @@ impl<'a> SubCommand<'a> {
     pub fn create_an_sub_command(name: &'a str) -> Self {
         #[cfg(debug_assertions)]
         {
-            let re = SubCommand::command_name_check(name);
+            let re = SubCommand::debug_command_name_check(name);
             if let Err(s) = re {
                 panic!("{}", s);
             }
@@ -78,10 +80,10 @@ impl<'a> SubCommand<'a> {
 
 impl<'a> SubCommand<'a> {
     /// set `Command.short_name`
-    pub fn short_name(self, short_name: &'a str) -> Self {
-        let mut re = self;
-        re._short_name = short_name;
-        re
+    // pub fn short_name(self, short_name: &'a str) -> Self {
+    pub fn short_name(mut self, short_name: &'a str) -> Self {
+        self._short_name = short_name;
+        self
     }
 
     /// set `SubCommand.about`
@@ -116,9 +118,8 @@ impl<'a> SubCommand<'a> {
         re
     }
 
-    // pub fn suc_command_run(&self, app_name: &String, cmd_args: &[String]) -> DidHandled {
-    pub fn suc_command_run(&self, app_name: &str, cmd_args: SharedVecString) -> DidHandled {
-        self.suc_command_try_run(app_name, cmd_args, true)
+    pub fn sub_command_run(&self, app_name: &str, cmd_args: SharedVecString) -> DidHandled {
+        self.sub_command_try_run(app_name, cmd_args, NeedTo::Run)
     }
 }
 
@@ -305,19 +306,21 @@ Usage:
     //     self.try_run(app_name, cmd_args, false)
     // }
 
-    fn suc_command_try_run(
+    // 如果  need_to_run == false, 则只检查
+    pub(crate) fn sub_command_try_run(
         &self,
         app_name: &str,
         // cmd_args: &[String],
         cmd_args: SharedVecString,
-        need_to_run: bool,
+        // need_to_run: bool,
+        need_to: NeedTo,
     ) -> DidHandled {
         {
             // 处理当前 子命令 的 flag.
             if let Some(first_arg) = cmd_args.first().cloned() {
                 // 处理当前子命令的 help flag.
                 if first_arg == "--help" || first_arg == "-h" {
-                    if need_to_run {
+                    if need_to.is_run() {
                         self.print_command_help(app_name);
                     }
                     return DidHandled::Handled;
@@ -325,7 +328,7 @@ Usage:
 
                 // 处理当前子命令的 example flag.
                 if first_arg == "--example" || first_arg == "-e" {
-                    if need_to_run {
+                    if need_to.is_run() {
                         self.print_command_example(app_name);
                     }
                     return DidHandled::Handled;
@@ -339,52 +342,61 @@ Usage:
             let v = SubcommandArgsValue::new(cmd_args);
 
             let re = match &self._arg_type_with_action {
-                ArgAction::Empty(f) => run(v.get_empty(), need_to_run, f),
-                ArgAction::String(f) => run(v.get_string(), need_to_run, f),
-                ArgAction::StringMutiple(f) => run(v.get_vec_string(), need_to_run, f),
-                ArgAction::Number(f) => run(v.get_number(), need_to_run, f),
-                ArgAction::NumberMutiple(f) => run(v.get_vec_number(), need_to_run, f),
-                ArgAction::Path(f) => run(v.get_path(), need_to_run, f),
-                ArgAction::PathMutiple(f) => run(v.get_vec_path(), need_to_run, f),
-                ArgAction::Bool(f) => run(v.get_bool(), need_to_run, f),
-                ArgAction::BoolMutiple(f) => run(v.get_vec_bool(), need_to_run, f),
-                ArgAction::Dialog(f) => run(v.get_repl(), need_to_run, &|s| match s {
-                    Some(json_string) => {
-                        /* 收到了参数 "stdin" */
-                        let re = &mut arg_type::Dialog::new_from_toml(json_string.as_str());
-                        match re {
-                            Ok(repl) => {
-                                f(repl);
-                                // repl.finesh(app_name, &self._command_name);
-                            }
-                            Err(err) => {
-                                eprintln!("{}", err);
-                                // json_string 解码为 Vec<String> 时发生错误.
-                                panic!(
-                                    "\n参数不正确.\nsee {} {} {} for more infomation.\n",
-                                    app_name.magenta(),
-                                    self._name.styled_sub_command(),
-                                    "-h".styled_arg()
-                                );
+                ArgAction::Empty(f) => run(v.get_empty(), need_to, f),
+                ArgAction::String(f) => run(v.get_string(), need_to, f),
+                ArgAction::StringMutiple(f) => run(v.get_vec_string(), need_to, f),
+                ArgAction::Number(f) => run(v.get_number(), need_to, f),
+                ArgAction::NumberMutiple(f) => run(v.get_vec_number(), need_to, f),
+                ArgAction::Path(f) => run(v.get_path(), need_to, f),
+                ArgAction::PathMutiple(f) => run(v.get_vec_path(), need_to, f),
+                ArgAction::Bool(f) => run(v.get_bool(), need_to, f),
+                ArgAction::BoolMutiple(f) => run(v.get_vec_bool(), need_to, f),
+                ArgAction::Dialog(f) => run(v.get_repl(), need_to, &|s| {
+                    match s {
+                        Some(json_string) => {
+                            /* 收到了参数 "stdin" */
+                            let re = &mut arg_type::Dialog::new_from_toml(json_string.as_str());
+                            match re {
+                                Ok(repl) => {
+                                    f(repl); // repl.finesh(app_name, &self._command_name);
+                                }
+                                Err(err) => {
+                                    eprintln!("{}", err);
+                                    // json_string 解码为 Vec<String> 时发生错误.
+                                    panic!(
+                                        "\n参数不正确.\nsee {} {} {} for more infomation.\n",
+                                        app_name.magenta(),
+                                        self._name.styled_sub_command(),
+                                        "-h".styled_arg()
+                                    );
+                                }
                             }
                         }
-                    }
-                    None => {
-                        /* 该子命令没有收到参数, 启动问答式交互 */
+                        None => {
+                            /* 该子命令没有收到参数, 启动问答式交互 */
 
-                        let mut repl = arg_type::Dialog::new();
-                        f(&mut repl);
-                        repl.finesh(app_name, self._name);
+                            let mut repl = arg_type::Dialog::new();
+                            f(&mut repl);
+                            repl.finesh(app_name, self._name);
+                        }
                     }
                 }),
             };
 
             if let DidHandled::Failed(err) = re {
+                let tips = format!(
+                    "输入  {} {} {}  查看更详细信息",
+                    app_name.styled_sub_command(),
+                    self._name.styled_sub_command(),
+                    "-h".styled_sub_command(),
+                );
                 return DidHandled::Failed(format!(
                     r#"
 {}{}
 
 {}
+
+{tips}
                 "#,
                     "error: ".bright_red(),
                     err,
@@ -396,12 +408,13 @@ Usage:
 
             fn run<T>(
                 result: ParseResult<T>,
-                need_run_action: bool,
+                // need_run_action: bool,
+                need_to: NeedTo,
                 func: &dyn Fn(T),
             ) -> DidHandled {
                 match result {
                     Ok(s) => {
-                        if need_run_action {
+                        if need_to.is_run() {
                             func(s);
                         }
                         DidHandled::Handled
@@ -414,7 +427,7 @@ Usage:
 
     /// 检查 子命令 的名字是否符合要求.
     #[cfg(debug_assertions)] // 只在 debug 模式下使用
-    fn command_name_check(name: &str) -> Result<(), String> {
+    fn debug_command_name_check(name: &str) -> Result<(), String> {
         if name.is_empty() {
             let msg = format!(
                 r#"
@@ -456,4 +469,73 @@ Usage:
 
         Ok(())
     }
+
+    /// 测试命令是否能够被匹配
+    pub(crate) fn cmd_debug_parse<'a>(
+        &'a self,
+        app_name: &str,
+        // cmd_args: SharedVecString,
+    ) -> ExampleTestResult<'a> {
+        let mut result = ExampleTestResult {
+            cmd: self,
+            failures_examples: vec![],
+            success_examples: vec![],
+        };
+
+        // let mut _failed_commands: Vec<&'a SingleExample<'a>> = vec![];
+
+        for y in &self._exaples.val {
+            let virtual_env_args = helper::parse_arg_string(y.command);
+            let re = self.sub_command_try_run(app_name, virtual_env_args.into(), NeedTo::ParseOnly);
+            match re {
+                DidHandled::Handled => result.success_examples.push(y),
+                DidHandled::Failed(_) => result.failures_examples.push(y),
+            }
+        }
+
+        result
+    }
 }
+
+pub(crate) struct ExampleTestResult<'a> {
+    cmd: &'a SubCommand<'a>,
+    failures_examples: Vec<&'a SingleExample<'a>>,
+    success_examples: Vec<&'a SingleExample<'a>>,
+}
+
+impl ExampleTestResult<'_> {
+    fn is_success(&self) -> bool {
+        self.failures_examples.is_empty()
+    }
+
+    pub fn formated(&self) -> String {
+        let ok = if self.is_success() {
+            "ok".green().to_string()
+        } else {
+            "FAILED".red().to_string()
+        };
+
+        let msgs: String = self
+            .failures_examples
+            .iter()
+            .map(|x| x.formated())
+            .fold("".to_string(), |x, y| x + &y);
+
+        let mut table = table!();
+        table.set_format(helper::table_formater());
+        table.add_row(row![msgs]);
+
+        format!(
+            r#"example test for {cmd_name} ... {ok}{t}"#,
+            cmd_name = self.cmd._name.styled_sub_command(),
+            t = table,
+            // display = self.cmd._arg_type_with_action.arg_type_display()
+        )
+    }
+}
+
+// example test for "run" ... ok
+// example test "init" ... FAILED
+//      app build 2 # this can not parse.
+// example test "build" ... FAILED
+//      app build 2 # this can not parse.

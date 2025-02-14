@@ -1,6 +1,6 @@
-use crate::examples_types::Examples;
 use crate::helper::*;
 use crate::*;
+use crate::{examples_types::Examples, subcommand::ExampleTestResult};
 use core::fmt;
 use owo_colors::OwoColorize;
 use prettytable::{row, table, Table};
@@ -39,73 +39,6 @@ pub enum DidHandled {
     Failed(String),
 }
 
-/// 用于创建命令行程序并设置程序的 子命令.
-///
-/// # 示例:  
-/// ```rust
-///    use std::rc::Rc;
-///    use chenbao_cmd::*;
-///    let app = App::new("cmd")
-///        .about("这个程序主要是为了测试我写的 cmd crate")
-///        .author("chen bao")
-///        .version_message("0.0.1".to_string())
-///        .add_subcommand(
-///            SubCommand::new("run")
-///                .about("运行程序")
-///                .action(ArgAction::Empty(Rc::new(|| {
-///                    println!(r#"ning commmand: "run""#);
-///                }))),
-///        )
-///        .add_subcommand(
-///            SubCommand::new("help")
-///                .about("运行程序")
-///                .action(ArgAction::Empty(Rc::new(|| {}))),
-///        )
-///        .add_subcommand(
-///            SubCommand::new("build")
-///                .short_name("b")
-///                .about("编译项目")
-///                .action(ArgAction::Bool(Rc::new(|_x| {
-///                    println!("coand \"run\"{:?}\n", _x);
-///                }))),
-///        )
-///        .add_subcommand(
-///            SubCommand::new("empty")
-///                .about("用来测试 ArgCount::Zero ")
-///                .action(ArgAction::Empty(Rc::new(|| {
-///                    println!("teing arg_zero");
-///                }))),
-///        )
-///        .add_subcommand(
-///            SubCommand::new("number")
-///                .about("用来测试 ArgCount::Zero ")
-///                .action(ArgAction::Number(Rc::new(|_x| {
-///                    println!("teing arg_zero");
-///                }))),
-///        )
-///        .add_subcommand(
-///            SubCommand::new("vecnumber")
-///                .about("用来测试 ArgCount::Zero ")
-///                .action(ArgAction::NumberMutiple(Rc::new(|_x| {
-///                    println!("teing arg_zero");
-///                }))),
-///        )
-///        .add_subcommand(
-///            SubCommand::new("vecbool")
-///                .about("用来测试 ArgCount::Zero ")
-///                .action(ArgAction::BoolMutiple(Rc::new(|_x| {
-///                    println!("teing arg_zero");
-///                }))),
-///        )
-///        .add_subcommand(
-///            SubCommand::new("vecstring")
-///                .about("用来测试 ArgCount::Zero ")
-///                .action(ArgAction::StringMutiple(Rc::new(|_x| {
-///                    println!("teing arg_zero");
-///                }))),
-///        );
-///    app.run();
-/// ```
 #[derive(Clone, Debug)]
 pub struct App<'a> {
     /// 此程序的名称;  
@@ -143,6 +76,8 @@ pub struct App<'a> {
 
     /// `let env_arg: Vec<String> = std::env::args().collect()`
     _env_arg: SharedVecString,
+
+    _need_to: NeedTo,
 }
 
 impl<'a> App<'a> {
@@ -258,7 +193,10 @@ impl<'a> App<'a> {
     ///
     /// ```
     pub fn run(self) {
-        let re = self.try_run();
+        let mut re = self;
+        re._need_to = NeedTo::Run;
+
+        let re = re.try_run();
         match re {
             DidHandled::Handled => {}
             DidHandled::Failed(_e) => {
@@ -269,11 +207,6 @@ impl<'a> App<'a> {
 
     /// like run(), but has result.
     pub fn try_run(self) -> DidHandled {
-        #[cfg(debug_assertions)]
-        {
-            self.debug_check();
-        }
-
         let option_string = self._env_arg.get(1);
         match option_string {
             None => {
@@ -353,7 +286,12 @@ impl<'a> App<'a> {
             let command_name = &x._name;
 
             // TODO: 为 cmd_name 添加颜色.
-            let cmd_name = format!("{}{}", short_name, command_name,);
+            let cmd_name = format!(
+                "{}{} {}",
+                short_name,
+                command_name,
+                x._arg_type_with_action.arg_type_display().green()
+            );
 
             table.add_row(row![cmd_name.styled_sub_command(), x._about]);
         }
@@ -423,23 +361,10 @@ Usage:
                 for x in rows {
                     table.add_row(x);
                 }
-
-                // rows.row_iter().for_each(|a| {
-                //     table.add_row(a.clone());
-                // });
             }
             println!("{}", table);
             table.printstd();
         } else {
-            // let mut table = table!();
-            // table.set_format(helper::table_formater());
-
-            // self._examples.pretty_formated().row_iter().for_each(|a| {
-            //     table.add_row(a.clone());
-            // });
-
-            // println!("{}", table);
-
             println!("{}", vec_row_to_table(self._examples.pretty_formated()));
         }
     }
@@ -454,60 +379,27 @@ impl App<'_> {
     /// // -h --help -v -version
     fn _handle_app_help(&self) -> DidHandled {
         let command_name = &*self._env_arg[1];
-        // let arr = vec!["-h", "--help", "help", "h"];
-        let arr = ["-h", "--help"];
 
-        if arr.contains(&command_name) {
-            // 打印 App 的帮助信息.
-            self.print_app_help();
+        if ["-h", "--help"].contains(&command_name) {
+            if self._need_to.is_run() {
+                self.print_app_help(); // 打印 App 的帮助信息.
+            }
             DidHandled::Handled
         } else {
             DidHandled::Failed(r#"不是 "-h" or "--help""#.to_string())
         }
-
-        // if !(command_name == "-h" || command_name == "--help") {
-        //     return DidHandled::Failed("不是程序的 help 命令".to_string());
-        // }
-
-        // //  "help" 命令 的默认实现, 这里处理的是: 是用 help 命令查询其他命令.
-        // // 比如 `app help run` 查询 run 命令的帮助文档. 效果等同于 `app run --help`
-        // if let Some(需要查询的命令名称) = self.sub_command_arg.first() {
-        //     if 需要查询的命令名称 == "-h" || 需要查询的命令名称 == "--help" {
-        //         // TODO: 命令 ‘help' 的帮助文档
-
-        //         println!("命令 ‘help' 的帮助文档");
-
-        //         return DidHandled::Handled;
-        //     }
-
-        //     for x in &self.sub_commands {
-        //         if 需要查询的命令名称 == &x.command_name || 需要查询的命令名称 == &x.short_name
-        //         {
-        //             x.print_command_help(&self.app_name);
-        //             return DidHandled::Handled;
-        //         }
-        //     }
-        //     return DidHandled::Failed(format!(
-        //         "查询的命令 {} 不存在",
-        //         需要查询的命令名称.styled_sub_command()
-        //     ));
-        // } else {
-        //     // 打印 App 的帮助信息.
-        //     self.print_app_help();
-        //     return DidHandled::Handled;
-        // }
     }
 
     /// app version 命令的默认实现
     fn _handle_app_version(&self) -> DidHandled {
         // 处理 App 的flags.
         //  -v -version
-        // let command_name = self._env_arg[1].clone();
-        let command_name = &self._env_arg[1];
 
-        if command_name == "-v" || command_name == "--version" {
-            println!("{}", self._app_version_message);
-
+        let command_name = &*self._env_arg[1];
+        if ["-v", "--version"].contains(&command_name) {
+            if self._need_to.is_run() {
+                println!("{}", self._app_version_message);
+            }
             DidHandled::Handled
         } else {
             DidHandled::Failed("不是 version 命令".to_string())
@@ -528,8 +420,9 @@ impl App<'_> {
                         table.add_row(x.clone());
                     });
                 });
-
-                println!("{}", table);
+                if self._need_to.is_run() {
+                    println!("{}", table);
+                }
             }
 
             DidHandled::Handled
@@ -540,20 +433,6 @@ impl App<'_> {
             ))
         }
     }
-    // /// app version 命令的默认实现
-    // fn _heldle_app_example(&self) -> DidHandled {
-    //     // 处理 App 的flags.
-    //     // -h --help -v -version
-    //     let command_name = self.env_arg[1].clone();
-
-    //     if command_name == "-v" || command_name == "--version" {
-    //         println!("{}", self.app_version_message);
-
-    //         return DidHandled::Handled;
-    //     } else {
-    //         return DidHandled::Failed(format!("不是 {} 命令", "version".styled_sub_command()));
-    //     }
-    // }
 
     /// 处理只输入了程序名称没有子命令也没有任何 flag 的情况.
     fn _handle_app_default_acton(&self) -> DidHandled {
@@ -561,11 +440,16 @@ impl App<'_> {
             if self._env_arg.len() == 1 {
                 match &self._app_default_action {
                     AppDefaultAction::PrintHelpMessage => {
-                        self.print_app_help();
+                        if self._need_to.is_run() {
+                            self.print_app_help();
+                        }
+
                         return DidHandled::Handled;
                     }
                     AppDefaultAction::CustomAction(f) => {
-                        f();
+                        if self._need_to.is_run() {
+                            f();
+                        }
 
                         return DidHandled::Handled;
                     }
@@ -583,7 +467,7 @@ impl App<'_> {
                 if command_name == x._name || command_name == x._short_name {
                     let cmd_args = self._commands_arg.clone();
 
-                    return x.suc_command_run(&self._app_name, cmd_args);
+                    return x.sub_command_try_run(&self._app_name, cmd_args, self._need_to);
                 } else {
                     continue;
                 }
@@ -602,7 +486,9 @@ impl App<'_> {
         let command_name = self._env_arg[1].clone();
 
         if command_name == "-e" || command_name == "--example" {
-            self.print_app_examples();
+            if self._need_to.is_run() {
+                self.print_app_examples();
+            }
 
             DidHandled::Handled
         } else {
@@ -611,12 +497,7 @@ impl App<'_> {
     }
 }
 
-// enum Expect {
-//     Right = 0,
-//     Wrong = 1,
-// }
-
-impl App<'_> {
+impl<'a> App<'a> {
     //  ------- Debug Functions -------
 
     /// 模拟用户输入,  
@@ -660,23 +541,35 @@ impl App<'_> {
     /// 检查子命令示example是否能正确的被解析
     /// 检查子命令的名字是否重复.
     /// 命令人类友好度检查
-    #[cfg(debug_assertions)] // 只在 debug 模式下使用
-    pub fn debug_check(&self) {
+    // #[cfg(debug_assertions)] // 只在 debug 模式下使用
+    pub fn test(&self) {
         // TODO: 打印两个名称冲突的 Cmd
 
-        let re = self.debug_duplicate_names_check();
-        if let Err(duplicate_names) = re {
-            println!("{}", "ERROR 有子命令的名称重复了:".red());
+        {
+            let re = self.debug_duplicate_names_check();
+            if let Err(duplicate_names) = re {
+                println!("{}", "ERROR 有子命令的名称重复了:".red());
 
-            duplicate_names.iter().for_each(|x| {
-                println!("{}", x);
-            });
+                duplicate_names.iter().for_each(|x| {
+                    println!("{}", x);
+                });
+            }
+        }
+
+        {
+            // let mut table: Table = table!();
+            // table.set_format(helper::table_formater());
+
+            let re = self.debug_检查子命令示example是否能正确的被解析();
+            for x in re {
+                print!("{}", x.formated());
+            }
         }
     }
 
     /// 检查子命令的名字是否重复.
-    #[cfg(debug_assertions)] // 只在 debug 模式下使用
-    pub(crate) fn debug_duplicate_names_check(
+    // #[cfg(debug_assertions)] // 只在 debug 模式下使用
+    fn debug_duplicate_names_check(
         &self,
         // ) -> Result<(), std::collections::HashSet<&String>> {
     ) -> Result<(), std::collections::HashSet<&str>> {
@@ -747,9 +640,19 @@ impl App<'_> {
         }
     }
 
-    // pub(crate) fn debug_检查子命令示example是否能正确的被解析() {}
+    fn debug_检查子命令示example是否能正确的被解析(
+        &'a self,
+    ) -> Vec<ExampleTestResult<'a>> {
+        let mut re: Vec<ExampleTestResult<'a>> = vec![];
 
-    // pub(crate) fn debug_命令人类友好度检查(&self) {}
+        self._commands.iter().for_each(|cmd| {
+            re.push(cmd.cmd_debug_parse(&self._app_name));
+        });
+
+        re
+    }
+
+    // pub(crate) fn debug_子命令——人类友好度检查(&self) {}
 }
 
 impl Default for App<'_> {
@@ -789,6 +692,13 @@ impl Default for App<'_> {
             _examples: Examples::new(),
             _commands_arg: sub_cmd_arg.into(),
             _app_default_action: Default::default(),
+            _need_to: NeedTo::Run,
         }
     }
 }
+
+// example test for "run" ... ok
+// example test "init" ... FAILED
+//      app build 2 # this can not parse.
+// example test "build" ... FAILED
+//      app build 2 # this can not parse.

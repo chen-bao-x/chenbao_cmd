@@ -1,7 +1,6 @@
 use crate::arg_type::{ReplArg, ReplArgStore};
 use crate::helper::*;
 use owo_colors::OwoColorize;
-use std::io::Empty;
 use std::{marker::PhantomData, num::ParseIntError, path::Path, vec};
 
 use super::*;
@@ -127,24 +126,21 @@ impl DialogGenerator<'_> {
         // let mut self = self;
 
         if self.is_from_json {
-            // let val = self.arguments.get(self.index, prompt);
-            let val = self.arguments.get(self.index, prompt);
+            let result_value = self
+                .arguments
+                .get(self.index, prompt)
+                .unwrap_or_else(|| panic!("key: {}", key_gen(self.index, prompt)))
+                .get_number();
 
-            if let Some(str) = val {
-                let result_value = str.get_number();
-
-                return self.ret(result_value);
-            }
-
-            panic!("key: {}", key_gen(self.index, prompt));
+            self.ret(result_value)
         } else {
             // get value from REPL.
 
             let result_value = DialogerWraper::get_number(prompt, &self.theme);
-            // let string = serde_json::to_string(&result_value).unwrap();
 
             self.arguments
                 .add(self.index, prompt, arg_type::ReplArg::Number(result_value));
+
             self.ret(result_value)
         }
     }
@@ -157,7 +153,7 @@ impl DialogGenerator<'_> {
                 // .expect(&format!("{:?}", key_gen(self.index, prompt)))
                 .unwrap_or_else(|| panic!("{:?}", key_gen(self.index, prompt)))
                 .get_number_multiple();
-            self.ret(result_value)
+            self.ret(result_value.clone())
         } else {
             let multiple_string = DialogerWraper::get_string_multiple(prompt, &self.theme);
 
@@ -329,6 +325,7 @@ impl DialogGenerator<'_> {
         DialogerWraper::password_with_confirmation(prompt)
     }
 
+    /// 打印 快捷参数
     pub fn finesh(&mut self, app_name: &str, command_name: &str) {
         let app_name = app_name.cyan();
         let command_name = command_name.bright_cyan();
@@ -348,139 +345,6 @@ Executed command: {app_name} {command_name} stdin << '{marker}'
     fn ret<T>(&mut self, result_value: T) -> T {
         self.index += 1;
         result_value
-    }
-}
-
-#[cfg(test)]
-mod test_repl_new_api_style {
-    use super::*;
-
-    use std::fmt::Debug;
-
-    // #[test]
-    fn dialog_generator_tester<F, R>(val: Option<&str>, f: F)
-    where
-        F: Fn(&mut DialogGenerator) -> R,
-        R: Debug,
-    {
-        let mut repl = match val {
-            Some(str) => DialogGenerator::new_from_toml(str).unwrap(),
-            None => DialogGenerator::new(),
-        };
-        let x = f(&mut repl);
-
-        let is_from_json = val.is_some();
-
-        println!("输入的是: {:?}", x);
-        println!("json_str: {}", repl.to_toml());
-        assert_eq!(repl.is_from_json, is_from_json);
-
-        // repl.editor("prompt");
-    }
-
-    // #[test]
-    // fn it_works() {
-    // // 此测试需要手动测试.
-    //     let mut repl1 = DialogGenerator::new(None);
-    //     {
-    //         let items = vec!["one", "two", "tree", "four"];
-
-    //         let _str = repl1.string("string");
-    //         let _string_multiple = repl1.string_multiple("string_multiple");
-    //         let _num = repl1.number("number");
-    //         let _number_multiple = repl1.number_multiple("number_multiple");
-    //         let _number_multiple = repl1.path("path");
-    //         let _number_multiple = repl1.path_multiple("path_multiple");
-    //         let _number_multiple = repl1.select("select", &items);
-    //         let _number_multiple = repl1.select_multiple("select_multiple", &items);
-    //         let _password = repl1.password("password");
-    //         let _password_with_confirmation = repl1.password_with_confirmation("password");
-    //         let _editor = repl1.editor("editor");
-    //         let _yes_or_no = repl1.yes_or_no("yes_or_no");
-    //     }
-
-    //     let json_str = repl1.to_json_str();
-    //     let mut _repl2 = DialogGenerator::new(Some(&json_str));
-
-    //     println!(
-    //         "repl1: {:?}\nrepl2: {:?}",
-    //         repl1.arguments, _repl2.arguments
-    //     );
-    //     assert_eq!(repl1.arguments, _repl2.arguments);
-    // }
-
-    #[test]
-    fn test_string() {
-        // 已测试, 可以逆转.
-
-        // // form terminal repl.
-        // dialog_generator_tester(None, |x| {
-        //     return x.string("prompt").to_string();
-        // });
-
-        // form json string.
-        dialog_generator_tester(Some(r#"     ["sadfdsaf dsf sad f"]    "#), |x| {
-            x.string("string").to_string()
-        });
-    }
-
-    #[test]
-    fn test_string_multiple() {
-        // 已测试, 可以逆转.
-
-        // form terminal repl.
-        // dialog_generator_tester(None, |x| {
-        //     return x.string_multiple("prompt");
-        // });
-
-        // form json string.
-        dialog_generator_tester(Some(r#"   ["[\"sadfdsafsadf\",\"sdaf\"]"]   "#), |x| {
-            x.string_multiple("prompt")
-        });
-    }
-
-    #[test]
-    fn test_number() {
-        // 已测试, 可以逆转.
-
-        // // form terminal repl.
-        // dialog_generator_tester(None, |x| {
-        //     return x.number("prompt");
-        // });
-
-        // form json string.
-        dialog_generator_tester(Some(r#"       ["325435325"]      "#), |x| {
-            x.number("prompt")
-        });
-    }
-
-    #[test]
-    fn test_number_multiple() {
-        // 已测试, 可以逆转.
-
-        // form terminal repl.
-        // dialog_generator_tester(None, |x| {
-        //     return x.number_multiple("prompt");
-        // });
-
-        // form json string.
-        dialog_generator_tester(
-            Some(r#"      ["[\"1\",\"2\",\"3\",\"4\",\"5\"]"]     "#),
-            |x| x.number_multiple("prompt"),
-        );
-    }
-
-    #[test]
-    fn test_yes_or_no() {
-        // 已测试, 可以逆转.
-
-        // // form terminal repl.
-        // dialog_generator_tester(None, |x| {
-        //     return x.yes_or_no("prompt");
-        // });
-
-        // form json string.
-        dialog_generator_tester(Some(r#"      ["false"]     "#), |x| x.yes_or_no("prompt"));
     }
 }
 
@@ -658,35 +522,38 @@ impl DialogerWraper {
 mod test_dialog {
     // 这里面都是一些 dialoguer 式交互, 需要手动来测试.
 
-    // use super::*;
+    use super::*;
 
-    // #[test]
-    // fn test_get_string() {
-    //     let a = DialogGeter::get_string("请输入一个字符串");
-    //     println!("最终获得的 string 是: {}", a);
-    // }
+    #[test]
+    fn test_get_string() {
+        let a = DialogerWraper::get_string(
+            "请输入一个字符串",
+            &dialoguer::theme::ColorfulTheme::default(),
+        );
+        println!("最终获得的 string 是: {}", a);
+    }
 
     // #[test]
     // fn test_repl_get_number() {
-    //     let a = DialogGeter::get_number("你要吃几个汉堡?");
+    //     let a = DialogerWraper::get_number("你要吃几个汉堡?");
     //     println!("最终获得的数字是: {}", a);
     // }
 
     // #[test]
     // fn test_repl_get_multiple_string() {
-    //     let arr = DialogGeter::get_string_multiple("请输入多个字符串");
+    //     let arr = DialogerWraper::get_string_multiple("请输入多个字符串");
     //     println!("{:?}", arr);
     // }
 
     // #[test]
     // fn test_repl_req_bool() {
-    //     let b = DialogGeter::get_bool("test_repl_req_bool");
+    //     let b = DialogerWraper::get_bool("test_repl_req_bool");
     //     println!("最终获得的数字是: {:?}", b);
     // }
 
     // #[test]
     // fn test_repl_req_string() {
-    //     let b = DialogGeter::get_string("请输入一个字符串");
+    //     let b = DialogerWraper::get_string("请输入一个字符串");
     //     println!("最终获得的数字是: {:?}", b);
     // }
 
@@ -694,32 +561,32 @@ mod test_dialog {
     // fn test_get_single_selected() {
     //     let items = vec!["foo", "bar", "baz"];
 
-    //     let b = DialogGeter::get_single_selected("prompt", &items);
+    //     let b = DialogerWraper::get_single_selected("prompt", &items);
     //     println!("最终获得的数字是: {:?}", b);
     // }
 
     // #[test]
     // fn test_get_multiple_selected() {
     //     let items = vec!["foo", "bar", "baz"];
-    //     let b = DialogGeter::get_multiple_selected("prompt", &items);
+    //     let b = DialogerWraper::get_multiple_selected("prompt", &items);
     //     println!("最终获得的数字是: {:?}", b);
     // }
 
     // #[test]
     // fn test_edit() {
-    //     let b = DialogGeter::editor("prompt");
+    //     let b = DialogerWraper::editor("prompt");
     //     println!("最终获得的数字是: {:?}", b);
     // }
 
     // #[test]
     // fn test_password() {
-    //     let b = DialogGeter::password("");
+    //     let b = DialogerWraper::password("");
     //     println!("最终获得的数字是: {:?}", b);
     // }
 
     // #[test]
     // fn test_password_with_confirmation() {
-    //     let b = DialogGeter::password_with_confirmation("password_with_confirmation");
+    //     let b = DialogerWraper::password_with_confirmation("password_with_confirmation");
     //     println!("最终获得的数字是: {:?}", b);
     // }
 }

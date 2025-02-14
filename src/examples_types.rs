@@ -64,12 +64,16 @@ impl<'a> Examples<'a> {
 
         self.val.push(e);
     }
+
+    pub fn iter(&self) -> core::slice::Iter<'_, SingleExample<'a>> {
+        self.val.iter()
+    }
 }
 
 // ------- SingleExample -------
 
 #[derive(Clone, Debug, Hash)]
-pub(crate) struct SingleExample<'a> {
+pub struct SingleExample<'a> {
     pub command: &'a str,
 
     pub description: &'a str,
