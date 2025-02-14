@@ -22,15 +22,17 @@ pub struct SubCommand<'a> {
     pub _short_name: &'a str,
 
     /// 一句话介绍此命令
-    pub _about: String,
+    // pub _about: String,
+    pub _about: &'a str,
 
     /// 是用此命令的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
-    pub _exaples: Examples,
+    pub _exaples: Examples<'a>,
 
     /// 自定义的帮助文档.
     /// 当用户使用 help 命令查询此命令时显示的帮助文档.
-    pub _help_message: Option<String>,
+    // pub _help_message: Option<String>,
+    pub _help_message: Option<&'a str>,
 
     /// 子命令需要的参数的类型以及该子命令的 action.
     /// 在打印子命令的帮助文档时需要用到此属性.
@@ -65,7 +67,7 @@ impl<'a> SubCommand<'a> {
         SubCommand {
             _name: name,
 
-            _about: "".to_string(),
+            _about: "",
             _help_message: None,
             _short_name: "",
             _exaples: Examples::new(),
@@ -83,26 +85,25 @@ impl<'a> SubCommand<'a> {
     }
 
     /// set `SubCommand.about`
-    pub fn about(self, about: &str) -> Self {
+    pub fn about(self, about: &'a str) -> Self {
         let mut re = self;
-        re._about = about.to_string();
+        re._about = about;
         re
     }
 
-    pub fn add_example(self, command: &str, description: &str) -> Self {
+    pub fn add_example(self, command: &'a str, description: &'a str) -> Self {
         // TODO: 检查 `command: &'static str` 是否是可执行的 command.
 
         let mut re = self;
-        re._exaples
-            .add_single_example(command.to_string(), description.to_string());
+        re._exaples.add_single_example(command, description);
 
         re
     }
 
     /// set `Command.example`
-    pub fn help_document(self, str: &str) -> Self {
+    pub fn help_document(self, str: &'a str) -> Self {
         let mut re = self;
-        re._help_message = Some(str.to_string());
+        re._help_message = Some(str);
 
         re
     }
@@ -264,8 +265,8 @@ Usage:
     pub fn formated_command_example(&self, app_name: &str) -> Vec<Row> {
         if self._exaples.is_empty() {
             SingleExample {
-                command: "{app_name} {command_name} {arg}".to_string(),
-                description: self._about.to_string(),
+                command: "{app_name} {command_name} {arg}",
+                description: self._about,
             }
             .formated();
 
@@ -373,7 +374,7 @@ Usage:
 
                         let mut repl = arg_type::Dialog::new();
                         f(&mut repl);
-                        repl.finesh(app_name, &self._name);
+                        repl.finesh(app_name, self._name);
                     }
                 }),
             };

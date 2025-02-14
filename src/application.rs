@@ -125,14 +125,14 @@ pub struct App<'a> {
     pub _app_version_message: &'a str,
 
     /// 此程序的帮助文档,
-    pub _help_message: SharedString,
+    pub _help_message: &'a str,
 
     /// 此 app 的所有子命令.
     pub _commands: Vec<SubCommand<'a>>,
 
     /// 使用此程序的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
-    pub _examples: Examples,
+    pub _examples: Examples<'a>,
 
     /// 子命令的 “参数”
     pub _commands_arg: SharedVecString,
@@ -182,11 +182,10 @@ impl<'a> App<'a> {
     /// 使用此程序的一些示例,  
     /// 当用户使用 `app -e` 时会打印在这里添加的示例.  
     /// 此 method 可以多次调用来给此程序添加多个示例.
-    pub fn add_app_example(self, command: &str, description: &str) -> Self {
+    pub fn add_app_example(self, command: &'a str, description: &'a str) -> Self {
         let mut re = self;
 
-        re._examples
-            .add_single_example(command.to_string(), description.to_string());
+        re._examples.add_single_example(command, description);
 
         re
     }
@@ -236,9 +235,9 @@ impl<'a> App<'a> {
 
     /// 自定义帮助信息.  
     /// 此方法会替换掉由 chenbao_cmd 提供的帮助文档.
-    pub fn help_message(self, message: &str) -> Self {
+    pub fn help_message(self, message: &'a str) -> Self {
         let mut re = self;
-        re._help_message = message.to_string().into();
+        re._help_message = message;
 
         re
     }
@@ -581,7 +580,7 @@ impl App<'_> {
     fn _handle_commands(&self, command_name: &String) -> DidHandled {
         {
             for x in &self._commands {
-                if command_name == &x._name || command_name == &x._short_name {
+                if command_name == x._name || command_name == x._short_name {
                     let cmd_args = self._commands_arg.clone();
 
                     return x.suc_command_run(&self._app_name, cmd_args);
@@ -679,7 +678,7 @@ impl App<'_> {
     #[cfg(debug_assertions)] // 只在 debug 模式下使用
     pub(crate) fn debug_duplicate_names_check(
         &self,
-    // ) -> Result<(), std::collections::HashSet<&String>> {
+        // ) -> Result<(), std::collections::HashSet<&String>> {
     ) -> Result<(), std::collections::HashSet<&str>> {
         use std::collections::HashSet;
 
@@ -702,7 +701,7 @@ impl App<'_> {
             // default_impls.insert("--version".to_string());
             // default_impls.insert("-e".to_string());
             // default_impls.insert("--example".to_string());
-            
+
             default_impls.insert("-h");
             default_impls.insert("--help");
             default_impls.insert("-v");

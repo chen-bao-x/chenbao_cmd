@@ -1,7 +1,8 @@
-use crate::arg_type::ReplArgStore;
+use crate::arg_type::{ReplArg, ReplArgStore};
 use crate::helper::*;
 use owo_colors::OwoColorize;
-use std::{num::ParseIntError, path::Path, vec};
+use std::io::Empty;
+use std::{marker::PhantomData, num::ParseIntError, path::Path, vec};
 
 use super::*;
 use arg_type::key_gen;
@@ -10,7 +11,7 @@ const ARGUMENTS_START_INDEX: usize = 1;
 
 // #[derive(Debug)]
 /// ArgType::Repl(_) 需要用到 ReplQuestions.  
-pub struct DialogGenerator {
+pub struct DialogGenerator<'a> {
     /// 从 json_str 转换过来的 Vec<String>.
     /// 也可能是通过 问答式命令行交互 获取到的 Vec<String>.
     pub arguments: ReplArgStore,
@@ -23,13 +24,15 @@ pub struct DialogGenerator {
     pub is_from_json: bool,
 
     theme: dialoguer::theme::ColorfulTheme,
+
+    占位符号: PhantomData<&'a std::io::Empty>,
 }
-impl Default for DialogGenerator {
+impl Default for DialogGenerator<'_> {
     fn default() -> Self {
         Self::new()
     }
 }
-impl DialogGenerator {
+impl DialogGenerator<'_> {
     /* private */
 
     /// Creates a new [`ReplQuestions`].
@@ -47,20 +50,22 @@ impl DialogGenerator {
 
             is_from_json: false,
             theme: dialoguer::theme::ColorfulTheme::default(),
+            占位符号: PhantomData,
         }
     }
 
     /// ```rs
     /// let cmd = crate::DialogGenerator::new_from_jsonstr(r#"["hello"]"#);
     /// ```
-    pub fn new_from_toml(str: &str) -> Result<Self, String> {
-        ReplArgStore::from_toml(str)
+    pub fn new_from_toml(toml_formated_string: &str) -> Result<Self, String> {
+        ReplArgStore::from_toml(toml_formated_string)
             .map(|art_store| Self {
                 arguments: art_store,
                 index: ARGUMENTS_START_INDEX,
 
                 is_from_json: true,
                 theme: dialoguer::theme::ColorfulTheme::default(),
+                占位符号: PhantomData,
             })
             .map_err(|_e| format!("{}{}转换为 json 时出错: {}", file!(), line!(), _e))
     }
@@ -75,9 +80,10 @@ impl DialogGenerator {
     }
 }
 
-impl DialogGenerator {
+impl DialogGenerator<'_> {
     // _string
     pub fn string(&mut self, prompt: &str) -> arg_type::String {
+        // pub fn string(&mut self, prompt: &str) -> &str {
         if !self.is_from_json {
             let result_value = DialogerWraper::get_string(prompt, &self.theme);
 
@@ -85,10 +91,15 @@ impl DialogGenerator {
                 .add(self.index, prompt, arg_type::ReplArg::String(result_value));
         }
 
-        let result_value = self.arguments.get(self.index, prompt).unwrap().get_string();
+        let result_value = self.get(self.index, prompt).unwrap().get_string();
 
-        self.ret(result_value)
+        self.ret(result_value.to_string())
     }
+
+    fn get(&self, indasdex: usize, prompt: &str) -> Option<&ReplArg> {
+        self.arguments.get(indasdex, prompt)
+    }
+
     // _string_multiple
     pub fn string_multiple(&mut self, prompt: &str) -> arg_type::StringMutiple {
         if self.is_from_json {
@@ -98,7 +109,7 @@ impl DialogGenerator {
                 .unwrap_or_else(|| panic!("没找到需要的参数: {}", key_gen(self.index, prompt)))
                 .get_string_multiple();
 
-            self.ret(result_value)
+            self.ret(result_value.to_vec())
         } else {
             let result_value = DialogerWraper::get_string_multiple(prompt, &self.theme);
 
@@ -239,19 +250,21 @@ impl DialogGenerator {
         }
     }
     // _select
-    pub fn select(&mut self, prompt: &str, items: &Vec<&str>) -> arg_type::String {
-        if self.is_from_json {
-            let result_value = self.arguments.get(self.index, prompt).unwrap().get_string();
-            self.ret(result_value)
-        } else {
-            // get value from REPL.
-
+    pub fn select(&mut self, prompt: &str, items: &Vec<&str>) -> &str {
+        if !self.is_from_json {
             let str = DialogerWraper::get_single_selected(prompt, items, &self.theme);
 
             let result_value = arg_type::ReplArg::String(str.to_string());
 
             self.arguments.add(self.index, prompt, result_value);
-            self.ret(str.to_string())
+        }
+
+        let result_value = self.arguments.get(self.index, prompt).unwrap().get_string();
+
+        {
+            // ret
+            self.index += 1;
+            result_value
         }
     }
     // _select_multiple
@@ -263,7 +276,7 @@ impl DialogGenerator {
                 .unwrap()
                 .get_string_multiple();
 
-            self.ret(result_value)
+            self.ret(result_value.to_vec())
         } else {
             // get value from REPL.
 
@@ -281,34 +294,23 @@ impl DialogGenerator {
         }
     }
     // _editor
-    pub fn editor(&mut self, prompt: &str) -> arg_type::String {
+
+    pub fn editor(&mut self, prompt: &str) -> &str {
         if self.is_from_json {
-            println!("is_from_json");
-            let val = self.arguments.get(self.index, prompt);
-
-            match val {
-                Some(str) => {
-                    // 成功获取到了需要的参数
-                    let result_value = str.get_string();
-
-                    // self.ret(result_value)
-                    self.ret(result_value)
-                }
-                None => {
-                    // not string
-                    panic!();
-                }
-            }
-        } else {
             let result_value = DialogerWraper::get_string_from_editor(prompt);
-
             self.arguments.add(
                 self.index,
                 prompt,
                 arg_type::ReplArg::String(result_value.clone()),
             );
+        }
 
-            self.ret(result_value)
+        let result_value = self.arguments.get(self.index, prompt).unwrap().get_string();
+
+        {
+            // ret
+            self.index += 1;
+            result_value
         }
     }
     // _password

@@ -8,7 +8,7 @@ pub type Path = std::path::PathBuf;
 pub type PathMutiple = Vec<std::path::PathBuf>;
 pub type Bool = bool;
 pub type BoolMutiple = Vec<bool>;
-pub type Dialog = crate::question_and_anser::DialogGenerator;
+pub type Dialog<'a> = crate::question_and_anser::DialogGenerator<'a>;
 // pub type Empty = self::EmptyArg;
 
 /// 用来表示这个 subcommand 不需要参数.
@@ -58,15 +58,17 @@ impl ReplArg {
         }
         panic!("{:?}", self);
     }
-    pub fn get_string(&self) -> String {
+
+    pub fn get_string(&self) -> &str {
         if let ReplArg::String(val) = self {
-            return val.to_string();
+            // return val.to_string();
+            return val;
         }
         panic!("{:?}", self);
     }
-    pub fn get_string_multiple(&self) -> Vec<String> {
+    pub fn get_string_multiple(&self) -> &Vec<String> {
         if let ReplArg::StringMultiple(val) = self {
-            return val.to_vec();
+            return val;
         }
         panic!("{:?}", self);
     }
