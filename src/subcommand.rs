@@ -1,6 +1,6 @@
 use crate::{
     action::{ArgAction, ParseResult, SubcommandArgsValue},
-    examples_types::Examples,
+    examples_types::{Examples, SingleExample},
     helper::*,
 };
 
@@ -87,19 +87,20 @@ impl SubCommand {
         re
     }
 
-    pub fn add_example(self, command: &'static str, description: &'static str) -> Self {
+    pub fn add_example(self, command: &str, description: &str) -> Self {
         // TODO: 检查 `command: &'static str` 是否是可执行的 command.
 
         let mut re = self;
-        re._exaples.add_single_example(command, description);
+        re._exaples
+            .add_single_example(command.to_string(), description.to_string());
 
         re
     }
 
     /// set `Command.example`
-    pub fn help_document(self, str: String) -> Self {
+    pub fn help_document(self, str: &str) -> Self {
         let mut re = self;
-        re._help_message = Some(str);
+        re._help_message = Some(str.to_string());
 
         re
     }
@@ -263,6 +264,12 @@ Usage:
     /// 已经格式化好了, 直接放进 Table 打印就行.
     pub fn formated_command_example(&self, app_name: &String) -> Table {
         if self._exaples.is_empty() {
+            SingleExample {
+                command: "{app_name} {command_name} {arg}".to_string(),
+                description: self._about.to_string(),
+            }
+            .formated();
+
             let mut table = table!();
             {
                 table.set_format(helper::table_formater());

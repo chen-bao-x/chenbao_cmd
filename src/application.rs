@@ -1,8 +1,7 @@
+use crate::examples_types::Examples;
+use crate::helper::*;
+use crate::*;
 use core::fmt;
-
-use super::*;
-use crate::subcommand::SubCommand;
-use crate::{examples_types::Examples, helper::*};
 use owo_colors::OwoColorize;
 use prettytable::{row, table, Table};
 
@@ -113,10 +112,10 @@ pub struct App {
     pub _app_name: String,
 
     /// 一句话介绍此程序.
-    pub _about: &'static str,
+    pub _about: String,
 
     /// 此程序的作者
-    pub _author: &'static str,
+    pub _author: String,
 
     /// 当用户查询此程序的 version 信息时显示的信息;
     pub _app_version_message: String,
@@ -162,26 +161,27 @@ impl App {
     /// ```rs
     /// let app = App::new().app_name(env!("CARGO_PKG_NAME"));
     /// ```
-    pub fn app_name(self, app_name: &'static str) -> Self {
+    pub fn app_name(self, app_name: &str) -> Self {
         let mut re = self;
         re._app_name = app_name.to_string();
         re
     }
 
     /// 在这里介绍这个程序是什么. 做什么用的
-    pub fn about(self, about: &'static str) -> Self {
+    pub fn about(self, about: &str) -> Self {
         let mut re = self;
-        re._about = about;
+        re._about = about.to_string();
         re
     }
 
     /// 使用此程序的一些示例,  
     /// 当用户使用 `app -e` 时会打印在这里添加的示例.  
     /// 此 method 可以多次调用来给此程序添加多个示例.
-    pub fn add_app_example(self, command: &'static str, description: &'static str) -> Self {
+    pub fn add_app_example(self, command: &str, description: &str) -> Self {
         let mut re = self;
 
-        re._examples.add_single_example(command, description);
+        re._examples
+            .add_single_example(command.to_string(), description.to_string());
 
         re
     }
@@ -192,18 +192,18 @@ impl App {
     /// ```rs
     /// let app = App::new().version_message(env!("CARGO_PKG_VERSION"));
     /// ```
-    pub fn version_message(self, version_message: String) -> Self {
+    pub fn version_message(self, version_message: &str) -> Self {
         let mut re = self;
-        re._app_version_message = version_message;
+        re._app_version_message = version_message.to_owned();
         re
     }
 
     /// 此程序的版本信息.  
     /// 当用户使用 `app --version` 时会打印在这里添加的版本信息.  
     /// 此 method 只需要调用一次.  
-    pub fn author(self, author: &'static str) -> Self {
+    pub fn author(self, author: &str) -> Self {
         let mut re = self;
-        re._author = author;
+        re._author = author.to_string();
         re
     }
 
@@ -229,9 +229,9 @@ impl App {
 
     /// 自定义帮助信息.  
     /// 此方法会替换掉由 chenbao_cmd 提供的帮助文档.
-    pub fn help_message(self, message: String) -> Self {
+    pub fn help_message(self, message: &str) -> Self {
         let mut re = self;
-        re._help_message = message;
+        re._help_message = message.to_string();
 
         re
     }
@@ -333,7 +333,7 @@ impl App {
         }
 
         let mut table = table!();
-        table.set_format(table_formater());
+        table.set_format(helper::table_formater());
 
         for x in &self._commands {
             let short_name = if x._short_name.is_empty() {
@@ -419,16 +419,18 @@ Usage:
                 });
             }
             println!("{}", table);
-            // table.printstd();
+            table.printstd();
         } else {
-            let mut table = table!();
-            table.set_format(helper::table_formater());
+            // let mut table = table!();
+            // table.set_format(helper::table_formater());
 
-            self._examples.pretty_formated().row_iter().for_each(|a| {
-                table.add_row(a.clone());
-            });
+            // self._examples.pretty_formated().row_iter().for_each(|a| {
+            //     table.add_row(a.clone());
+            // });
 
-            println!("{}", table);
+            // println!("{}", table);
+
+            println!("{}", self._examples.pretty_formated());
         }
     }
 }
@@ -597,13 +599,19 @@ impl App {
     }
 }
 
+enum Expect {
+    Right,
+    Wrong,
+}
+
 impl App {
     //  ------- Debug Functions -------
 
     /// 模拟用户输入,  
     /// 用来更方便的测试程序.  
     // #[cfg(debug_assertions)]
-    pub fn deubug_run(self, virtual_env_args: Vec<&str>) -> Self {
+    pub fn deubug_run<const N: usize>(self, virtual_env_args: [&str; N]) -> Self {
+        
         println!(
             "------- command testing for: {} ",
             virtual_env_args.join(" ").styled_sub_command()
@@ -634,6 +642,7 @@ impl App {
             }
         }
 
+        // 返回未修改的 self
         self
     }
 

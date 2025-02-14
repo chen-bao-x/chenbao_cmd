@@ -59,7 +59,7 @@ impl Examples {
         table
     }
 
-    pub fn add_single_example(&mut self, command: &'static str, description: &'static str) {
+    pub fn add_single_example(&mut self, command: String, description: String) {
         let e = SingleExample {
             command,
             description,
@@ -73,8 +73,8 @@ impl Examples {
 
 #[derive(Clone, Debug, Hash)]
 pub(crate) struct SingleExample {
-    pub command: &'static str,
-    pub description: &'static str,
+    pub command: String,
+    pub description: String,
 }
 
 impl std::fmt::Display for SingleExample {
@@ -100,16 +100,16 @@ impl SingleExample {
 fn sdafasdf() {
     let mut arr: Examples = Examples::new();
     arr.add_single_example(
-        "ls | sort-by size",
-        "List the files in the current directory, sorted by size:",
+        "ls | sort-by size".to_string(),
+        "List the files in the current directory, sorted by size:".to_string(),
     );
     arr.add_single_example(
-        "sys host | get hostname",
-        "Get the current system host name:",
+        "sys host | get hostname".to_string(),
+        "Get the current system host name:".to_string(),
     );
     arr.add_single_example(
-        "Get the processes on your system actively using CPU:",
-        "ps | where cpu > 0",
+        "Get the processes on your system actively using CPU:".to_string(),
+        "ps | where cpu > 0".to_string(),
     );
 
     println!("{}", arr);
