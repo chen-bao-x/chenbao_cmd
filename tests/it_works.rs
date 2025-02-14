@@ -96,20 +96,20 @@ fn it_works() {
     // }
 
     let _asdf = app
-        .deubug_run(vec!["cmd", "-e"])
-        .deubug_run(vec!["cmd", "help"])
-        .deubug_run(vec!["cmd", "-h"])
-        .deubug_run(vec!["cmd", "b"])
-        .deubug_run(vec!["cmd", "build", "true"])
-        .deubug_run(vec!["cmd", "build", "-h"])
-        .deubug_run(vec!["cmd", "build", "-e"])
-        .deubug_run(vec!["cmd", "run"])
-        .deubug_run(vec!["cmd", "run", "3"])
-        .deubug_run(vec!["cmd", "run", "3", "32"]) // 类型正确, 数量不正确
-        .deubug_run(vec!["cmd", "run", "-h"])
-        .deubug_run(vec!["cmd", "-h"])
-        .deubug_run(vec!["cmd"])
-        .deubug_run(vec!["cmd", "arg_one", "-h"]);
+        .deubug_run(["cmd", "-e"])
+        .deubug_run(["cmd", "help"])
+        .deubug_run(["cmd", "-h"])
+        .deubug_run(["cmd", "b"])
+        .deubug_run(["cmd", "build", "true"])
+        .deubug_run(["cmd", "build", "-h"])
+        .deubug_run(["cmd", "build", "-e"])
+        .deubug_run(["cmd", "run"])
+        .deubug_run(["cmd", "run", "3"])
+        .deubug_run(["cmd", "run", "3", "32"]) // 类型正确, 数量不正确
+        .deubug_run(["cmd", "run", "-h"])
+        .deubug_run(["cmd", "-h"])
+        .deubug_run(["cmd"])
+        .deubug_run(["cmd", "arg_one", "-h"]);
 }
 
 #[test]
@@ -257,11 +257,6 @@ fn dsafdsaf() {
         .deubug_run(["cmd"])
         .deubug_run(["cmd", "arg_one", "-h"]);
 
-    let s1: Box<str> = "hello".into();
-
-    let aaa = "".to_string();
-    let aaa = b"asdfasdf";
-    
     let _ = app
         .deubug_run(["app_name", "-e"])
         // .deubug_run(vec!["app_name", "help"])

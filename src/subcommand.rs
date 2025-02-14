@@ -7,8 +7,7 @@ use crate::{
 use super::*;
 use application::DidHandled;
 use owo_colors::OwoColorize;
-use prettytable::{row, table, Row, Table};
-use std::vec;
+use prettytable::{row, Row};
 
 /// 子命令
 #[derive(Clone, Debug)]
@@ -113,25 +112,22 @@ impl SubCommand {
         re
     }
 
-    pub fn run(&self, app_name: &String, cmd_args: &[String]) -> DidHandled {
-        self.try_run(app_name, cmd_args, true)
+    // pub fn suc_command_run(&self, app_name: &String, cmd_args: &[String]) -> DidHandled {
+    pub fn suc_command_run(&self, app_name: &str, cmd_args: SharedVecString) -> DidHandled {
+        self.suc_command_try_run(app_name, cmd_args, true)
     }
 }
 
 impl SubCommand {
-    pub fn print_command_help(&self, app_name: &String) {
+    pub fn print_command_help(&self, app_name: &str) {
         println!("{}", self.formated_command_help(app_name));
     }
 
     /// `app cmd -e` 打印当前子命令的示例.
-    pub fn print_command_example(&self, app_name: &String) {
+    pub fn print_command_example(&self, app_name: &str) {
         let arr = self.formated_command_example(app_name);
-        let mut table = table!();
-        table.set_format(table_formater());
 
-        arr.row_iter().for_each(|x| {
-            table.add_row(x.clone());
-        });
+        let table = helper::vec_row_to_table(arr);
 
         println!(
             "子命令 {} {} 的使用示例:",
@@ -143,7 +139,7 @@ impl SubCommand {
     }
 }
 impl SubCommand {
-    pub fn formated_usage(&self, app_name: &String) -> String {
+    pub fn formated_usage(&self, app_name: &str) -> String {
         let command_name = self._name.styled_sub_command();
         let short_name = self._short_name.styled_sub_command();
 
@@ -190,7 +186,7 @@ Usage:
     }
 
     /// `app cmd -h` 时显示的帮助文档.
-    pub fn formated_command_help(&self, app_name: &String) -> String {
+    pub fn formated_command_help(&self, app_name: &str) -> String {
         if let Some(s) = &self._help_message {
             // 自定义了帮助文档的情况;
             s.to_string()
@@ -262,7 +258,7 @@ Usage:
     }
 
     /// 已经格式化好了, 直接放进 Table 打印就行.
-    pub fn formated_command_example(&self, app_name: &String) -> Table {
+    pub fn formated_command_example(&self, app_name: &str) -> Vec<Row> {
         if self._exaples.is_empty() {
             SingleExample {
                 command: "{app_name} {command_name} {arg}".to_string(),
@@ -270,9 +266,11 @@ Usage:
             }
             .formated();
 
-            let mut table = table!();
+            // let mut table = table! {};
+            let mut table: Vec<Row> = vec![];
+
             {
-                table.set_format(helper::table_formater());
+                // table.set_format(helper::table_formater());
 
                 let arg = self
                     ._arg_type_with_action
@@ -280,7 +278,7 @@ Usage:
                     .bright_green()
                     .to_string();
 
-                table.add_row(row![
+                table.push(row![
                     format!(
                         "{app_name} {command_name} {arg}",
                         command_name = self._name.styled_sub_command(),
@@ -303,10 +301,16 @@ Usage:
     //     self.try_run(app_name, cmd_args, false)
     // }
 
-    fn try_run(&self, app_name: &String, cmd_args: &[String], need_to_run: bool) -> DidHandled {
+    fn suc_command_try_run(
+        &self,
+        app_name: &str,
+        // cmd_args: &[String],
+        cmd_args: SharedVecString,
+        need_to_run: bool,
+    ) -> DidHandled {
         {
             // 处理当前 子命令 的 flag.
-            if let Some(first_arg) = cmd_args.first() {
+            if let Some(first_arg) = cmd_args.first().cloned() {
                 // 处理当前子命令的 help flag.
                 if first_arg == "--help" || first_arg == "-h" {
                     if need_to_run {
@@ -327,8 +331,8 @@ Usage:
 
         {
             let arg_message = self._arg_type_with_action.arg_message();
-            // let n = need_to_run;
-            let v = SubcommandArgsValue::new(cmd_args.to_owned());
+
+            let v = SubcommandArgsValue::new(cmd_args);
 
             let re = match &self._arg_type_with_action {
                 ArgAction::Empty(f) => run(v.get_empty(), need_to_run, f),

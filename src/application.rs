@@ -4,6 +4,7 @@ use crate::*;
 use core::fmt;
 use owo_colors::OwoColorize;
 use prettytable::{row, table, Table};
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub(crate) enum AppDefaultAction {
@@ -109,19 +110,19 @@ pub enum DidHandled {
 pub struct App {
     /// 此程序的名称;  
     /// 所有自动生成的帮助文档和示例都会使用到 self._app_name
-    pub _app_name: String,
+    pub _app_name: SharedString,
 
     /// 一句话介绍此程序.
-    pub _about: String,
+    pub _about: SharedString,
 
     /// 此程序的作者
-    pub _author: String,
+    pub _author: SharedString,
 
     /// 当用户查询此程序的 version 信息时显示的信息;
-    pub _app_version_message: String,
+    pub _app_version_message: SharedString,
 
     /// 此程序的帮助文档,
-    pub _help_message: String,
+    pub _help_message: SharedString,
 
     /// 此 app 的所有子命令.
     pub _commands: Vec<SubCommand>,
@@ -131,14 +132,14 @@ pub struct App {
     pub _examples: Examples,
 
     /// 子命令的 “参数”
-    pub _commands_arg: Vec<String>,
+    pub _commands_arg: SharedVecString,
 
     /// 只输入了程序名称没有子命令也没有任何 flag 时之行的 action.
     /// 默认是 AppDefaultAction::PrintHelpMessage;
     _app_default_action: AppDefaultAction,
 
     /// `let env_arg: Vec<String> = std::env::args().collect()`
-    _env_arg: Vec<String>,
+    _env_arg: SharedVecString,
 }
 
 impl App {
@@ -163,14 +164,14 @@ impl App {
     /// ```
     pub fn app_name(self, app_name: &str) -> Self {
         let mut re = self;
-        re._app_name = app_name.to_string();
+        re._app_name = Rc::new(app_name.to_string());
         re
     }
 
     /// 在这里介绍这个程序是什么. 做什么用的
     pub fn about(self, about: &str) -> Self {
         let mut re = self;
-        re._about = about.to_string();
+        re._about = about.to_string().into();
         re
     }
 
@@ -194,7 +195,7 @@ impl App {
     /// ```
     pub fn version_message(self, version_message: &str) -> Self {
         let mut re = self;
-        re._app_version_message = version_message.to_owned();
+        re._app_version_message = version_message.to_owned().into();
         re
     }
 
@@ -203,7 +204,7 @@ impl App {
     /// 此 method 只需要调用一次.  
     pub fn author(self, author: &str) -> Self {
         let mut re = self;
-        re._author = author.to_string();
+        re._author = author.to_string().into();
         re
     }
 
@@ -231,7 +232,7 @@ impl App {
     /// 此方法会替换掉由 chenbao_cmd 提供的帮助文档.
     pub fn help_message(self, message: &str) -> Self {
         let mut re = self;
-        re._help_message = message.to_string();
+        re._help_message = message.to_string().into();
 
         re
     }
@@ -414,9 +415,13 @@ Usage:
             for x in &self._commands {
                 let rows = x.formated_command_example(&self._app_name);
 
-                rows.row_iter().for_each(|a| {
-                    table.add_row(a.clone());
-                });
+                for x in rows {
+                    table.add_row(x);
+                }
+
+                // rows.row_iter().for_each(|a| {
+                //     table.add_row(a.clone());
+                // });
             }
             println!("{}", table);
             table.printstd();
@@ -430,7 +435,7 @@ Usage:
 
             // println!("{}", table);
 
-            println!("{}", self._examples.pretty_formated());
+            println!("{}", vec_row_to_table(self._examples.pretty_formated()));
         }
     }
 }
@@ -504,7 +509,8 @@ impl App {
     }
 
     fn _handle_list_all_command(&self) -> DidHandled {
-        let command_name = self._env_arg[1].clone();
+        // let command_name = self._env_arg[1].clone();
+        let command_name = &self._env_arg[1];
 
         if command_name == "--list-all-commands" {
             {
@@ -565,13 +571,14 @@ impl App {
         DidHandled::Failed("有子命令或者 flag, 不是 app_default_acton".to_string())
     }
 
+    // fn _handle_commands(&self, command_name: &String) -> DidHandled {
     fn _handle_commands(&self, command_name: &String) -> DidHandled {
         {
             for x in &self._commands {
                 if command_name == &x._name || command_name == &x._short_name {
-                    let cmd_args = &self._commands_arg;
+                    let cmd_args = self._commands_arg.clone();
 
-                    return x.run(&self._app_name, cmd_args);
+                    return x.suc_command_run(&self._app_name, cmd_args);
                 } else {
                     continue;
                 }
@@ -599,10 +606,10 @@ impl App {
     }
 }
 
-enum Expect {
-    Right,
-    Wrong,
-}
+// enum Expect {
+//     Right = 0,
+//     Wrong = 1,
+// }
 
 impl App {
     //  ------- Debug Functions -------
@@ -611,7 +618,6 @@ impl App {
     /// 用来更方便的测试程序.  
     // #[cfg(debug_assertions)]
     pub fn deubug_run<const N: usize>(self, virtual_env_args: [&str; N]) -> Self {
-        
         println!(
             "------- command testing for: {} ",
             virtual_env_args.join(" ").styled_sub_command()
@@ -621,16 +627,16 @@ impl App {
         let env_arg: Vec<String> = virtual_env_args.iter().map(|x| x.to_string()).collect();
 
         // 第 2 个一级后面的所有.
-        let sub_cmd_arg: Vec<String> = if env_arg.len() > 2 {
-            env_arg[2..].to_vec()
+        let sub_cmd_arg: SharedVecString = if env_arg.len() > 2 {
+            env_arg[2..].to_vec().into()
         } else {
-            vec![]
+            vec![].into()
         };
 
         re._commands_arg = sub_cmd_arg;
-        re._env_arg = env_arg;
+        re._env_arg = env_arg.into();
         if re._app_name.is_empty() {
-            re._app_name = env!("CARGO_PKG_NAME").to_string();
+            re._app_name = env!("CARGO_PKG_NAME").to_string().into();
         }
 
         let did_handled = re.try_run();
@@ -757,15 +763,15 @@ impl Default for App {
         };
 
         Self {
-            _app_name: app_name,
+            _app_name: app_name.into(),
             _about: Default::default(),
             _author: Default::default(),
-            _app_version_message: "0.0.1".to_string(),
+            _app_version_message: "0.0.1".to_string().into(),
             _help_message: Default::default(),
             _commands: Default::default(),
-            _env_arg: env_args,
+            _env_arg: env_args.into(),
             _examples: Examples::new(),
-            _commands_arg: sub_cmd_arg,
+            _commands_arg: sub_cmd_arg.into(),
             _app_default_action: Default::default(),
         }
     }

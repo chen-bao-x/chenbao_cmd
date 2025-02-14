@@ -13,7 +13,6 @@ dialoguer = { version = "0.11.0", features = [
 ] }
 owo-colors = "4.1.0"
 prettytable = "0.10.0"
-serde_json = "1.0.138"
 serde = { version = "1.0.217", features = ["derive"] }
 toml = "0.8.20"
 chenbao_cmd_macro = {path = "./packages/chenbao_cmd_macro"}

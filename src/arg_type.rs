@@ -60,7 +60,7 @@ impl ReplArg {
     }
     pub fn get_string(&self) -> String {
         if let ReplArg::String(val) = self {
-            return val.to_string();
+            return val.clone();
         }
         panic!("{:?}", self);
     }
@@ -136,10 +136,6 @@ impl ReplArgStore {
         }
 
         toml::to_string_pretty(&self)
-    }
-
-    pub fn to_json(&self) -> String {
-        serde_json::to_string_pretty(self).unwrap()
     }
 }
 

@@ -108,3 +108,6 @@ mod examples_types;
 mod helper;
 mod question_and_anser;
 mod subcommand;
+
+pub(crate) type SharedString = std::rc::Rc<String>;
+pub(crate) type SharedVecString = std::rc::Rc<Vec<String>>;

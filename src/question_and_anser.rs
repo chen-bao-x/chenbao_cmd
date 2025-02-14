@@ -329,7 +329,7 @@ impl DialogGenerator {
         DialogerWraper::password_with_confirmation(prompt)
     }
 
-    pub fn finesh(&mut self, app_name: &String, command_name: &String) {
+    pub fn finesh(&mut self, app_name: &str, command_name: &str) {
         let app_name = app_name.cyan();
         let command_name = command_name.bright_cyan();
         // println!("runing command: {app_name} {command_name} stdin << '###_marker_###'\n{}\n###_marker_###\n", self.to_toml().green());
@@ -466,9 +466,7 @@ mod test_repl_new_api_style {
         // form json string.
         dialog_generator_tester(
             Some(r#"      ["[\"1\",\"2\",\"3\",\"4\",\"5\"]"]     "#),
-            |x| {
-                x.number_multiple("prompt")
-            },
+            |x| x.number_multiple("prompt"),
         );
     }
 
@@ -482,9 +480,7 @@ mod test_repl_new_api_style {
         // });
 
         // form json string.
-        dialog_generator_tester(Some(r#"      ["false"]     "#), |x| {
-            x.yes_or_no("prompt")
-        });
+        dialog_generator_tester(Some(r#"      ["false"]     "#), |x| x.yes_or_no("prompt"));
     }
 }
 

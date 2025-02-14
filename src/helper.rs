@@ -1,5 +1,5 @@
 use owo_colors::OwoColorize;
-use prettytable::format::TableFormat;
+use prettytable::{format::TableFormat, table, Row, Table};
 
 // pub(crate) fn is_debug_mode() -> bool {
 //     return cfg!(debug_assertions);
@@ -232,3 +232,14 @@ impl<T: ToString> StyledString for T {
 //         )
 //     }
 // }
+
+pub fn vec_row_to_table(arr: Vec<Row>) -> Table {
+    let mut table = table!();
+    table.set_format(table_formater());
+
+    for x in arr {
+        table.add_row(x);
+    }
+
+    table
+}

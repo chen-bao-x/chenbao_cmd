@@ -1,7 +1,8 @@
 use super::arg_type;
 use crate::helper::StyledString;
+use crate::SharedVecString;
 use core::fmt;
-use std::{default, num::ParseIntError, path::Path};
+use std::{default, num::ParseIntError, path::Path, rc::Rc};
 
 pub type ParseResultMessage = String;
 pub type ParseResult<T> = Result<T, ParseResultMessage>;
@@ -14,7 +15,7 @@ pub enum ArgAction {
 
     String(&'static dyn Fn(arg_type::String)),
 
-    StringMutiple(&'static dyn Fn(arg_type::StringMutiple)),
+    StringMutiple(&'static dyn Fn(Rc<arg_type::StringMutiple>)),
 
     Number(&'static dyn Fn(arg_type::Number)),
 
@@ -197,13 +198,14 @@ impl ArgAction {
 #[derive(Clone)]
 pub(crate) struct SubcommandArgsValue {
     /// 子命令的 参数
-    pub subcommand_args: Vec<String>,
+    pub subcommand_args: SharedVecString,
 }
 
+// impl SubcommandArgsValue {
 impl SubcommandArgsValue {
     pub fn new(
         // need_arg_type: ArgType,
-        value: Vec<String>,
+        value: SharedVecString,
     ) -> Self {
         Self {
             subcommand_args: value,
@@ -237,12 +239,12 @@ impl SubcommandArgsValue {
         ))
     }
 
-    pub fn get_vec_string(self) -> ParseResult<Vec<String>> {
+    pub fn get_vec_string(self) -> ParseResult<SharedVecString> {
         Ok(self.subcommand_args)
     }
 
-    pub fn get_number(self) -> ParseResult<arg_type::Number> {
-        let s = self.subcommand_args;
+    pub fn get_number(&self) -> ParseResult<arg_type::Number> {
+        let s = &self.subcommand_args;
         if s.len() == 1 {
             if let Some(str) = s.first() {
                 let re: Result<arg_type::Number, core::num::ParseIntError> = str.parse();
@@ -267,21 +269,26 @@ impl SubcommandArgsValue {
     pub fn get_vec_number(self) -> ParseResult<arg_type::NumberMutiple> {
         let s = self.subcommand_args;
 
-        let mut re: Vec<arg_type::Number> = vec![];
+        let mut re: Vec<arg_type::Number> = [].to_vec();
 
-        for x in s {
+        let mut has_err: Option<String> = None;
+
+        s.iter().for_each(|x| {
             let u: Result<arg_type::Number, ParseIntError> = x.parse();
             match u {
                 Ok(n) => {
                     re.push(n);
                 }
                 Err(_err) => {
-                    return Err(format!("{}", _err));
+                    has_err = Some(format!("{}", _err));
                 }
             }
+        });
+        if let Some(err_msg) = has_err {
+            Err(err_msg)
+        } else {
+            Ok(re)
         }
-
-        Ok(re)
     }
 
     pub fn get_path(self) -> ParseResult<arg_type::Path> {
@@ -309,10 +316,10 @@ impl SubcommandArgsValue {
 
         let mut re: arg_type::PathMutiple = vec![];
 
-        for x in s {
+        s.iter().for_each(|x| {
             let path_buf = Path::new(&x).to_owned();
             re.push(path_buf);
-        }
+        });
 
         Ok(re)
     }
@@ -366,29 +373,28 @@ impl SubcommandArgsValue {
     pub fn get_vec_bool(self) -> ParseResult<Vec<bool>> {
         let s = self.subcommand_args;
         let mut re: Vec<bool> = vec![];
+        let mut err: Option<String> = None;
 
-        for x in s {
+        s.iter().for_each(|x| {
             let lovwercase = x.to_lowercase();
-            {
-                if lovwercase == "true" {
-                    re.push(true);
-                    continue;
-                }
-            }
 
-            {
-                if lovwercase == "false" {
-                    re.push(false);
-                    continue;
-                }
+            if lovwercase == "true" {
+                re.push(true);
+            } else if lovwercase == "false" {
+                re.push(false);
+            } else {
+                err = Some(
+                    "参数不正确: 参数的类型是 bool.\nbool 类型的值可以是: true , false "
+                        .to_string(),
+                );
             }
+        });
 
-            return Err(
-                "参数不正确: 参数的类型是 bool.\nbool 类型的值可以是: true , false ".to_string(),
-            );
+        if let Some(msg) = err {
+            Err(msg)
+        } else {
+            Ok(re)
         }
-
-        Ok(re)
     }
 
     // pub fn get_repl(self) -> ParseResult<Option<String>> {
@@ -414,9 +420,9 @@ impl SubcommandArgsValue {
         }
 
         Err(format!(
-            "参数数量不正确: 需要 0 个 或者 1 个 参数, 实际接收到了 {} 个参数: {}",
+            "参数数量不正确: 需要 0 个 或者 1 个 参数, 实际接收到了 {} 个参数: {:?}",
             subcmd_args.len().styled_sub_command(),
-            serde_json::to_string(&subcmd_args).unwrap().styled_arg(),
+            subcmd_args,
         ))
     }
 }
@@ -441,8 +447,7 @@ mod arg_check {
     #[test]
     fn ok_case_bool() {
         {
-            // let v = SubcommandArgsValue::new(ArgType::Bool, vec!["false".to_string()]);
-            let v = SubcommandArgsValue::new(vec!["false".to_string()]);
+            let v = SubcommandArgsValue::new(vec!["false".to_string()].into());
             let re = v.get_bool();
 
             // shold be Ok. not Err.
@@ -456,7 +461,7 @@ mod arg_check {
     fn ok_case_empty() {
         {
             // let v = SubcommandArgsValue::new(ArgType::Empty, vec![]);
-            let v = SubcommandArgsValue::new(vec![]);
+            let v = SubcommandArgsValue::new([].to_vec().into());
             let re = v.get_empty();
 
             // shold be Ok. not Err.
@@ -469,7 +474,8 @@ mod arg_check {
     #[test]
     fn ok_case_number() {
         {
-            let v = SubcommandArgsValue::new(vec!["2314324".to_string()]);
+            let a = ["2314324".to_string()];
+            let v = SubcommandArgsValue::new(a.to_vec().into());
             let re = v.get_number();
 
             // shold be Ok. not Err.
@@ -482,7 +488,7 @@ mod arg_check {
     #[test]
     fn ok_case_string() {
         {
-            let v = SubcommandArgsValue::new(vec!["2314324".to_string()]);
+            let v = SubcommandArgsValue::new(vec!["2314324".to_string()].into());
             let re = v.get_string();
 
             // shold be Ok. not Err.
@@ -494,7 +500,7 @@ mod arg_check {
     #[test]
     fn ok_case_path() {
         {
-            let v = SubcommandArgsValue::new(vec!["./path".to_string()]);
+            let v = SubcommandArgsValue::new(vec!["./path".to_string()].into());
             let re = v.get_path();
 
             // shold be Ok. not Err.
@@ -506,7 +512,8 @@ mod arg_check {
     #[test]
     fn ok_case_vec_path() {
         {
-            let v = SubcommandArgsValue::new(vec!["./path".to_string(), "asdf.txt".to_string()]);
+            let v =
+                SubcommandArgsValue::new(vec!["./path".to_string(), "asdf.txt".to_string()].into());
             let re = v.get_vec_path();
 
             // shold be Ok. not Err.
@@ -518,7 +525,7 @@ mod arg_check {
     #[test]
     fn ok_case_vec_bool() {
         {
-            let v = SubcommandArgsValue::new(vec!["false".to_string(), "true".to_string()]);
+            let v = SubcommandArgsValue::new(vec!["false".to_string(), "true".to_string()].into());
             let re = v.get_vec_bool();
 
             // shold be Ok. not Err.
@@ -530,7 +537,7 @@ mod arg_check {
     #[test]
     fn ok_case_vec_number() {
         {
-            let v = SubcommandArgsValue::new(vec!["234532".to_string(), "5436".to_string()]);
+            let v = SubcommandArgsValue::new(vec!["234532".to_string(), "5436".to_string()].into());
             let re = v.get_vec_number();
 
             // shold be Ok. not Err.
@@ -543,7 +550,7 @@ mod arg_check {
     #[test]
     fn ok_case_vec_string() {
         {
-            let v = SubcommandArgsValue::new(vec!["234532".to_string(), "5436".to_string()]);
+            let v = SubcommandArgsValue::new(vec!["234532".to_string(), "5436".to_string()].into());
             let re = v.get_vec_string();
 
             // shold be Ok. not Err.
@@ -555,7 +562,7 @@ mod arg_check {
 
     #[test]
     fn err_case_empty() {
-        let v = SubcommandArgsValue::new(vec!["false".to_string()]);
+        let v = SubcommandArgsValue::new(vec!["false".to_string()].into());
         let re = v.get_empty();
 
         // shold be Err, not ok.
@@ -566,7 +573,7 @@ mod arg_check {
 
     #[test]
     fn err_case_string() {
-        let v = SubcommandArgsValue::new(vec![]);
+        let v = SubcommandArgsValue::new(vec![].into());
         let re = v.get_bool();
 
         // shold be Err, not ok.
@@ -588,7 +595,7 @@ mod arg_check {
 
     #[test]
     fn err_case_number() {
-        let v = SubcommandArgsValue::new(vec!["false".to_string()]);
+        let v = SubcommandArgsValue::new(vec!["false".to_string()].into());
         let re = v.get_number();
 
         // shold be Err, not ok.
@@ -599,7 +606,7 @@ mod arg_check {
 
     #[test]
     fn err_case_vec_bool() {
-        let v = SubcommandArgsValue::new(vec!["faasdflse".to_string()]);
+        let v = SubcommandArgsValue::new(vec!["faasdflse".to_string()].into());
         let re = v.get_bool();
 
         // shold be Err, not ok.
@@ -610,7 +617,7 @@ mod arg_check {
 
     #[test]
     fn err_case_vec_number() {
-        let v = SubcommandArgsValue::new(vec!["false".to_string()]);
+        let v = SubcommandArgsValue::new(vec!["false".to_string()].into());
         let re = v.get_number();
 
         // shold be Err, not ok.
@@ -632,7 +639,7 @@ mod arg_check {
 
     #[test]
     fn err_case_vec_string() {
-        let v = SubcommandArgsValue::new(vec!["falsasdfe".to_string()]);
+        let v = SubcommandArgsValue::new(vec!["falsasdfe".to_string()].into());
         let re = v.get_bool();
 
         // shold be Err, not ok.
