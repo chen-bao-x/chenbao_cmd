@@ -6,7 +6,8 @@ use std::{num::ParseIntError, path::Path, vec};
 use super::*;
 use arg_type::key_gen;
 
-const DEFAULTINDEX: usize = 1;
+const ARGUMENTS_START_INDEX: usize = 1;
+
 // #[derive(Debug)]
 /// ArgType::Repl(_) 需要用到 ReplQuestions.  
 pub struct DialogGenerator {
@@ -42,7 +43,8 @@ impl DialogGenerator {
     pub fn new() -> Self {
         Self {
             arguments: ReplArgStore::new(),
-            index: DEFAULTINDEX,
+            index: ARGUMENTS_START_INDEX,
+
             is_from_json: false,
             theme: dialoguer::theme::ColorfulTheme::default(),
         }
@@ -55,7 +57,8 @@ impl DialogGenerator {
         ReplArgStore::from_toml(str)
             .map(|art_store| Self {
                 arguments: art_store,
-                index: DEFAULTINDEX,
+                index: ARGUMENTS_START_INDEX,
+
                 is_from_json: true,
                 theme: dialoguer::theme::ColorfulTheme::default(),
             })
@@ -75,20 +78,16 @@ impl DialogGenerator {
 impl DialogGenerator {
     // _string
     pub fn string(&mut self, prompt: &str) -> arg_type::String {
-        if self.is_from_json {
-            let result_value = self.arguments.get(self.index, prompt).unwrap().get_string();
-
-            self.ret(result_value)
-        } else {
+        if !self.is_from_json {
             let result_value = DialogerWraper::get_string(prompt, &self.theme);
 
-            self.arguments.add(
-                self.index,
-                prompt,
-                arg_type::ReplArg::String(result_value.clone()),
-            );
-            self.ret(result_value)
+            self.arguments
+                .add(self.index, prompt, arg_type::ReplArg::String(result_value));
         }
+
+        let result_value = self.arguments.get(self.index, prompt).unwrap().get_string();
+
+        self.ret(result_value)
     }
     // _string_multiple
     pub fn string_multiple(&mut self, prompt: &str) -> arg_type::StringMutiple {
@@ -97,7 +96,6 @@ impl DialogGenerator {
                 .arguments
                 .get(self.index, prompt)
                 .unwrap_or_else(|| panic!("没找到需要的参数: {}", key_gen(self.index, prompt)))
-                // .unwrap()
                 .get_string_multiple();
 
             self.ret(result_value)
@@ -293,14 +291,14 @@ impl DialogGenerator {
                     // 成功获取到了需要的参数
                     let result_value = str.get_string();
 
-                    return self.ret(result_value);
+                    // self.ret(result_value)
+                    self.ret(result_value)
                 }
                 None => {
                     // not string
+                    panic!();
                 }
             }
-
-            panic!();
         } else {
             let result_value = DialogerWraper::get_string_from_editor(prompt);
 
@@ -577,11 +575,12 @@ impl DialogerWraper {
         }
     }
 
-    fn get_multiple_selected<T>(
+    fn get_multiple_selected<'a, T>(
         prompt: &str,
-        items: &[T],
+        items: &'a [T],
         theme: &dialoguer::theme::ColorfulTheme,
-    ) -> Vec<T>
+        // ) -> Vec<T>
+    ) -> Vec<&'a T>
     where
         T: ToString + Clone,
     {
@@ -593,13 +592,11 @@ impl DialogerWraper {
 
         match re {
             Ok(selection) => {
-                let mut re: Vec<T> = vec![];
-
+                let mut seleted: Vec<&T> = vec![];
                 for i in selection {
-                    re.push(items[i].clone());
+                    seleted.push(&items[i]);
                 }
-
-                re
+                seleted
             }
             Err(_e) => {
                 eprintln!("{}", _e.red());

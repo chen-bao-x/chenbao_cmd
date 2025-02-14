@@ -30,7 +30,7 @@ impl Default for Empty {
 // -------
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-#[serde(untagged)] // 使用 untagged enum
+#[serde(untagged)] // 使用 转换成 toml 后不会有  NumberMultiple = [324] 这样的 enum key.
 pub enum ReplArg {
     Number(i64),
     NumberMultiple(Vec<i64>),
@@ -60,7 +60,7 @@ impl ReplArg {
     }
     pub fn get_string(&self) -> String {
         if let ReplArg::String(val) = self {
-            return val.clone();
+            return val.to_string();
         }
         panic!("{:?}", self);
     }
@@ -102,8 +102,6 @@ impl ReplArg {
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-
-// pub struct ReplArgStore(std::collections::HashMap<String, ReplArg>);
 pub struct ReplArgStore(std::collections::BTreeMap<String, ReplArg>); // BTreeMap 是按照 key 来排序的,  HashMap 是无序的.
 impl ReplArgStore {
     pub fn new() -> Self {
@@ -122,12 +120,14 @@ impl ReplArgStore {
     pub fn insert(&mut self, k: String, v: ReplArg) -> Option<ReplArg> {
         self.0.insert(k, v)
     }
+
+    pub fn remove(&mut self, index: usize, prompt: &str) -> Option<ReplArg> {
+        self.0.remove(&key_gen(index, prompt))
+    }
+
     pub fn get(&self, index: usize, prompt: &str) -> Option<&ReplArg> {
         let key = key_gen(index, prompt);
         self.0.get(&key)
-    }
-    pub fn remove(&mut self, index: usize, prompt: &str) -> Option<ReplArg> {
-        self.0.remove(&key_gen(index, prompt))
     }
 
     pub fn to_toml(&self) -> Result<String, toml::ser::Error> {

@@ -497,7 +497,8 @@ impl App {
     fn _handle_app_version(&self) -> DidHandled {
         // 处理 App 的flags.
         //  -v -version
-        let command_name = self._env_arg[1].clone();
+        // let command_name = self._env_arg[1].clone();
+        let command_name = &self._env_arg[1];
 
         if command_name == "-v" || command_name == "--version" {
             println!("{}", self._app_version_message);
@@ -509,7 +510,6 @@ impl App {
     }
 
     fn _handle_list_all_command(&self) -> DidHandled {
-        // let command_name = self._env_arg[1].clone();
         let command_name = &self._env_arg[1];
 
         if command_name == "--list-all-commands" {
