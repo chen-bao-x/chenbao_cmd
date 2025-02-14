@@ -11,13 +11,15 @@ use prettytable::{row, Row};
 
 /// 子命令
 #[derive(Clone, Debug)]
-pub struct SubCommand {
+pub struct SubCommand<'a> {
     /// 子命令名   
     /// 命令的名称长度最好不要超过 20 个字符.
-    pub _name: String,
+    // pub _name: String,
+    pub _name: &'a str,
 
     /// 命令名的简写形式, 通常是一个字符  
-    pub _short_name: String,
+    // pub _short_name: String,
+    pub _short_name: &'a str,
 
     /// 一句话介绍此命令
     pub _about: String,
@@ -35,7 +37,7 @@ pub struct SubCommand {
     pub _arg_type_with_action: ArgAction,
 }
 
-impl SubCommand {
+impl<'a> SubCommand<'a> {
     /// 创建新的 SubCommand.  
     ///
     /// 这几个已经又了默认实现, 不能再作为子命令的名称:  
@@ -51,7 +53,7 @@ impl SubCommand {
     ///         print!("command \"run\"{:?}\n", _x);
     ///     })));
     /// ```
-    pub fn create_an_sub_command(name: &str) -> Self {
+    pub fn create_an_sub_command(name: &'a str) -> Self {
         #[cfg(debug_assertions)]
         {
             let re = SubCommand::command_name_check(name);
@@ -61,21 +63,22 @@ impl SubCommand {
         }
 
         SubCommand {
-            _name: name.to_string(),
+            _name: name,
+
             _about: "".to_string(),
             _help_message: None,
-            _short_name: "".to_string(),
+            _short_name: "",
             _exaples: Examples::new(),
             _arg_type_with_action: ArgAction::default(),
         }
     }
 }
 
-impl SubCommand {
+impl<'a> SubCommand<'a> {
     /// set `Command.short_name`
-    pub fn short_name(self, short_name: &str) -> Self {
+    pub fn short_name(self, short_name: &'a str) -> Self {
         let mut re = self;
-        re._short_name = short_name.to_string();
+        re._short_name = short_name;
         re
     }
 
@@ -118,7 +121,7 @@ impl SubCommand {
     }
 }
 
-impl SubCommand {
+impl SubCommand<'_> {
     pub fn print_command_help(&self, app_name: &str) {
         println!("{}", self.formated_command_help(app_name));
     }
@@ -138,7 +141,7 @@ impl SubCommand {
         println!("{}", table);
     }
 }
-impl SubCommand {
+impl SubCommand<'_> {
     pub fn formated_usage(&self, app_name: &str) -> String {
         let command_name = self._name.styled_sub_command();
         let short_name = self._short_name.styled_sub_command();

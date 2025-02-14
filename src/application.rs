@@ -107,25 +107,28 @@ pub enum DidHandled {
 ///    app.run();
 /// ```
 #[derive(Clone, Debug)]
-pub struct App {
+pub struct App<'a> {
     /// 此程序的名称;  
     /// 所有自动生成的帮助文档和示例都会使用到 self._app_name
     pub _app_name: SharedString,
 
     /// 一句话介绍此程序.
-    pub _about: SharedString,
+    // pub _about: SharedString,
+    pub _about: &'a str,
 
     /// 此程序的作者
-    pub _author: SharedString,
+    // pub _author: SharedString,
+    pub _author: &'a str,
 
     /// 当用户查询此程序的 version 信息时显示的信息;
-    pub _app_version_message: SharedString,
+    // pub _app_version_message: SharedString,
+    pub _app_version_message: &'a str,
 
     /// 此程序的帮助文档,
     pub _help_message: SharedString,
 
     /// 此 app 的所有子命令.
-    pub _commands: Vec<SubCommand>,
+    pub _commands: Vec<SubCommand<'a>>,
 
     /// 使用此程序的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
@@ -142,7 +145,7 @@ pub struct App {
     _env_arg: SharedVecString,
 }
 
-impl App {
+impl<'a> App<'a> {
     // ============================
     // =        Public Part       =
     // ============================
@@ -152,7 +155,7 @@ impl App {
     ///     app.run();
     /// ```
     // pub fn new(app_name: &str) -> App {
-    pub fn new() -> App {
+    pub fn new() -> App<'a> {
         Self {
             ..Default::default()
         }
@@ -169,9 +172,10 @@ impl App {
     }
 
     /// 在这里介绍这个程序是什么. 做什么用的
-    pub fn about(self, about: &str) -> Self {
+    pub fn about(self, about: &'a str) -> Self {
         let mut re = self;
-        re._about = about.to_string().into();
+        // re._about = about.to_string().into();
+        re._about = about;
         re
     }
 
@@ -193,18 +197,20 @@ impl App {
     /// ```rs
     /// let app = App::new().version_message(env!("CARGO_PKG_VERSION"));
     /// ```
-    pub fn version_message(self, version_message: &str) -> Self {
+    pub fn version_message(self, version_message: &'a str) -> Self {
         let mut re = self;
-        re._app_version_message = version_message.to_owned().into();
+        // re._app_version_message = version_message.to_owned().into();
+        re._app_version_message = version_message;
         re
     }
 
     /// 此程序的版本信息.  
     /// 当用户使用 `app --version` 时会打印在这里添加的版本信息.  
     /// 此 method 只需要调用一次.  
-    pub fn author(self, author: &str) -> Self {
+    pub fn author(self, author: &'a str) -> Self {
         let mut re = self;
-        re._author = author.to_string().into();
+
+        re._author = author;
         re
     }
 
@@ -220,7 +226,7 @@ impl App {
 
     /// add command
     /// 为此 App 添加指令
-    pub fn add_command(self, command: SubCommand) -> Self {
+    pub fn add_command(self, command: SubCommand<'a>) -> Self {
         let mut re = self;
 
         re._commands.push(command);
@@ -440,7 +446,7 @@ Usage:
     }
 }
 
-impl App {
+impl App<'_> {
     // -------- Private Part --------
 
     fn _handle_defalt_implement(&self) {}
@@ -611,7 +617,7 @@ impl App {
 //     Wrong = 1,
 // }
 
-impl App {
+impl App<'_> {
     //  ------- Debug Functions -------
 
     /// 模拟用户输入,  
@@ -673,31 +679,42 @@ impl App {
     #[cfg(debug_assertions)] // 只在 debug 模式下使用
     pub(crate) fn debug_duplicate_names_check(
         &self,
-    ) -> Result<(), std::collections::HashSet<&String>> {
+    // ) -> Result<(), std::collections::HashSet<&String>> {
+    ) -> Result<(), std::collections::HashSet<&str>> {
         use std::collections::HashSet;
 
         // 重复了的子命令名称.
 
-        let mut duplicated_names: HashSet<&String> = HashSet::new();
+        // let mut duplicated_names: HashSet<&String> = HashSet::new();
+        let mut duplicated_names: HashSet<&str> = HashSet::new();
 
         // 子命令的名字合集.
-        let mut set: HashSet<&String> = HashSet::new();
+        // let mut set: HashSet<&String> = HashSet::new();
+        let mut set: HashSet<&str> = HashSet::new();
 
-        let mut default_impls: HashSet<String> = HashSet::new();
+        // let mut default_impls: HashSet<String> = HashSet::new();
+        let mut default_impls: HashSet<&str> = HashSet::new();
         {
             // 这几个是 chenbao_cmd  自带的默认实现的 子命令和 flag, 不能被自定义.
-            default_impls.insert("-h".to_string());
-            default_impls.insert("--help".to_string());
-            default_impls.insert("-v".to_string());
-            default_impls.insert("--version".to_string());
-            default_impls.insert("-e".to_string());
-            default_impls.insert("--example".to_string());
+            // default_impls.insert("-h".to_string());
+            // default_impls.insert("--help".to_string());
+            // default_impls.insert("-v".to_string());
+            // default_impls.insert("--version".to_string());
+            // default_impls.insert("-e".to_string());
+            // default_impls.insert("--example".to_string());
+            
+            default_impls.insert("-h");
+            default_impls.insert("--help");
+            default_impls.insert("-v");
+            default_impls.insert("--version");
+            default_impls.insert("-e");
+            default_impls.insert("--example");
         }
         for x in &self._commands {
             {
                 let name = &x._name;
 
-                if set.contains(&name) || default_impls.contains(name) {
+                if set.contains(name) || default_impls.contains(name) {
                     duplicated_names.insert(name);
 
                     println!(
@@ -710,13 +727,13 @@ impl App {
             }
 
             {
-                let short_name = &x._short_name;
+                let short_name = x._short_name;
 
                 if short_name.is_empty() {
                     continue;
                 }
 
-                if (set.contains(short_name)) || default_impls.contains(short_name) {
+                if (set.contains(&short_name)) || default_impls.contains(short_name) {
                     duplicated_names.insert(short_name);
                 } else {
                     set.insert(short_name);
@@ -736,7 +753,7 @@ impl App {
     // pub(crate) fn debug_命令人类友好度检查(&self) {}
 }
 
-impl Default for App {
+impl Default for App<'_> {
     fn default() -> Self {
         let env_args: Vec<String> = std::env::args().collect();
 
@@ -766,7 +783,7 @@ impl Default for App {
             _app_name: app_name.into(),
             _about: Default::default(),
             _author: Default::default(),
-            _app_version_message: "0.0.1".to_string().into(),
+            _app_version_message: "0.0.1",
             _help_message: Default::default(),
             _commands: Default::default(),
             _env_arg: env_args.into(),
