@@ -1,5 +1,4 @@
 use chenbao_cmd::*;
-use std::vec;
 
 #[test]
 fn it_works() {
@@ -68,26 +67,28 @@ fn it_works() {
                     print!("testing arg_zero");
                 })),
         )
-        .add_command(
-            SubCommand::create_an_sub_command("repl")
-                .about("用来测试 ArgCount::Repl(_) ")
-                .action(ArgAction::Dialog(
-                    &(|r| {
-                        let items = vec!["one", "two", "tree", "four"];
+        // .add_command(
+        //     SubCommand::create_an_sub_command("repl")
+        //         .about("用来测试 ArgCount::Repl(_) ")
+        //         .action(ArgAction::Dialog(
+        //             &(|r| {
+        //                 let items = vec!["one", "two", "tree", "four"];
 
-                        let _req_bool = r.number("你要吃几个汉堡包?");
-                        let _你要吃几个汉堡包 = r.number_multiple("多个 number");
-                        let _多个_number = r.string("string");
-                        let _string = r.string_multiple("string_multiple");
-                        let _string_multiple = r.yes_or_no("bool");
-                        let _path = r.path("path");
-                        let _path_multiple = r.path_multiple("path");
-                        let _seleted = r.select("selete", &items);
-                        let _seleted = r.select_multiple("selete", &items);
-                        // .yes_or_no_multiple(&mut req_bool_multiple, "bool mutiple")
-                    }),
-                )),
-        );
+        //                 let _req_bool = r.number("你要吃几个汉堡包?");
+        //                 let _你要吃几个汉堡包 = r.number_multiple("多个 number");
+        //                 let _多个_number = r.string("string");
+        //                 let _string = r.string_multiple("string_multiple");
+        //                 let _string_multiple = r.yes_or_no("bool");
+        //                 let _path = r.path("path");
+        //                 let _path_multiple = r.path_multiple("path");
+        //                 let _seleted = r.select("selete", &items);
+        //                 let _seleted = r.select_multiple("selete", &items);
+        //                 // .yes_or_no_multiple(&mut req_bool_multiple, "bool mutiple")
+        //             }),
+        //         )),
+        // )
+        
+        ;
 
     // let re = app.debug_duplicate_names_check();
     // match re {

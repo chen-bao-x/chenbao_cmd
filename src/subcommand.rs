@@ -54,12 +54,12 @@ impl<'a> SubCommand<'a> {
     /// "-e" "--example"  
     /// ```
     /// use chenbao_cmd::*;
-    /// SubCommand::new("build")
-    ///     .short_name("b")
-    ///     .about("编译项目")
-    ///     .action(ArgAction::Bool(std::rc::Rc::new(|_x| {
-    ///         print!("command \"run\"{:?}\n", _x);
-    ///     })));
+    ///     cmd!("build")
+    ///         .short_name("b")
+    ///         .about("编译项目")
+    ///         .action(ArgAction::Bool(&|_x| {
+    ///             print!("command \"run\"{:?}\n", _x);
+    ///         }));
     /// ```
     pub fn create_an_sub_command(name: &'a str) -> Self {
         // #[cfg(debug_assertions)]

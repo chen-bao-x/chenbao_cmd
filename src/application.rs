@@ -98,7 +98,7 @@ impl<'a> App<'a> {
     // ============================
 
     /// ```rust
-    ///     let app = chenbao_cmd::App::new("cmd");
+    ///     let app = chenbao_cmd::App::new();
     ///     app.run();
     /// ```
     // pub fn new(app_name: &str) -> App {
@@ -109,8 +109,8 @@ impl<'a> App<'a> {
     }
 
     /// 如果不设置 app_name(_), 则会使用编译后可执行文件的文件名字作为 app_name.
-    /// ```rs
-    /// let app = App::new().app_name(env!("CARGO_PKG_NAME"));
+    /// ```
+    /// let app = chenbao_cmd::App::new().app_name(env!("CARGO_PKG_NAME"));
     /// ```
     pub fn app_name(self, app_name: &str) -> Self {
         let mut re = self;
@@ -140,8 +140,8 @@ impl<'a> App<'a> {
     /// 此程序的版本信息.  
     /// 当用户使用 `app --version` 时会打印在这里添加的版本信息.  
     /// 此 method 只需要调用一次.  
-    /// ```rs
-    /// let app = App::new().version_message(env!("CARGO_PKG_VERSION"));
+    /// ```
+    /// let app = chenbao_cmd::App::new().version_message(env!("CARGO_PKG_VERSION"));
     /// ```
     pub fn version_message(self, version_message: &'a str) -> Self {
         let mut re = self;
@@ -170,11 +170,12 @@ impl<'a> App<'a> {
         re
     }
 
-    /// add command
-    /// 为此 App 添加指令
+    /// ### 为此 App 添加指令
+    /// 示例:  
     /// ```
+    /// use chenbao_cmd::*;
     /// let app = App::new()
-    ///     .add_command( cmd!("b")  )
+    ///     .add_command( cmd!("init")  .about("初始化羡慕"));
     /// ```
     pub fn add_command(self, cmd: SubCommand<'a>) -> Self {
         let mut re = self;
@@ -185,27 +186,32 @@ impl<'a> App<'a> {
     }
 
     /// 自定义帮助信息.  
-    /// 此方法会替换掉由 chenbao_cmd 提供的帮助文档.
+    /// 此方法会替换掉 自动生成的 帮助文档.
     pub fn help_message(self, message: &'a str) -> Self {
         let mut re = self;
         re._help_message = message;
-
         re
     }
 
+    /// ### 启动 app.  
+    /// 示例:  
     /// ```rust
-    /// let app = chenbao_cmd::App::new("cmd")
-    ///     .about("在这里介绍这个程序在什么情况下能帮助用户解决什么问题.")
-    ///     .author("chen bao")
-    ///     .version_message("0.0.1".to_string())
-    ///     .add_subcommand(
-    ///         chenbao_cmd::SubCommand::new("run")
-    ///          .about("运行程序")
-    ///          .action(chenbao_cmd::ArgAction::Empty(std::rc::Rc::new(|| {
-    ///              println!(r#"ning commmand: "run""#);
-    ///          }))),
-    ///     );
-    ///     app.run();
+    /// use chenbao_cmd::*;
+    ///    let app = chenbao_cmd::App::new()
+    ///        .about("在这里介绍这个程序在什么情况下能帮助用户解决什么问题.")
+    ///        .author("chen bao")
+    ///        .version_message("0.0.1")
+    ///        .add_command(
+    ///            cmd!("run")
+    ///                .about("运行程序")
+    ///                .action(chenbao_cmd::ArgAction::Empty(
+    ///                    &(|_| {
+    ///                        println!(r#"ning commmand: "run""#);
+    ///                    }),
+    ///                )),
+    ///        );
+    ///    app.run();
+    ///
     ///
     /// ```
     pub fn run(self) {
@@ -221,7 +227,7 @@ impl<'a> App<'a> {
         }
     }
 
-    /// like run(), but has result.
+    /// like run(), but has result type.
     pub fn try_run(self) -> DidHandled {
         let option_string = self._env_arg.get(1);
         match option_string {

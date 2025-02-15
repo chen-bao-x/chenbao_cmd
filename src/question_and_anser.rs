@@ -522,16 +522,16 @@ impl DialogerWraper {
 mod test_dialog {
     // 这里面都是一些 dialoguer 式交互, 需要手动来测试.
 
-    use super::*;
+    // use super::*;
 
-    #[test]
-    fn test_get_string() {
-        let a = DialogerWraper::get_string(
-            "请输入一个字符串",
-            &dialoguer::theme::ColorfulTheme::default(),
-        );
-        println!("最终获得的 string 是: {}", a);
-    }
+    // #[test]
+    // fn test_get_string() {
+    //     let a = DialogerWraper::get_string(
+    //         "请输入一个字符串",
+    //         &dialoguer::theme::ColorfulTheme::default(),
+    //     );
+    //     println!("最终获得的 string 是: {}", a);
+    // }
 
     // #[test]
     // fn test_repl_get_number() {

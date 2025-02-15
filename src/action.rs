@@ -672,13 +672,13 @@ mod arg_check {
 
     #[test]
     fn err_case_vec_string() {
-        let v = SubcommandArgsValue::new(vec!["falsasdfe".to_string()].into());
+        let v = SubcommandArgsValue::new(vec!["falseasdf".to_string()].into());
         let re = v.get_bool();
 
         // shold be Err, not ok.
         if re.is_ok() {
             panic!("");
         }
-        panic!("");
+      
     }
 }
