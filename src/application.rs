@@ -39,6 +39,15 @@ pub enum DidHandled {
     Failed(String),
 }
 
+impl DidHandled {
+    pub fn map_err<O: FnOnce(String) -> String>(self, op: O) -> DidHandled {
+        match self {
+            DidHandled::Handled => self,
+            DidHandled::Failed(e) => DidHandled::Failed(op(e)),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct App<'a> {
     /// 此程序的名称;  
@@ -65,7 +74,7 @@ pub struct App<'a> {
 
     /// 使用此程序的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
-    pub _examples: Examples<'a>,
+    pub _app_examples: Examples<'a>,
 
     /// 子命令的 “参数”
     pub _commands_arg: SharedVecString,
@@ -77,6 +86,8 @@ pub struct App<'a> {
     /// `let env_arg: Vec<String> = std::env::args().collect()`
     _env_arg: SharedVecString,
 
+    /// 标记是否需要执行 SubCommand 的 action.  
+    /// 默认是 NeedTo::Run
     _need_to: NeedTo,
 }
 
@@ -120,7 +131,7 @@ impl<'a> App<'a> {
     pub fn add_app_example(self, command: &'a str, description: &'a str) -> Self {
         let mut re = self;
 
-        re._examples.add_single_example(command, description);
+        re._app_examples.add_single_example(command, description);
 
         re
     }
@@ -351,7 +362,7 @@ Usage:
     /// 打印 App 的示例.  
     /// `app -e` 时调用此函数.
     pub fn print_app_examples(&self) {
-        if self._examples.is_empty() {
+        if self._app_examples.is_empty() {
             let mut table = table!();
             table.set_format(table_formater());
 
@@ -365,7 +376,7 @@ Usage:
             println!("{}", table);
             table.printstd();
         } else {
-            println!("{}", vec_row_to_table(self._examples.pretty_formated()));
+            println!("{}", vec_row_to_table(self._app_examples.pretty_formated()));
         }
     }
 }
@@ -538,11 +549,10 @@ impl<'a> App<'a> {
         self
     }
 
-    /// 检查子命令示example是否能正确的被解析
-    /// 检查子命令的名字是否重复.
-    /// 命令人类友好度检查
+    /// 检查子命令示example是否能正确的被解析  
+    /// 检查子命令的名字是否重复.  
     // #[cfg(debug_assertions)] // 只在 debug 模式下使用
-    pub fn test(&self) {
+    pub fn debug_check(&self) {
         // TODO: 打印两个名称冲突的 Cmd
 
         {
@@ -557,12 +567,9 @@ impl<'a> App<'a> {
         }
 
         {
-            // let mut table: Table = table!();
-            // table.set_format(helper::table_formater());
-
-            let re = self.debug_检查子命令示example是否能正确的被解析();
+            let re = self.debug_example_check();
             for x in re {
-                print!("{}", x.formated());
+                print!("{}", x.formated_massage());
             }
         }
     }
@@ -640,13 +647,11 @@ impl<'a> App<'a> {
         }
     }
 
-    fn debug_检查子命令示example是否能正确的被解析(
-        &'a self,
-    ) -> Vec<ExampleTestResult<'a>> {
+    fn debug_example_check(&'a self) -> Vec<ExampleTestResult<'a>> {
         let mut re: Vec<ExampleTestResult<'a>> = vec![];
 
         self._commands.iter().for_each(|cmd| {
-            re.push(cmd.cmd_debug_parse(&self._app_name));
+            re.push(cmd.debug_cmd_example_check(&self._app_name));
         });
 
         re
@@ -689,7 +694,7 @@ impl Default for App<'_> {
             _help_message: Default::default(),
             _commands: Default::default(),
             _env_arg: env_args.into(),
-            _examples: Examples::new(),
+            _app_examples: Examples::new(),
             _commands_arg: sub_cmd_arg.into(),
             _app_default_action: Default::default(),
             _need_to: NeedTo::Run,
@@ -702,3 +707,21 @@ impl Default for App<'_> {
 //      app build 2 # this can not parse.
 // example test "build" ... FAILED
 //      app build 2 # this can not parse.
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) enum NeedTo {
+    /// 之行设置的 ArgAction
+    Run,
+
+    /// 只解析, 不执行.
+    ParseOnly,
+}
+
+impl NeedTo {
+    pub fn is_run(&self) -> bool {
+        match self {
+            NeedTo::Run => true,
+            NeedTo::ParseOnly => false,
+        }
+    }
+}

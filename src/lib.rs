@@ -111,20 +111,3 @@ mod subcommand;
 
 pub(crate) type SharedString = std::rc::Rc<String>;
 pub(crate) type SharedVecString = std::rc::Rc<Vec<String>>;
-
-#[derive(Clone, Copy, Debug)]
-pub(crate) enum NeedTo {
-    /// 之行设置的 ArgAction
-    Run,
-
-    /// 只解析, 不执行.
-    ParseOnly,
-}
-impl NeedTo {
-    pub fn is_run(&self) -> bool {
-        match self {
-            NeedTo::Run => true,
-            NeedTo::ParseOnly => false,
-        }
-    }
-}

@@ -1,9 +1,7 @@
 use std::vec;
 
 use crate::{
-    action::{ArgAction, ParseResult, SubcommandArgsValue},
-    examples_types::{Examples, SingleExample},
-    helper::*,
+    action::{ArgAction, ParseResult, SubcommandArgsValue}, application::NeedTo, examples_types::{Examples, SingleExample}, helper::*
 };
 
 use super::*;
@@ -38,7 +36,7 @@ pub struct SubCommand<'a> {
 
     /// 子命令需要的参数的类型以及该子命令的 action.
     /// 在打印子命令的帮助文档时需要用到此属性.
-    pub _arg_type_with_action: ArgAction,
+    pub _arg_type_with_action: ArgAction<'a>,
 }
 
 impl<'a> SubCommand<'a> {
@@ -111,7 +109,7 @@ impl<'a> SubCommand<'a> {
     }
 
     /// set `Command.action`
-    pub fn action(self, need_arg_type: ArgAction) -> Self {
+    pub fn action(self, need_arg_type: ArgAction<'a>) -> Self {
         let mut re = self;
         re._arg_type_with_action = need_arg_type;
 
@@ -143,7 +141,7 @@ impl SubCommand<'_> {
         println!("{}", table);
     }
 }
-impl SubCommand<'_> {
+impl<'a> SubCommand<'a> {
     pub fn formated_usage(&self, app_name: &str) -> String {
         let command_name = self._name.styled_sub_command();
         let short_name = self._short_name.styled_sub_command();
@@ -265,11 +263,12 @@ Usage:
     /// 已经格式化好了, 直接放进 Table 打印就行.
     pub fn formated_command_example(&self, app_name: &str) -> Vec<Row> {
         if self._exaples.is_empty() {
-            SingleExample {
-                command: "{app_name} {command_name} {arg}",
-                description: self._about,
-            }
-            .formated();
+            // SingleExample {
+            //     command: "{app_name} {command_name} {arg}",
+            //     description: self._about,
+            //     exaple_check_state: ExapleCheckState::Uncheck,
+            // }
+            // .formated();
 
             // let mut table = table! {};
             let mut table: Vec<Row> = vec![];
@@ -306,13 +305,12 @@ Usage:
     //     self.try_run(app_name, cmd_args, false)
     // }
 
-    // 如果  need_to_run == false, 则只检查
+    /// 尝试执行此 子命令.
+    /// 如果  need_to == NeedTo::ParseOnly, 则只检查不执行 action.
     pub(crate) fn sub_command_try_run(
         &self,
         app_name: &str,
-        // cmd_args: &[String],
         cmd_args: SharedVecString,
-        // need_to_run: bool,
         need_to: NeedTo,
     ) -> DidHandled {
         {
@@ -425,6 +423,75 @@ Usage:
         }
     }
 
+    /// 检查 是否是此子命令的命令和参数.
+    pub(crate) fn sub_command_try_parse(
+        &self,
+        app_name: &str,
+        cmd_args: SharedVecString,
+    ) -> DidHandled {
+        {
+            // 处理当前 子命令 的 flag.
+            if let Some(first_arg) = cmd_args.first().cloned() {
+                // 处理当前子命令的 help flag.
+                if first_arg == "--help" || first_arg == "-h" {
+                    return DidHandled::Handled;
+                }
+
+                // 处理当前子命令的 example flag.
+                if first_arg == "--example" || first_arg == "-e" {
+                    return DidHandled::Handled;
+                }
+            }
+        }
+
+        {
+            let arg_message = self._arg_type_with_action.arg_message();
+
+            let v = SubcommandArgsValue::new(cmd_args);
+
+            let re = match &self._arg_type_with_action {
+                ArgAction::Empty(_f) => run(v.get_empty()),
+                ArgAction::String(_f) => run(v.get_string()),
+                ArgAction::StringMutiple(_f) => run(v.get_vec_string()),
+                ArgAction::Number(_f) => run(v.get_number()),
+                ArgAction::NumberMutiple(_f) => run(v.get_vec_number()),
+                ArgAction::Path(_f) => run(v.get_path()),
+                ArgAction::PathMutiple(_f) => run(v.get_vec_path()),
+                ArgAction::Bool(_f) => run(v.get_bool()),
+                ArgAction::BoolMutiple(_f) => run(v.get_vec_bool()),
+                ArgAction::Dialog(_f) => run(v.get_repl()),
+            };
+
+            return re.map_err(|err| {
+                let tips = format!(
+                    "输入  {} {} {}  查看更详细信息",
+                    app_name.styled_sub_command(),
+                    self._name.styled_sub_command(),
+                    "-h".styled_sub_command(),
+                );
+                format!(
+                    r#"
+{}{}
+
+{}
+
+{tips}
+                "#,
+                    "error: ".bright_red(),
+                    err,
+                    arg_message,
+                )
+            });
+
+            fn run<T>(result: ParseResult<T>) -> DidHandled {
+                match result {
+                    Ok(_s) => DidHandled::Handled,
+                    Err(err) => DidHandled::Failed(err),
+                }
+            }
+        }
+    }
+
     /// 检查 子命令 的名字是否符合要求.
     #[cfg(debug_assertions)] // 只在 debug 模式下使用
     fn debug_command_name_check(name: &str) -> Result<(), String> {
@@ -471,25 +538,32 @@ Usage:
     }
 
     /// 测试命令是否能够被匹配
-    pub(crate) fn cmd_debug_parse<'a>(
-        &'a self,
-        app_name: &str,
-        // cmd_args: SharedVecString,
-    ) -> ExampleTestResult<'a> {
+    pub(crate) fn debug_cmd_example_check(&'a self, app_name: &str) -> ExampleTestResult<'a> {
         let mut result = ExampleTestResult {
             cmd: self,
             failures_examples: vec![],
             success_examples: vec![],
         };
 
-        // let mut _failed_commands: Vec<&'a SingleExample<'a>> = vec![];
+        for exam in &self._exaples.val {
+            let cmd_arg = || -> Vec<String> {
+                let mut virtual_env_args = helper::parse_arg_string(exam.command);
+                if virtual_env_args.len() >= 2 {
+                    virtual_env_args.remove(0); // 移除 app name
+                    virtual_env_args.remove(0); // 移除 子命令的名字
+                }
+                virtual_env_args
+            }();
 
-        for y in &self._exaples.val {
-            let virtual_env_args = helper::parse_arg_string(y.command);
-            let re = self.sub_command_try_run(app_name, virtual_env_args.into(), NeedTo::ParseOnly);
+            let re = self.sub_command_try_parse(app_name, cmd_arg.into());
             match re {
-                DidHandled::Handled => result.success_examples.push(y),
-                DidHandled::Failed(_) => result.failures_examples.push(y),
+                DidHandled::Handled => result.success_examples.push(exam),
+                DidHandled::Failed(_e) => {
+                    result.failures_examples.push(Sadadsf {
+                        base: exam,
+                        err_msg: _e,
+                    });
+                }
             }
         }
 
@@ -499,8 +573,19 @@ Usage:
 
 pub(crate) struct ExampleTestResult<'a> {
     cmd: &'a SubCommand<'a>,
-    failures_examples: Vec<&'a SingleExample<'a>>,
+    failures_examples: Vec<Sadadsf<'a>>,
     success_examples: Vec<&'a SingleExample<'a>>,
+}
+
+pub(crate) struct Sadadsf<'a> {
+    base: &'a SingleExample<'a>,
+    err_msg: String,
+}
+
+impl<'a> Sadadsf<'a> {
+    fn formated_whit_err_msg(&self) -> String {
+        format!("{}{}", self.base.formated(), self.err_msg)
+    }
 }
 
 impl ExampleTestResult<'_> {
@@ -508,7 +593,7 @@ impl ExampleTestResult<'_> {
         self.failures_examples.is_empty()
     }
 
-    pub fn formated(&self) -> String {
+    pub fn formated_massage(&self) -> String {
         let ok = if self.is_success() {
             "ok".green().to_string()
         } else {
@@ -518,7 +603,7 @@ impl ExampleTestResult<'_> {
         let msgs: String = self
             .failures_examples
             .iter()
-            .map(|x| x.formated())
+            .map(|x| format!("{}", x.formated_whit_err_msg()))
             .fold("".to_string(), |x, y| x + &y);
 
         let mut table = table!();

@@ -7,33 +7,32 @@ use std::{default, num::ParseIntError, path::Path, rc::Rc};
 pub type ParseResultMessage = String;
 pub type ParseResult<T> = Result<T, ParseResultMessage>;
 
-/// 设置子命令的参数数量和参数类型, 以及·该子命令要执行的函数.
 #[derive(Clone)]
-pub enum ArgAction {
+pub enum ArgAction<'a> {
     /// 表示这个子命令不需要参数
-    Empty(&'static dyn Fn(arg_type::Empty)),
+    Empty(&'a dyn Fn(arg_type::Empty)),
 
-    String(&'static dyn Fn(arg_type::String)),
+    String(&'a dyn Fn(arg_type::String)),
 
-    StringMutiple(&'static dyn Fn(Rc<arg_type::StringMutiple>)),
+    StringMutiple(&'a dyn Fn(Rc<arg_type::StringMutiple>)),
 
-    Number(&'static dyn Fn(arg_type::Number)),
+    Number(&'a dyn Fn(arg_type::Number)),
 
-    NumberMutiple(&'static dyn Fn(arg_type::NumberMutiple)),
+    NumberMutiple(&'a dyn Fn(arg_type::NumberMutiple)),
 
-    Path(&'static dyn Fn(arg_type::Path)),
+    Path(&'a dyn Fn(arg_type::Path)),
 
-    PathMutiple(&'static dyn Fn(arg_type::PathMutiple)),
+    PathMutiple(&'a dyn Fn(arg_type::PathMutiple)),
 
-    Bool(&'static dyn Fn(arg_type::Bool)),
+    Bool(&'a dyn Fn(arg_type::Bool)),
 
-    BoolMutiple(&'static dyn Fn(arg_type::BoolMutiple)),
+    BoolMutiple(&'a dyn Fn(arg_type::BoolMutiple)),
 
     /// 对话式交互.
-    Dialog(&'static dyn Fn(&mut arg_type::Dialog)),
+    Dialog(&'a dyn Fn(&mut arg_type::Dialog)),
 }
 
-impl std::fmt::Display for ArgAction {
+impl std::fmt::Display for ArgAction<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ArgAction::Empty(_) => write!(f, "ArgType::Empty"),
@@ -50,12 +49,12 @@ impl std::fmt::Display for ArgAction {
     }
 }
 
-impl default::Default for ArgAction {
+impl default::Default for ArgAction<'_> {
     fn default() -> Self {
         Self::Empty(&|_x| {})
     }
 }
-impl fmt::Debug for ArgAction {
+impl fmt::Debug for ArgAction<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Empty(_arg0) => f.debug_tuple("Empty(_)").finish(),
@@ -72,7 +71,7 @@ impl fmt::Debug for ArgAction {
     }
 }
 
-impl ArgAction {
+impl ArgAction<'_> {
     /// 当音帮助文档时的 arguments 参数说明.
     pub(crate) fn arg_message(&self) -> String {
         let arg_tips = match self {

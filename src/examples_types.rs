@@ -57,12 +57,7 @@ impl<'a> Examples<'a> {
     }
 
     pub fn add_single_example(&mut self, command: &'a str, description: &'a str) {
-        let e = SingleExample {
-            command,
-            description,
-        };
-
-        self.val.push(e);
+        self.val.push(SingleExample::new(command, description));
     }
 
     pub fn iter(&self) -> core::slice::Iter<'_, SingleExample<'a>> {
@@ -75,8 +70,17 @@ impl<'a> Examples<'a> {
 #[derive(Clone, Debug, Hash)]
 pub struct SingleExample<'a> {
     pub command: &'a str,
-
     pub description: &'a str,
+}
+
+impl<'a> SingleExample<'a> {
+    fn new(command: &'a str, description: &'a str) -> Self {
+        Self {
+            command,
+            description,
+            // exaple_check_state: ExapleCheckState::Uncheck,
+        }
+    }
 }
 
 impl std::fmt::Display for SingleExample<'_> {
