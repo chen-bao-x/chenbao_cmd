@@ -1,9 +1,10 @@
 use crate::helper::*;
+use crate::subcommand::ErrorTable;
 use crate::*;
 use crate::{examples_types::Examples, subcommand::ExampleTestResult};
 use core::fmt;
 use owo_colors::OwoColorize;
-use prettytable::{row, table, Table};
+use prettytable::{cell, row, table, Row, Table};
 use std::rc::Rc;
 
 #[derive(Clone)]
@@ -301,12 +302,7 @@ impl<'a> App<'a> {
             let command_name = &x._name;
 
             // TODO: 为 cmd_name 添加颜色.
-            let cmd_name = format!(
-                "{}{} {}",
-                short_name,
-                command_name,
-                x._arg_type_with_action.arg_type_display().green()
-            );
+            let cmd_name = format!("{}{}", short_name, command_name,);
 
             table.add_row(row![cmd_name.styled_sub_command(), x._about]);
         }
@@ -367,18 +363,20 @@ Usage:
     /// `app -e` 时调用此函数.
     pub fn print_app_examples(&self) {
         if self._app_examples.is_empty() {
-            let mut table = table!();
-            table.set_format(table_formater());
+            //  自动生成的示例效果不好, 先不自动生成.
 
-            for x in &self._commands {
-                let rows = x.formated_command_example(&self._app_name);
+            // let mut table = table!();
+            // table.set_format(table_formater());
 
-                for x in rows {
-                    table.add_row(x);
-                }
-            }
-            println!("{}", table);
-            table.printstd();
+            // for x in &self._commands {
+            //     let rows = x.formated_command_example(&self._app_name);
+
+            //     for x in rows {
+            //         table.add_row(x);
+            //     }
+            // }
+            // println!("{}", table);
+            // table.printstd();
         } else {
             println!("{}", vec_row_to_table(self._app_examples.pretty_formated()));
         }
@@ -561,26 +559,72 @@ impl<'a> App<'a> {
 
         {
             let re = self.debug_duplicate_names_check();
-            if let Err(duplicate_names) = re {
-                println!("{}", "ERROR 有子命令的名称重复了:".red());
 
-                duplicate_names.iter().for_each(|x| {
-                    println!("{}", x);
-                });
+            if !re.is_empty() {
+                println!("\n{}\n", "有子命令的名称重复了".bright_yellow().bold());
+
+                for x in &re {
+                    println!("{}", x.generate_table())
+                }
             }
         }
 
         {
             let re = self.debug_example_check();
-            for x in re {
-                print!("{}", x.formated_massage());
+            if !re.is_empty() {
+                println!(
+                    "\n{}\n",
+                    "开始检查 example 是否能被解析".bright_yellow().bold()
+                );
+                for x in re {
+                    print!("{}", x.formated_massage());
+                }
             }
         }
     }
 
+    fn debug_duplicate_names_check(&self) -> Vec<ErrorTable> {
+        let mut re: Vec<ErrorTable> = vec![];
+
+        if let Err(duplicated_names) = self.debug_duplicate_names_check_asdfasfsdfds() {
+            for name in duplicated_names.clone() {
+                let abouts: Vec<Row> = self
+                    ._commands
+                    .iter()
+                    .filter(|x| [x._name, x._short_name].contains(&name))
+                    .map(|x| {
+                        let mut r = row![];
+
+                        let short_name = if x._short_name.is_empty() {
+                            "".to_string()
+                        } else {
+                            format!("{}, ", x._short_name.cyan())
+                        };
+
+                        r.add_cell(cell!(format!(
+                            "{}{}",
+                            short_name,
+                            x._name.styled_sub_command()
+                        )));
+                        r.add_cell(cell!(x._about.to_string()));
+                        r
+                    })
+                    .collect();
+
+                re.push(ErrorTable {
+                    title: row![name.bright_cyan()],
+                    err_messages: abouts,
+                    ..Default::default()
+                });
+            }
+        }
+
+        re
+    }
+
     /// 检查子命令的名字是否重复.
     // #[cfg(debug_assertions)] // 只在 debug 模式下使用
-    fn debug_duplicate_names_check(
+    fn debug_duplicate_names_check_asdfasfsdfds(
         &self,
         // ) -> Result<(), std::collections::HashSet<&String>> {
     ) -> Result<(), std::collections::HashSet<&str>> {
@@ -588,23 +632,14 @@ impl<'a> App<'a> {
 
         // 重复了的子命令名称.
 
-        // let mut duplicated_names: HashSet<&String> = HashSet::new();
         let mut duplicated_names: HashSet<&str> = HashSet::new();
 
         // 子命令的名字合集.
-        // let mut set: HashSet<&String> = HashSet::new();
         let mut set: HashSet<&str> = HashSet::new();
 
-        // let mut default_impls: HashSet<String> = HashSet::new();
         let mut default_impls: HashSet<&str> = HashSet::new();
         {
             // 这几个是 chenbao_cmd  自带的默认实现的 子命令和 flag, 不能被自定义.
-            // default_impls.insert("-h".to_string());
-            // default_impls.insert("--help".to_string());
-            // default_impls.insert("-v".to_string());
-            // default_impls.insert("--version".to_string());
-            // default_impls.insert("-e".to_string());
-            // default_impls.insert("--example".to_string());
 
             default_impls.insert("-h");
             default_impls.insert("--help");
@@ -619,11 +654,6 @@ impl<'a> App<'a> {
 
                 if set.contains(name) || default_impls.contains(name) {
                     duplicated_names.insert(name);
-
-                    println!(
-                        "name:{:?}\nduplicated_names:{:?}\nset: {:?}",
-                        name, duplicated_names, set
-                    );
                 } else {
                     set.insert(name);
                 }
@@ -714,12 +744,6 @@ impl Default for App<'_> {
         }
     }
 }
-
-// example test for "run" ... ok
-// example test "init" ... FAILED
-//      app build 2 # this can not parse.
-// example test "build" ... FAILED
-//      app build 2 # this can not parse.
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum NeedTo {

@@ -175,40 +175,40 @@ impl ArgAction<'_> {
     // /// 参数的数量不正确时的报错信息
     // pub(crate) fn cunt_error_tips(&self) {}
 
-    /// 告诉用户某个类型的参数应该怎么正确填写.
-    pub(crate) fn value_example(&self) -> String {
-        let re = match self {
-            ArgAction::Empty(_) => "",
-            ArgAction::String(_) => r#""thid is an string example.""#,
-            ArgAction::StringMutiple(_) => r#""str 1" "str 2" "str 3""#,
-            ArgAction::Number(_) => r#"9"#,
-            ArgAction::NumberMutiple(_) => r#"5 9 100 12"#,
-            ArgAction::Path(_) => r#""./path/to/folder/or/file.txt""#,
-            ArgAction::PathMutiple(_) => r#""./path 1" "/path/2/" "./" "path3.txt""#,
-            ArgAction::Bool(_) => r#"true"#,
-            ArgAction::BoolMutiple(_) => r#"true false"#,
-            ArgAction::Dialog(_) => "",
-        };
+    // /// 告诉用户某个类型的参数应该怎么正确填写.
+    // pub(crate) fn value_example(&self) -> String {
+    //     let re = match self {
+    //         ArgAction::Empty(_) => "",
+    //         ArgAction::String(_) => r#""thid is an string example.""#,
+    //         ArgAction::StringMutiple(_) => r#""str 1" "str 2" "str 3""#,
+    //         ArgAction::Number(_) => r#"9"#,
+    //         ArgAction::NumberMutiple(_) => r#"5 9 100 12"#,
+    //         ArgAction::Path(_) => r#""./path/to/folder/or/file.txt""#,
+    //         ArgAction::PathMutiple(_) => r#""./path 1" "/path/2/" "./" "path3.txt""#,
+    //         ArgAction::Bool(_) => r#"true"#,
+    //         ArgAction::BoolMutiple(_) => r#"true false"#,
+    //         ArgAction::Dialog(_) => "",
+    //     };
+    //
+    //     re.to_string()
+    // }
 
-        re.to_string()
-    }
-
-    pub(crate) fn arg_type_display(&self) -> String {
-        let re = match self {
-            ArgAction::Empty(_) => "",
-            ArgAction::String(_) => r#"<String>"#,
-            ArgAction::StringMutiple(_) => r#"<String>..."#,
-            ArgAction::Number(_) => r#"<Number>"#,
-            ArgAction::NumberMutiple(_) => r#"<Number>"#,
-            ArgAction::Path(_) => r#"<Path>"#,
-            ArgAction::PathMutiple(_) => r#"<Path>..."#,
-            ArgAction::Bool(_) => r#"<bool>"#,
-            ArgAction::BoolMutiple(_) => r#"<bool>..."#,
-            ArgAction::Dialog(_) => "",
-        };
-
-        re.to_string()
-    }
+    // pub(crate) fn arg_type_display(&self) -> String {
+    //     let re = match self {
+    //         ArgAction::Empty(_) => "",
+    //         ArgAction::String(_) => r#"<String>"#,
+    //         ArgAction::StringMutiple(_) => r#"<String>..."#,
+    //         ArgAction::Number(_) => r#"<Number>"#,
+    //         ArgAction::NumberMutiple(_) => r#"<Number>"#,
+    //         ArgAction::Path(_) => r#"<Path>"#,
+    //         ArgAction::PathMutiple(_) => r#"<Path>..."#,
+    //         ArgAction::Bool(_) => r#"<bool>"#,
+    //         ArgAction::BoolMutiple(_) => r#"<bool>..."#,
+    //         ArgAction::Dialog(_) => "",
+    //     };
+//
+    //     re.to_string()
+    // }
 }
 
 /// 子命令实际接收到的参数

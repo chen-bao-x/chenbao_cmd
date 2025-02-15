@@ -1,4 +1,4 @@
-use std::vec;
+use std::{default, vec};
 
 use crate::{
     action::{ArgAction, ParseResult, SubcommandArgsValue},
@@ -62,13 +62,13 @@ impl<'a> SubCommand<'a> {
     ///     })));
     /// ```
     pub fn create_an_sub_command(name: &'a str) -> Self {
-        #[cfg(debug_assertions)]
-        {
-            let re = SubCommand::debug_command_name_check(name);
-            if let Err(s) = re {
-                panic!("{}", s);
-            }
-        }
+        // #[cfg(debug_assertions)]
+        // {
+        //     let re = SubCommand::debug_command_name_check(name);
+        //     if let Err(s) = re {
+        //         panic!("{}", s);
+        //     }
+        // }
 
         SubCommand {
             _name: name,
@@ -149,8 +149,8 @@ impl SubCommand<'_> {
 }
 impl<'a> SubCommand<'a> {
     pub fn formated_usage(&self, app_name: &str) -> String {
-        let command_name = self._name.styled_sub_command();
-        let short_name = self._short_name.styled_sub_command();
+        let command_name = self._name.bright_cyan();
+        let short_name = self._short_name.bright_cyan();
 
         let arg_in_usage = match self._arg_type_with_action {
             ArgAction::Empty(_) => "".to_string(),
@@ -173,18 +173,18 @@ impl<'a> SubCommand<'a> {
         };
 
         // let arg_in_usage = arg_in_usage;
-
+        let app_name = app_name.cyan();
         let a = format!(
             r#"
 Usage: 
-{app_name} {command_name} {arg_in_usage}"#
+    {app_name} {command_name} {arg_in_usage}"#
         );
 
         let b = format!(
             r#"
 Usage: 
-{app_name} {command_name} {arg_in_usage}
-{app_name} {short_name} {arg_in_usage}"#
+    {app_name} {command_name} {arg_in_usage}
+    {app_name} {short_name} {arg_in_usage}"#
         );
 
         if self._short_name.is_empty() {
@@ -194,7 +194,8 @@ Usage:
         }
     }
 
-    /// `app cmd -h` 时显示的帮助文档.
+    /// 自动生成的 子命令帮助文档.  
+    /// `app cmd -h` 时显示的帮助文档.  
     pub fn formated_command_help(&self, app_name: &str) -> String {
         if let Some(s) = &self._help_message {
             // 自定义了帮助文档的情况;
@@ -259,7 +260,7 @@ Usage:
         if !x._short_name.is_empty() {
             result.push(row![
                 short_name.styled_sub_command(),
-                format!("alias: {}", command_name)
+                format!("alias: {}", command_name.styled_sub_command())
             ]);
         }
 
@@ -269,35 +270,30 @@ Usage:
     /// 已经格式化好了, 直接放进 Table 打印就行.
     pub fn formated_command_example(&self, app_name: &str) -> Vec<Row> {
         if self._exaples.is_empty() {
-            // SingleExample {
-            //     command: "{app_name} {command_name} {arg}",
-            //     description: self._about,
-            //     exaple_check_state: ExapleCheckState::Uncheck,
+            _ = app_name;
+            vec![]
+
+            //  自动生成的示例效果不好, 先不自动生成.
+            // {
+            //     let mut table: Vec<Row> = vec![];
+            //     {
+            //         let arg = self
+            //             ._arg_type_with_action
+            //             .value_example()
+            //             .bright_green()
+            //             .to_string();
+
+            //         table.push(row![
+            //             format!(
+            //                 "{app_name} {command_name} {arg}",
+            //                 command_name = self._name.styled_sub_command(),
+            //             ),
+            //             self._about
+            //         ]);
+            //     }
+
+            //     table
             // }
-            // .formated();
-
-            // let mut table = table! {};
-            let mut table: Vec<Row> = vec![];
-
-            {
-                // table.set_format(helper::table_formater());
-
-                let arg = self
-                    ._arg_type_with_action
-                    .value_example()
-                    .bright_green()
-                    .to_string();
-
-                table.push(row![
-                    format!(
-                        "{app_name} {command_name} {arg}",
-                        command_name = self._name.styled_sub_command(),
-                    ),
-                    self._about
-                ]);
-            }
-
-            table
         } else {
             self._exaples.pretty_formated()
         }
@@ -389,7 +385,7 @@ Usage:
 
             if let DidHandled::Failed(err) = re {
                 let tips = format!(
-                    "输入  {} {} {}  查看更详细信息",
+                    "输入  {} {} {}  查看更详细信息.",
                     app_name.styled_sub_command(),
                     self._name.styled_sub_command(),
                     "-h".styled_sub_command(),
@@ -469,8 +465,8 @@ Usage:
             };
 
             return re.map_err(|err| {
-                let tips = format!(
-                    "输入  {} {} {}  查看更详细信息",
+                let _ = format!(
+                    "输入  {} {} {}  查看更详细信息.",
                     app_name.styled_sub_command(),
                     self._name.styled_sub_command(),
                     "-h".styled_sub_command(),
@@ -496,50 +492,50 @@ Usage:
         }
     }
 
-    /// 检查 子命令 的名字是否符合要求.
-    #[cfg(debug_assertions)] // 只在 debug 模式下使用
-    fn debug_command_name_check(name: &str) -> Result<(), String> {
-        if name.is_empty() {
-            let msg = format!(
-                r#"
-    {error}: name 不能是空字符串 "", name 的值至少需要一个字符.
-    
-    如果想要设置只有 程序名 时执行的 action.
-    
-    请使用: app_default_action(_) 来设置.
-    示例:
-    let app = App::new("cmd")
-        .app_default_action(||{{ /* action */ }}) 
-    "#,
-                error = "error".red(),
-            );
+    //     /// 检查 子命令 的名字是否符合要求.
+    //     #[cfg(debug_assertions)] // 只在 debug 模式下使用
+    //     fn debug_command_name_check(name: &str) -> Result<(), String> {
+    //         if name.is_empty() {
+    //             let msg = format!(
+    //                 r#"
+    //     {error}: name 不能是空字符串 "", name 的值至少需要一个字符.
 
-            return Err(msg);
-        }
+    //     如果想要设置只有 程序名 时执行的 action.
 
-        let arr = [
-            "-h",
-            "--help",
-            "-e",
-            "--example",
-            "-v",
-            "--version",
-            "--list-all-commands",
-        ];
+    //     请使用: app_default_action(_) 来设置.
+    //     示例:
+    //     let app = App::new("cmd")
+    //         .app_default_action(||{{ /* action */ }})
+    //     "#,
+    //                 error = "error".red(),
+    //             );
 
-        if arr.contains(&name) {
-            let msg = format!(
-                r#"
-{error}: name 不能是 "-h", "--help", "-e", "--example", "-v", "--version", 这些已经有了默认的实现.
-    "#,
-                error = "error".red(),
-            );
+    //             return Err(msg);
+    //         }
 
-            return Err(msg);
-        }
+    //         let arr = [
+    //             "-h",
+    //             "--help",
+    //             "-e",
+    //             "--example",
+    //             "-v",
+    //             "--version",
+    //             "--list-all-commands",
+    //         ];
 
-        Ok(())
-    }
+    //         if arr.contains(&name) {
+    //             let msg = format!(
+    //                 r#"
+    // {error}: name 不能是 "-h", "--help", "-e", "--example", "-v", "--version", 这些已经有了默认的实现.
+    //     "#,
+    //                 error = "error".red(),
+    //             );
+
+    //             return Err(msg);
+    //         }
+
+    //         Ok(())
+    //     }
 
     /// 测试命令是否能够被匹配
     pub(crate) fn debug_cmd_example_check(&'a self, app_name: &str) -> ExampleTestResult<'a> {
@@ -571,7 +567,7 @@ Usage:
 
                     if !(self._name == name) {
                         let err_msg = format!(
-                            "{}: 需要 {}; 实际收到的: {:?}",
+                            "{}: 需要 {} 实际收到的: {:?}",
                             "子命令名称错误".bright_red(),
                             self._name.styled_sub_command(),
                             name
@@ -689,45 +685,58 @@ impl<'a> Sadadsf<'a> {
 // example test "build" ... FAILED
 //      app build 2 # this can not parse.
 
-// struct ErrorTable {
-//     title: Row,
-//     err_messages: Vec<Row>,
-//     format: TableFormat,
-// }
+pub struct ErrorTable {
+    pub title: Row,
+    pub err_messages: Vec<Row>,
+    pub format: TableFormat,
+}
 
-// impl ErrorTable {
-//     pub fn new() -> Self {
-//         let mut f = TableFormat::new();
-//         {
-//             f.separator(LinePosition::Bottom, LineSeparator::new('─', 'j', '└', 'r'));
-//             // f.separator(LinePosition::Title, LineSeparator::new('─', 'j', '├', 'r'));
-//             f.separator(LinePosition::Title, LineSeparator::new('━', 'j', '┝', 'r'));
-//             f.left_border('│');
-//         }
+impl default::Default for ErrorTable {
+    fn default() -> Self {
+        let mut f = TableFormat::new();
+        {
+            f.separator(LinePosition::Bottom, LineSeparator::new('─', '─', '└', 'r'));
+            // f.separator(LinePosition::Title, LineSeparator::new('─', 'j', '├', 'r'));
+            f.separator(LinePosition::Title, LineSeparator::new('━', '━', '┝', 'r'));
+            f.left_border('│');
 
-//         Self {
-//             title: row![],
-//             err_messages: vec![],
-//             format: f,
-//         }
-//     }
+            f.column_separator(' ');
+            f.padding(0, 4);
+        }
 
-//     pub fn generate_table(&self) -> Table {
-//         let mut table = table!();
-//         table.set_format(self.format);
-//         table.set_titles(self.title.clone());
+        Self {
+            title: Default::default(),
+            err_messages: Default::default(),
+            format: f,
+        }
+    }
+}
 
-//         for x in self.err_messages.clone() {
-//             table.add_row(x);
-//         }
-//         table
-//     }
+impl ErrorTable {
+    // pub fn new(title: String, err_messages: Vec<String>) -> Self {
+    //     Self {
+    //         title: row![title],
+    //         err_messages: err_messages.iter().map(|s| row![s]).collect(),
+    //         ..Default::default()
+    //     }
+    // }
 
-//     pub fn print(&self) {
-//         println!("{}", self.generate_table())
-//     }
+    pub fn generate_table(&self) -> Table {
+        let mut table = table!();
+        table.set_format(self.format);
+        table.set_titles(self.title.clone());
 
-//     pub fn set_title(&mut self, title: Row){
-//         self.title = title
-//     }
-// }
+        for x in self.err_messages.clone() {
+            table.add_row(x);
+        }
+        table
+    }
+
+    // pub fn print(&self) {
+    //     println!("{}", self.generate_table())
+    // }
+
+    // pub fn set_title(&mut self, title: Row) {
+    //     self.title = title
+    // }
+}

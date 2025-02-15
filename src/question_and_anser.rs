@@ -14,7 +14,7 @@ const ARGUMENTS_START_INDEX: usize = 1;
 pub struct DialogGenerator {
     /// 从 json_str 转换过来的 Vec<String>.
     /// 也可能是通过 问答式命令行交互 获取到的 Vec<String>.
-    pub arguments: ReplArgStore,
+    pub(crate) arguments: ReplArgStore,
 
     /// 当 Self 是从 json_str 转换过来的 Vec<String> 时,
     /// 这个用户标记读取到了哪一个参数.
