@@ -171,10 +171,14 @@ impl<'a> App<'a> {
 
     /// add command
     /// 为此 App 添加指令
-    pub fn add_command(self, command: SubCommand<'a>) -> Self {
+    /// ```
+    /// let app = App::new()
+    ///     .add_command( cmd!("b")  )
+    /// ```
+    pub fn add_command(self, cmd: SubCommand<'a>) -> Self {
         let mut re = self;
 
-        re._commands.push(command);
+        re._commands.push(cmd);
 
         re
     }
@@ -647,14 +651,23 @@ impl<'a> App<'a> {
         }
     }
 
+    /// 检查所有 子命令 的示例是否能被解析.
     fn debug_example_check(&'a self) -> Vec<ExampleTestResult<'a>> {
-        let mut re: Vec<ExampleTestResult<'a>> = vec![];
+        let mut ok: Vec<ExampleTestResult<'a>> = vec![];
+        let mut err: Vec<ExampleTestResult<'a>> = vec![];
 
         self._commands.iter().for_each(|cmd| {
-            re.push(cmd.debug_cmd_example_check(&self._app_name));
+            let r = cmd.debug_cmd_example_check(&self._app_name);
+            if r.is_success() {
+                ok.push(r);
+            } else {
+                err.push(r);
+            }
         });
 
-        re
+        ok.append(&mut err);
+
+        ok
     }
 
     // pub(crate) fn debug_子命令——人类友好度检查(&self) {}
@@ -719,6 +732,7 @@ pub(crate) enum NeedTo {
 
 impl NeedTo {
     pub fn is_run(&self) -> bool {
+        _ = NeedTo::ParseOnly;
         match self {
             NeedTo::Run => true,
             NeedTo::ParseOnly => false,

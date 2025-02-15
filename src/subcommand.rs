@@ -1,13 +1,19 @@
 use std::vec;
 
 use crate::{
-    action::{ArgAction, ParseResult, SubcommandArgsValue}, application::NeedTo, examples_types::{Examples, SingleExample}, helper::*
+    action::{ArgAction, ParseResult, SubcommandArgsValue},
+    application::NeedTo,
+    examples_types::{Examples, SingleExample},
+    helper::*,
 };
 
 use super::*;
 use application::DidHandled;
 use owo_colors::OwoColorize;
-use prettytable::{row, table, Row};
+use prettytable::{
+    format::{LinePosition, LineSeparator, TableFormat},
+    row, table, Row, Table,
+};
 
 /// 子命令
 #[derive(Clone, Debug)]
@@ -390,13 +396,13 @@ Usage:
                 );
                 return DidHandled::Failed(format!(
                     r#"
-{}{}
+{}
 
 {}
 
 {tips}
                 "#,
-                    "error: ".bright_red(),
+                    // "error: ".bright_red(),
                     err,
                     arg_message,
                 ));
@@ -471,13 +477,11 @@ Usage:
                 );
                 format!(
                     r#"
-{}{}
-
 {}
 
-{tips}
+{}
                 "#,
-                    "error: ".bright_red(),
+                    // "error: ".bright_red(),
                     err,
                     arg_message,
                 )
@@ -539,32 +543,59 @@ Usage:
 
     /// 测试命令是否能够被匹配
     pub(crate) fn debug_cmd_example_check(&'a self, app_name: &str) -> ExampleTestResult<'a> {
-        let mut result = ExampleTestResult {
-            cmd: self,
-            failures_examples: vec![],
-            success_examples: vec![],
-        };
+        let mut result = ExampleTestResult::new(self);
 
         for exam in &self._exaples.val {
+            let mut wait_to_putsh = Sadadsf {
+                base: exam,
+                err_msg: vec![],
+            };
+
             let cmd_arg = || -> Vec<String> {
                 let mut virtual_env_args = helper::parse_arg_string(exam.command);
-                if virtual_env_args.len() >= 2 {
-                    virtual_env_args.remove(0); // 移除 app name
-                    virtual_env_args.remove(0); // 移除 子命令的名字
+                if virtual_env_args.len() >= 1 {
+                    let name = virtual_env_args.remove(0); // 移除 app name
+                    if !(app_name == name) {
+                        let err_msg = format!(
+                            "{}: 需要 {}; 实际收到的: {:?}",
+                            "程序名称错误".bright_red(),
+                            app_name.styled_sub_command(),
+                            name
+                        );
+
+                        wait_to_putsh.err_msg.push(err_msg);
+                    }
                 }
+                if virtual_env_args.len() >= 1 {
+                    let name = virtual_env_args.remove(0); // 移除 子命令的名字
+
+                    if !(self._name == name) {
+                        let err_msg = format!(
+                            "{}: 需要 {}; 实际收到的: {:?}",
+                            "子命令名称错误".bright_red(),
+                            self._name.styled_sub_command(),
+                            name
+                        );
+                        wait_to_putsh.err_msg.push(err_msg);
+                    }
+                }
+
                 virtual_env_args
             }();
 
             let re = self.sub_command_try_parse(app_name, cmd_arg.into());
             match re {
                 DidHandled::Handled => result.success_examples.push(exam),
-                DidHandled::Failed(_e) => {
-                    result.failures_examples.push(Sadadsf {
-                        base: exam,
-                        err_msg: _e,
-                    });
+                DidHandled::Failed(err_msg) => {
+                    wait_to_putsh.err_msg.push(err_msg);
+                    // result.failures_examples.push(Sadadsf {
+                    //     base: exam,
+                    //     err_msg: vec![_e],
+                    // });
                 }
             }
+
+            result.failures_examples.push(wait_to_putsh);
         }
 
         result
@@ -577,19 +608,15 @@ pub(crate) struct ExampleTestResult<'a> {
     success_examples: Vec<&'a SingleExample<'a>>,
 }
 
-pub(crate) struct Sadadsf<'a> {
-    base: &'a SingleExample<'a>,
-    err_msg: String,
-}
-
-impl<'a> Sadadsf<'a> {
-    fn formated_whit_err_msg(&self) -> String {
-        format!("{}{}", self.base.formated(), self.err_msg)
+impl<'a> ExampleTestResult<'a> {
+    pub fn new(cmd: &'a SubCommand<'a>) -> Self {
+        Self {
+            cmd,
+            failures_examples: vec![],
+            success_examples: vec![],
+        }
     }
-}
-
-impl ExampleTestResult<'_> {
-    fn is_success(&self) -> bool {
+    pub fn is_success(&self) -> bool {
         self.failures_examples.is_empty()
     }
 
@@ -607,20 +634,100 @@ impl ExampleTestResult<'_> {
             .fold("".to_string(), |x, y| x + &y);
 
         let mut table = table!();
-        table.set_format(helper::table_formater());
+        let mut f = TableFormat::new();
+        {
+            f.padding(2, 0);
+            f.separator(LinePosition::Bottom, LineSeparator::new('─', 'j', '└', 'r'));
+            // f.separator(LinePosition::Title, LineSeparator::new('─', 'j', '├', 'r'));
+            f.separator(LinePosition::Title, LineSeparator::new('━', 'j', '┝', 'r'));
+            f.left_border('│');
+        }
+        table.set_format(f);
         table.add_row(row![msgs]);
 
-        format!(
-            r#"example test for {cmd_name} ... {ok}{t}"#,
-            cmd_name = self.cmd._name.styled_sub_command(),
-            t = table,
-            // display = self.cmd._arg_type_with_action.arg_type_display()
-        )
+        let t = if self.is_success() {
+            format!(
+                r#"example test for {cmd_name} ... {ok}
+"#,
+                cmd_name = self.cmd._name.styled_sub_command(),
+            )
+        } else {
+            let title = format!(
+                r#"example test for {cmd_name} ... {ok}"#,
+                cmd_name = self.cmd._name.styled_sub_command(),
+            );
+            table.set_titles(row![title]);
+            format!("\n{}", table)
+        };
+
+        t
+
+        // format!(
+        //     r#"example test for {cmd_name} ... {ok}{t}"#,
+        //     cmd_name = self.cmd._name.styled_sub_command(),
+        //     // t = table,
+        //     // display = self.cmd._arg_type_with_action.arg_type_display()
+        // )
     }
 }
 
+pub(crate) struct Sadadsf<'a> {
+    base: &'a SingleExample<'a>,
+    // err_msg: String,
+    err_msg: Vec<String>,
+}
+
+impl<'a> Sadadsf<'a> {
+    fn formated_whit_err_msg(&self) -> String {
+        let msg = self.err_msg.join("");
+        format!("{}{}", self.base.formated(), msg)
+    }
+}
 // example test for "run" ... ok
 // example test "init" ... FAILED
 //      app build 2 # this can not parse.
 // example test "build" ... FAILED
 //      app build 2 # this can not parse.
+
+// struct ErrorTable {
+//     title: Row,
+//     err_messages: Vec<Row>,
+//     format: TableFormat,
+// }
+
+// impl ErrorTable {
+//     pub fn new() -> Self {
+//         let mut f = TableFormat::new();
+//         {
+//             f.separator(LinePosition::Bottom, LineSeparator::new('─', 'j', '└', 'r'));
+//             // f.separator(LinePosition::Title, LineSeparator::new('─', 'j', '├', 'r'));
+//             f.separator(LinePosition::Title, LineSeparator::new('━', 'j', '┝', 'r'));
+//             f.left_border('│');
+//         }
+
+//         Self {
+//             title: row![],
+//             err_messages: vec![],
+//             format: f,
+//         }
+//     }
+
+//     pub fn generate_table(&self) -> Table {
+//         let mut table = table!();
+//         table.set_format(self.format);
+//         table.set_titles(self.title.clone());
+
+//         for x in self.err_messages.clone() {
+//             table.add_row(x);
+//         }
+//         table
+//     }
+
+//     pub fn print(&self) {
+//         println!("{}", self.generate_table())
+//     }
+
+//     pub fn set_title(&mut self, title: Row){
+//         self.title = title
+//     }
+// }

@@ -79,7 +79,7 @@ pub(crate) trait StyledString {
     fn styled_sub_command(&self) -> String;
     fn styled_arg_type(&self) -> String;
     fn styled_arg(&self) -> String;
-
+    fn styled_error_marker(&self) -> String;
     // fn styled_repl_prompt(&self) -> String;
     // fn styled_repl_input(&self) -> String;
     // fn styled_repl_selected(&self) -> String;
@@ -105,6 +105,14 @@ impl<T: ToString> StyledString for T {
             String::new()
         } else {
             self.to_string().green().to_string()
+        }
+    }
+
+    fn styled_error_marker(&self) -> String {
+        if self.to_string().is_empty() {
+            String::new()
+        } else {
+            self.to_string().bright_red().to_string()
         }
     }
 

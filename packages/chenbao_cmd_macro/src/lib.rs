@@ -5,7 +5,17 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, LitStr};
 
-/// adsfsadf
+/// # 示例:
+/// ```rs
+/// let app = App::new()
+///     .add_command(
+///         cmd!("test")
+///             .action(ArgAction::String(&|s|{
+///                 println!(r#"I got "{}""#, s)
+///             })
+///         )
+///     );
+/// ```
 #[proc_macro]
 pub fn cmd(input: TokenStream) -> TokenStream {
     // 解析输入
@@ -15,13 +25,13 @@ pub fn cmd(input: TokenStream) -> TokenStream {
     let string_value = input.token().to_string();
 
     if let Some(c) = contains_invalid_char(&string_value) {
-        return syn::Error::new_spanned(input, format!("命令名称不能包含字符: '{c}' "))
+        return syn::Error::new_spanned(input, format!("子命令名称不能包含字符: '{c}' "))
             .to_compile_error()
             .into();
     } else if contains_default_flags(&string_value) {
         return syn::Error::new_spanned(
             input,
-            format!("{string_value} 不能用于命令名称, {string_value} 已经有了默认实现.",),
+            format!("{string_value} 不能用于子命令名称, {string_value} 已经有了默认实现.",),
         )
         .to_compile_error()
         .into();
@@ -45,7 +55,7 @@ fn contains_invalid_char(value: &str) -> Option<char> {
             || c.is_whitespace()
             || c.is_control()
             || c.is_ascii_whitespace()
-            || ['$', '!', '(', ')', '[', ']', '\\', '\''].contains(&c)
+            || ['$', '!', '(', ')', '[', ']', '\\', '\'', '\n'].contains(&c)
     })
 }
 
@@ -66,9 +76,6 @@ fn contains_default_flags(value: &str) -> bool {
         "-v".to_string(),
         "--version".to_string(),
         "--list-all-commands".to_string(),
-        r#"\n"#.to_string(),
-        r#"\r\n"#.to_string(),
-        r#"\"#.to_string(),
     ];
 
     arr.contains(&string_value)

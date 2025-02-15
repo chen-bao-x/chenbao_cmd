@@ -1,7 +1,7 @@
 use crate::arg_type::{ReplArg, ReplArgStore};
 use crate::helper::*;
 use owo_colors::OwoColorize;
-use std::{marker::PhantomData, num::ParseIntError, path::Path, vec};
+use std::{num::ParseIntError, path::Path, vec};
 
 use super::*;
 use arg_type::key_gen;
@@ -10,7 +10,8 @@ const ARGUMENTS_START_INDEX: usize = 1;
 
 // #[derive(Debug)]
 /// ArgType::Repl(_) 需要用到 ReplQuestions.  
-pub struct DialogGenerator<'a> {
+// pub struct DialogGenerator<'a> {
+pub struct DialogGenerator {
     /// 从 json_str 转换过来的 Vec<String>.
     /// 也可能是通过 问答式命令行交互 获取到的 Vec<String>.
     pub arguments: ReplArgStore,
@@ -23,15 +24,14 @@ pub struct DialogGenerator<'a> {
     pub is_from_json: bool,
 
     theme: dialoguer::theme::ColorfulTheme,
-
-    占位符号: PhantomData<&'a std::io::Empty>,
+    // 占位符号: PhantomData<&'a std::io::Empty>,
 }
-impl Default for DialogGenerator<'_> {
+impl Default for DialogGenerator {
     fn default() -> Self {
         Self::new()
     }
 }
-impl DialogGenerator<'_> {
+impl DialogGenerator {
     /* private */
 
     /// Creates a new [`ReplQuestions`].
@@ -49,7 +49,7 @@ impl DialogGenerator<'_> {
 
             is_from_json: false,
             theme: dialoguer::theme::ColorfulTheme::default(),
-            占位符号: PhantomData,
+            // 占位符号: PhantomData,
         }
     }
 
@@ -64,7 +64,7 @@ impl DialogGenerator<'_> {
 
                 is_from_json: true,
                 theme: dialoguer::theme::ColorfulTheme::default(),
-                占位符号: PhantomData,
+                // 占位符号: PhantomData,
             })
             .map_err(|_e| format!("{}{}转换为 json 时出错: {}", file!(), line!(), _e))
     }
@@ -79,7 +79,7 @@ impl DialogGenerator<'_> {
     }
 }
 
-impl DialogGenerator<'_> {
+impl DialogGenerator {
     // _string
     pub fn string(&mut self, prompt: &str) -> arg_type::String {
         // pub fn string(&mut self, prompt: &str) -> &str {

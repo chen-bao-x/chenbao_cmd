@@ -1,3 +1,4 @@
+
 use super::arg_type;
 use crate::helper::StyledString;
 use crate::SharedVecString;
@@ -233,7 +234,8 @@ impl SubcommandArgsValue {
             Ok(arg_type::Empty::new())
         } else {
             Err(format!(
-                "参数数量不正确: 此子命令不需要参数, 实际接收到了 {} 个参数: {:?}",
+                "{}: 此子命令不需要参数, 实际接收到了 {} 个参数: {:?}",
+                "参数数量错误".styled_error_marker(),
                 self.subcommand_args.len().styled_sub_command(),
                 self.subcommand_args,
             ))
@@ -249,7 +251,8 @@ impl SubcommandArgsValue {
             }
         }
         Err(format!(
-            "参数数量不正确: 需要 1 个参数, 实际接收到了 {} 个参数: {}",
+            "{}: 需要 1 个参数, 实际接收到了 {} 个参数: {}",
+            "参数数量错误".styled_error_marker(),
             s.len().styled_sub_command(),
             format!("{:?}", s).styled_arg(),
         ))
@@ -273,7 +276,8 @@ impl SubcommandArgsValue {
             }
         } else {
             return Err(format!(
-                "参数数量不正确: 需要 1 个参数, 实际接收到了 {} 个参数: {}",
+                "{}: 需要 1 个参数, 实际接收到了 {} 个参数: {}",
+                "参数数量错误".styled_error_marker(),
                 s.len().styled_sub_command(),
                 // s.green(),
                 format!("{:?}", s).styled_arg(),
@@ -318,7 +322,8 @@ impl SubcommandArgsValue {
             }
         } else {
             return Err(format!(
-                "参数数量不正确: 需要 1 个参数, 实际接收到了 {} 个参数: {}",
+                "{}: 需要 1 个参数, 实际接收到了 {} 个参数: {}",
+                "参数数量错误".styled_error_marker(),
                 s.len().styled_sub_command(),
                 // s.green(),
                 format!("{:?}", s).styled_arg(),
@@ -359,7 +364,7 @@ impl SubcommandArgsValue {
                 }
 
                 Err(format!(
-                    "参数不正确: 参数的类型是 {btype}, {btype} 类型的值可以是: {t}, {f}, 实际接收到的是: {args:?}",
+                    "参数类型错误: 参数的类型是 {btype}, {btype} 类型的值可以是: {t}, {f}, 实际接收到的是: {args}",
                     btype = "bool".styled_arg_type(),
                     t = true.styled_arg(),
                     f = false.styled_arg(),
@@ -368,7 +373,8 @@ impl SubcommandArgsValue {
                 ))
             } else {
                 Err(format!(
-                    "参数数量不正确: 需要 1 个 {} 类型的参数, 实际接收到了 {} 个参数: {}",
+                    "{}: 需要 1 个 {} 类型的参数, 实际接收到了 {} 个参数: {}",
+                    "参数数量错误".styled_error_marker(),
                     "bool".styled_arg_type(),
                     s.len().styled_sub_command(),
                     // s.styled_arg(),
@@ -377,7 +383,8 @@ impl SubcommandArgsValue {
             }
         } else {
             Err(format!(
-                "参数数量不正确: 需要 1 个 {} 类型的参数, 实际接收到了 {} 个参数: {}",
+                "{}: 需要 1 个 {} 类型的参数, 实际接收到了 {} 个参数: {}",
+                "参数数量错误".styled_error_marker(),
                 "bool".styled_arg_type(),
                 s.len().styled_sub_command(),
                 // s.styled_arg(),
@@ -389,7 +396,7 @@ impl SubcommandArgsValue {
     pub fn get_vec_bool(self) -> ParseResult<Vec<bool>> {
         let s = self.subcommand_args;
         let mut re: Vec<bool> = vec![];
-        let mut err: Option<String> = None;
+        let mut err_massage: Option<String> = None;
 
         s.iter().for_each(|x| {
             let lovwercase = x.to_lowercase();
@@ -399,14 +406,23 @@ impl SubcommandArgsValue {
             } else if lovwercase == "false" {
                 re.push(false);
             } else {
-                err = Some(
-                    "参数不正确: 参数的类型是 bool.\nbool 类型的值可以是: true , false "
-                        .to_string(),
-                );
+                
+     
+
+                err_massage = Some(format!(
+                    "{}: 参数的类型是 {btype}, {btype} 类型的值可以是: {t}, {f}, 实际接收到的是: {args}",
+                    "参数类型错误".styled_error_marker(),
+                    btype = "bool".styled_arg_type(),
+                    t = true.styled_arg(),
+                    f = false.styled_arg(),
+                    // args = VecString::vec_to_json(&s).styled_arg(),
+                    args = format!("{:?}", s).styled_arg(),
+                ))
+
             }
         });
 
-        if let Some(msg) = err {
+        if let Some(msg) = err_massage {
             Err(msg)
         } else {
             Ok(re)
@@ -436,7 +452,8 @@ impl SubcommandArgsValue {
         }
 
         Err(format!(
-            "参数数量不正确: 需要 0 个 或者 1 个 参数, 实际接收到了 {} 个参数: {:?}",
+            "{}: 需要 0 个参数 或者 自动生成的'快捷参数', 实际接收到了 {} 个参数: {:?}",
+            "参数数量错误".styled_error_marker(),
             subcmd_args.len().styled_sub_command(),
             subcmd_args,
         ))
