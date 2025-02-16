@@ -305,7 +305,7 @@ impl<'a> App<'a> {
                 format!("{}{}", &x._short_name, ", ",)
             };
 
-            let command_name = &x._name;
+            let command_name = &x._cmd_name;
 
             // TODO: 为 cmd_name 添加颜色.
             let cmd_name = format!("{}{}", short_name, command_name,);
@@ -317,13 +317,13 @@ impl<'a> App<'a> {
 
         let app_usage = format!(
             r#"
-Usage:
-
+{usg}:
     {app_name} {command} {arguments}
 "#,
             app_name = self._app_name.cyan(),
             command = "<command>".bright_cyan(),
             arguments = "[arguments]".green(),
+            usg = "Usage".bright_green()
         );
         let help = format!(
             "{}, {}",
@@ -347,7 +347,7 @@ Usage:
         let author = if self._author.is_empty() {
             "".to_string()
         } else {
-            format!("{} {}", "Author:", self._author)
+            format!("{}: {}\n", "Author".bright_green(), self._author)
         };
 
         let commands = format!("{}\n{}", "Commands:".bright_green(), all_commands_about);
@@ -483,7 +483,7 @@ impl App<'_> {
     fn _handle_commands(&self, command_name: &String) -> DidHandled {
         {
             for x in &self._commands {
-                if command_name == x._name || command_name == x._short_name {
+                if command_name == x._cmd_name || command_name == x._short_name {
                     let cmd_args = self._commands_arg.clone();
 
                     return x.sub_command_try_run(&self._app_name, cmd_args, self._need_to);
@@ -597,7 +597,7 @@ impl<'a> App<'a> {
                 let abouts: Vec<Row> = self
                     ._commands
                     .iter()
-                    .filter(|x| [x._name, x._short_name].contains(&name))
+                    .filter(|x| [x._cmd_name, x._short_name].contains(&name))
                     .map(|x| {
                         let mut r = row![];
 
@@ -610,7 +610,7 @@ impl<'a> App<'a> {
                         r.add_cell(cell!(format!(
                             "{}{}",
                             short_name,
-                            x._name.styled_sub_command()
+                            x._cmd_name.styled_sub_command()
                         )));
                         r.add_cell(cell!(x._about.to_string()));
                         r
@@ -656,7 +656,7 @@ impl<'a> App<'a> {
         }
         for x in &self._commands {
             {
-                let name = &x._name;
+                let name = &x._cmd_name;
 
                 if set.contains(name) || default_impls.contains(name) {
                     duplicated_names.insert(name);

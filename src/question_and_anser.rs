@@ -1,4 +1,5 @@
 use crate::arg_type::{ReplArg, ReplArgStore};
+
 use crate::helper::*;
 use owo_colors::OwoColorize;
 use std::{num::ParseIntError, path::Path, vec};
@@ -8,9 +9,7 @@ use arg_type::key_gen;
 
 const ARGUMENTS_START_INDEX: usize = 1;
 
-// #[derive(Debug)]
 /// ArgType::Repl(_) 需要用到 ReplQuestions.  
-// pub struct DialogGenerator<'a> {
 pub struct DialogGenerator {
     /// 从 json_str 转换过来的 Vec<String>.
     /// 也可能是通过 问答式命令行交互 获取到的 Vec<String>.
@@ -22,15 +21,15 @@ pub struct DialogGenerator {
 
     /// 是否是从 json_str 转换过来的?
     pub is_from_json: bool,
-
     theme: dialoguer::theme::ColorfulTheme,
-    // 占位符号: PhantomData<&'a std::io::Empty>,
 }
+
 impl Default for DialogGenerator {
     fn default() -> Self {
         Self::new()
     }
 }
+
 impl DialogGenerator {
     /* private */
 
@@ -326,7 +325,7 @@ impl DialogGenerator {
     }
 
     /// 打印 快捷参数
-    pub fn finesh(&mut self, app_name: &str, command_name: &str) {
+    pub fn finesh_and_print(&self, app_name: &str, command_name: &str) {
         let app_name = app_name.cyan();
         let command_name = command_name.bright_cyan();
         // println!("runing command: {app_name} {command_name} stdin << '###_marker_###'\n{}\n###_marker_###\n", self.to_toml().green());

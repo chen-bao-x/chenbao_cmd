@@ -20,15 +20,12 @@ use prettytable::{
 pub struct SubCommand<'a> {
     /// 子命令名   
     /// 命令的名称长度最好不要超过 20 个字符.
-    // pub _name: String,
-    pub _name: &'a str,
+    pub _cmd_name: &'a str,
 
     /// 命令名的简写形式, 通常是一个字符  
-    // pub _short_name: String,
     pub _short_name: &'a str,
 
     /// 一句话介绍此命令
-    // pub _about: String,
     pub _about: &'a str,
 
     /// 是用此命令的一些示范和例子.
@@ -37,12 +34,11 @@ pub struct SubCommand<'a> {
 
     /// 自定义的帮助文档.
     /// 当用户使用 help 命令查询此命令时显示的帮助文档.
-    // pub _help_message: Option<String>,
     pub _help_message: Option<&'a str>,
 
     /// 子命令需要的参数的类型以及该子命令的 action.
     /// 在打印子命令的帮助文档时需要用到此属性.
-    pub _arg_type_with_action: ArgAction<'a>,
+    pub _arg_type_with_action: ArgAction,
 }
 
 impl<'a> SubCommand<'a> {
@@ -62,16 +58,8 @@ impl<'a> SubCommand<'a> {
     ///         }));
     /// ```
     pub fn create_an_sub_command(name: &'a str) -> Self {
-        // #[cfg(debug_assertions)]
-        // {
-        //     let re = SubCommand::debug_command_name_check(name);
-        //     if let Err(s) = re {
-        //         panic!("{}", s);
-        //     }
-        // }
-
         SubCommand {
-            _name: name,
+            _cmd_name: name,
 
             _about: "",
             _help_message: None,
@@ -115,7 +103,7 @@ impl<'a> SubCommand<'a> {
     }
 
     /// set `Command.action`
-    pub fn action(self, need_arg_type: ArgAction<'a>) -> Self {
+    pub fn action(self, need_arg_type: ArgAction) -> Self {
         let mut re = self;
         re._arg_type_with_action = need_arg_type;
 
@@ -141,24 +129,20 @@ impl SubCommand<'_> {
         println!(
             "子命令 {} {} 的使用示例:",
             app_name,
-            self._name.styled_sub_command()
+            self._cmd_name.styled_sub_command()
         );
         println!();
         println!("{}", table);
     }
 }
+
 impl<'a> SubCommand<'a> {
     pub fn formated_usage(&self, app_name: &str) -> String {
-        let command_name = self._name.bright_cyan();
+        let command_name = self._cmd_name.bright_cyan();
         let short_name = self._short_name.bright_cyan();
 
         let arg_in_usage = match self._arg_type_with_action {
             ArgAction::Empty(_) => "".to_string(),
-
-            // ArgAction::String(_) => format!(r#"{}"#, "String".styled_arg_type()),
-            // ArgAction::Number(_) => format!(r#"{}"#, "Number".styled_arg_type()),
-            // ArgAction::Path(_) => format!(r#"{}"#, "Path".styled_arg_type()),
-            // ArgAction::Bool(_) => format!(r#"{}"#, "Bool".styled_arg_type()),
             ArgAction::String(_) => "String".styled_arg_type().to_string(),
             ArgAction::Number(_) => "Number".styled_arg_type().to_string(),
             ArgAction::Path(_) => "Path".styled_arg_type().to_string(),
@@ -176,15 +160,17 @@ impl<'a> SubCommand<'a> {
         let app_name = app_name.cyan();
         let a = format!(
             r#"
-Usage: 
-    {app_name} {command_name} {arg_in_usage}"#
+{usg}: 
+    {app_name} {command_name} {arg_in_usage}"#,
+            usg = "Usage".bright_green(),
         );
 
         let b = format!(
             r#"
-Usage: 
+{usg}: 
     {app_name} {command_name} {arg_in_usage}
-    {app_name} {short_name} {arg_in_usage}"#
+    {app_name} {short_name} {arg_in_usage}"#,
+            usg = "Usage".bright_green(),
         );
 
         if self._short_name.is_empty() {
@@ -252,7 +238,7 @@ Usage:
             format!("{}{}", &x._short_name, ", ")
         };
 
-        let command_name = &x._name;
+        let command_name = &x._cmd_name;
 
         let mut result: Vec<Row> = vec![];
 
@@ -358,7 +344,7 @@ Usage:
                             let re = &mut arg_type::Dialog::new_from_toml(json_string.as_str());
                             match re {
                                 Ok(repl) => {
-                                    f(repl); // repl.finesh(app_name, &self._command_name);
+                                    f(repl); // repl.finesh_and_print(app_name, self._name);
                                 }
                                 Err(err) => {
                                     eprintln!("{}", err);
@@ -366,7 +352,7 @@ Usage:
                                     panic!(
                                         "\n参数不正确.\nsee {} {} {} for more infomation.\n",
                                         app_name.magenta(),
-                                        self._name.styled_sub_command(),
+                                        self._cmd_name.styled_sub_command(),
                                         "-h".styled_arg()
                                     );
                                 }
@@ -377,7 +363,7 @@ Usage:
 
                             let mut repl = arg_type::Dialog::new();
                             f(&mut repl);
-                            repl.finesh(app_name, self._name);
+                            repl.finesh_and_print(app_name, self._cmd_name);
                         }
                     }
                 }),
@@ -387,7 +373,7 @@ Usage:
                 let tips = format!(
                     "输入  {} {} {}  查看更详细信息.",
                     app_name.styled_sub_command(),
-                    self._name.styled_sub_command(),
+                    self._cmd_name.styled_sub_command(),
                     "-h".styled_sub_command(),
                 );
                 return DidHandled::Failed(format!(
@@ -398,9 +384,7 @@ Usage:
 
 {tips}
                 "#,
-                    // "error: ".bright_red(),
-                    err,
-                    arg_message,
+                    err, arg_message,
                 ));
             }
 
@@ -468,7 +452,7 @@ Usage:
                 let _ = format!(
                     "输入  {} {} {}  查看更详细信息.",
                     app_name.styled_sub_command(),
-                    self._name.styled_sub_command(),
+                    self._cmd_name.styled_sub_command(),
                     "-h".styled_sub_command(),
                 );
                 format!(
@@ -492,54 +476,9 @@ Usage:
         }
     }
 
-    //     /// 检查 子命令 的名字是否符合要求.
-    //     #[cfg(debug_assertions)] // 只在 debug 模式下使用
-    //     fn debug_command_name_check(name: &str) -> Result<(), String> {
-    //         if name.is_empty() {
-    //             let msg = format!(
-    //                 r#"
-    //     {error}: name 不能是空字符串 "", name 的值至少需要一个字符.
-
-    //     如果想要设置只有 程序名 时执行的 action.
-
-    //     请使用: app_default_action(_) 来设置.
-    //     示例:
-    //     let app = App::new("cmd")
-    //         .app_default_action(||{{ /* action */ }})
-    //     "#,
-    //                 error = "error".red(),
-    //             );
-
-    //             return Err(msg);
-    //         }
-
-    //         let arr = [
-    //             "-h",
-    //             "--help",
-    //             "-e",
-    //             "--example",
-    //             "-v",
-    //             "--version",
-    //             "--list-all-commands",
-    //         ];
-
-    //         if arr.contains(&name) {
-    //             let msg = format!(
-    //                 r#"
-    // {error}: name 不能是 "-h", "--help", "-e", "--example", "-v", "--version", 这些已经有了默认的实现.
-    //     "#,
-    //                 error = "error".red(),
-    //             );
-
-    //             return Err(msg);
-    //         }
-
-    //         Ok(())
-    //     }
-
     /// 测试命令是否能够被匹配
     pub(crate) fn debug_cmd_example_check(&'a self, app_name: &str) -> ExampleTestResult<'a> {
-        let mut result = ExampleTestResult::new(self);
+        let mut bad_examples = ExampleTestResult::new(self);
 
         for exam in &self._exaples.val {
             let mut wait_to_putsh = Sadadsf {
@@ -547,11 +486,11 @@ Usage:
                 err_msg: vec![],
             };
 
-            let cmd_arg = || -> Vec<String> {
+            let cmd_arg = {
                 let mut virtual_env_args = helper::parse_arg_string(exam.command);
-                if virtual_env_args.len() >= 1 {
+                if !virtual_env_args.is_empty() {
                     let name = virtual_env_args.remove(0); // 移除 app name
-                    if !(app_name == name) {
+                    if app_name != name {
                         let err_msg = format!(
                             "{}: 需要 {}; 实际收到的: {:?}",
                             "程序名称错误".bright_red(),
@@ -562,14 +501,14 @@ Usage:
                         wait_to_putsh.err_msg.push(err_msg);
                     }
                 }
-                if virtual_env_args.len() >= 1 {
+                if !virtual_env_args.is_empty() {
                     let name = virtual_env_args.remove(0); // 移除 子命令的名字
 
-                    if !(self._name == name) {
+                    if self._cmd_name != name {
                         let err_msg = format!(
                             "{}: 需要 {} 实际收到的: {:?}",
                             "子命令名称错误".bright_red(),
-                            self._name.styled_sub_command(),
+                            self._cmd_name.styled_sub_command(),
                             name
                         );
                         wait_to_putsh.err_msg.push(err_msg);
@@ -577,24 +516,20 @@ Usage:
                 }
 
                 virtual_env_args
-            }();
+            };
 
             let re = self.sub_command_try_parse(app_name, cmd_arg.into());
             match re {
-                DidHandled::Handled => result.success_examples.push(exam),
+                DidHandled::Handled => bad_examples.success_examples.push(exam),
                 DidHandled::Failed(err_msg) => {
                     wait_to_putsh.err_msg.push(err_msg);
-                    // result.failures_examples.push(Sadadsf {
-                    //     base: exam,
-                    //     err_msg: vec![_e],
-                    // });
                 }
             }
 
-            result.failures_examples.push(wait_to_putsh);
+            bad_examples.failures_examples.push(wait_to_putsh);
         }
 
-        result
+        bad_examples
     }
 }
 
@@ -626,54 +561,46 @@ impl<'a> ExampleTestResult<'a> {
         let msgs: String = self
             .failures_examples
             .iter()
-            .map(|x| format!("{}", x.formated_whit_err_msg()))
+            .map(|x| x.formated_whit_err_msg().to_string())
             .fold("".to_string(), |x, y| x + &y);
 
         let mut table = table!();
-        let mut f = TableFormat::new();
         {
+            let mut f = TableFormat::new();
             f.padding(2, 0);
             f.separator(LinePosition::Bottom, LineSeparator::new('─', 'j', '└', 'r'));
             // f.separator(LinePosition::Title, LineSeparator::new('─', 'j', '├', 'r'));
             f.separator(LinePosition::Title, LineSeparator::new('━', 'j', '┝', 'r'));
             f.left_border('│');
+            table.set_format(f);
         }
-        table.set_format(f);
         table.add_row(row![msgs]);
 
-        let t = if self.is_success() {
+        /* return */
+        if self.is_success() {
             format!(
                 r#"example test for {cmd_name} ... {ok}
 "#,
-                cmd_name = self.cmd._name.styled_sub_command(),
+                cmd_name = self.cmd._cmd_name.styled_sub_command(),
             )
         } else {
             let title = format!(
                 r#"example test for {cmd_name} ... {ok}"#,
-                cmd_name = self.cmd._name.styled_sub_command(),
+                cmd_name = self.cmd._cmd_name.styled_sub_command(),
             );
             table.set_titles(row![title]);
             format!("\n{}", table)
-        };
-
-        t
-
-        // format!(
-        //     r#"example test for {cmd_name} ... {ok}{t}"#,
-        //     cmd_name = self.cmd._name.styled_sub_command(),
-        //     // t = table,
-        //     // display = self.cmd._arg_type_with_action.arg_type_display()
-        // )
+        }
     }
 }
 
 pub(crate) struct Sadadsf<'a> {
     base: &'a SingleExample<'a>,
-    // err_msg: String,
+
     err_msg: Vec<String>,
 }
 
-impl<'a> Sadadsf<'a> {
+impl Sadadsf<'_> {
     fn formated_whit_err_msg(&self) -> String {
         let msg = self.err_msg.join("");
         format!("{}{}", self.base.formated(), msg)

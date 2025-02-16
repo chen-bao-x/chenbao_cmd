@@ -8,7 +8,8 @@ pub type Path = std::path::PathBuf;
 pub type PathMutiple = Vec<std::path::PathBuf>;
 pub type Bool = bool;
 pub type BoolMutiple = Vec<bool>;
-pub type Dialog<'a> = crate::question_and_anser::DialogGenerator;
+// pub type Dialog<'a> = crate::question_and_anser::DialogGenerator;
+pub type Dialog = crate::question_and_anser::DialogGenerator;
 // pub type Empty = self::EmptyArg;
 
 /// 用来表示这个 subcommand 不需要参数.
@@ -58,6 +59,7 @@ impl ReplArg {
             // return val.clone();
             return val;
         }
+
         panic!("{:?}", self);
     }
 

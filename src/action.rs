@@ -9,31 +9,33 @@ pub type ParseResultMessage = String;
 pub type ParseResult<T> = Result<T, ParseResultMessage>;
 
 #[derive(Clone)]
-pub enum ArgAction<'a> {
+pub enum ArgAction  {
     /// 表示这个子命令不需要参数
-    Empty(&'a dyn Fn(arg_type::Empty)),
+    Empty(&'static dyn Fn(arg_type::Empty)),
 
-    String(&'a dyn Fn(arg_type::String)),
+    String(&'static dyn Fn(arg_type::String)),
 
-    StringMutiple(&'a dyn Fn(Rc<arg_type::StringMutiple>)),
+    StringMutiple(&'static dyn Fn(Rc<arg_type::StringMutiple>)),
 
-    Number(&'a dyn Fn(arg_type::Number)),
+    Number(&'static dyn Fn(arg_type::Number)),
 
-    NumberMutiple(&'a dyn Fn(arg_type::NumberMutiple)),
+    NumberMutiple(&'static dyn Fn(arg_type::NumberMutiple)),
 
-    Path(&'a dyn Fn(arg_type::Path)),
+    Path(&'static dyn Fn(arg_type::Path)),
 
-    PathMutiple(&'a dyn Fn(arg_type::PathMutiple)),
+    PathMutiple(&'static dyn Fn(arg_type::PathMutiple)),
 
-    Bool(&'a dyn Fn(arg_type::Bool)),
+    Bool(&'static dyn Fn(arg_type::Bool)),
 
-    BoolMutiple(&'a dyn Fn(arg_type::BoolMutiple)),
+    BoolMutiple(&'static dyn Fn(arg_type::BoolMutiple)),
 
     /// 对话式交互.
-    Dialog(&'a dyn Fn(&mut arg_type::Dialog)),
+    Dialog(&'static dyn Fn(&mut arg_type::Dialog)),
+   
+    
 }
 
-impl std::fmt::Display for ArgAction<'_> {
+impl std::fmt::Display for ArgAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ArgAction::Empty(_) => write!(f, "ArgType::Empty"),
@@ -50,12 +52,12 @@ impl std::fmt::Display for ArgAction<'_> {
     }
 }
 
-impl default::Default for ArgAction<'_> {
+impl default::Default for ArgAction {
     fn default() -> Self {
         Self::Empty(&|_x| {})
     }
 }
-impl fmt::Debug for ArgAction<'_> {
+impl fmt::Debug for ArgAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Empty(_arg0) => f.debug_tuple("Empty(_)").finish(),
@@ -72,7 +74,7 @@ impl fmt::Debug for ArgAction<'_> {
     }
 }
 
-impl ArgAction<'_> {
+impl ArgAction {
     /// 当音帮助文档时的 arguments 参数说明.
     pub(crate) fn arg_message(&self) -> String {
         let arg_tips = match self {

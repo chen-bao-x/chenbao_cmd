@@ -284,3 +284,18 @@ fn dsafdsaf() {
         // .deubug_run(vec!["app_name", "repl"])
         .deubug_run(["app_name", "--list-all-commands"]);
 }
+use std::cell::Cell;
+use std::rc::Rc;
+#[test]
+fn maasdfasfin() {
+  let c = Cell::new("asdf");
+  let one = c.get();
+  c.set("qwer");
+  let two = c.get();
+  println!("{},{},{}", one, two, c.get());
+
+  let a = Rc::new(String::from("hello, world"));
+  let b = Rc::clone(&a);
+  let c = b.clone();
+  
+}
