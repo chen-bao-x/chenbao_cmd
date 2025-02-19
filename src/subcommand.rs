@@ -1,7 +1,7 @@
 use std::{default, vec};
 
 use crate::{
-    action::{ArgAction, ParseResult, SubcommandArgsValue},
+    action::{Arg, ParseResult, SubcommandArgsValue},
     application::NeedTo,
     examples_types::{Examples, SingleExample},
     helper::*,
@@ -18,11 +18,11 @@ use prettytable::{
 /// 子命令
 #[derive(Clone, Debug)]
 pub struct SubCommand<'a> {
-    /// 子命令名   
+    /// 子命令名
     /// 命令的名称长度最好不要超过 20 个字符.
     pub _cmd_name: &'a str,
 
-    /// 命令名的简写形式, 通常是一个字符  
+    /// 命令名的简写形式, 通常是一个字符
     pub _short_name: &'a str,
 
     /// 一句话介绍此命令
@@ -30,7 +30,7 @@ pub struct SubCommand<'a> {
 
     /// 是用此命令的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
-    pub _exaples: Examples<'a>,
+    pub _exaples: Examples,
 
     /// 自定义的帮助文档.
     /// 当用户使用 help 命令查询此命令时显示的帮助文档.
@@ -38,16 +38,16 @@ pub struct SubCommand<'a> {
 
     /// 子命令需要的参数的类型以及该子命令的 action.
     /// 在打印子命令的帮助文档时需要用到此属性.
-    pub _arg_type_with_action: ArgAction,
+    pub _arg_type_with_action: Arg,
 }
 
 impl<'a> SubCommand<'a> {
-    /// 创建新的 SubCommand.  
+    /// 创建新的 SubCommand.
     ///
-    /// 这几个已经又了默认实现, 不能再作为子命令的名称:  
-    /// "-h" "--help"  
-    /// "-e" "--help"  
-    /// "-e" "--example"  
+    /// 这几个已经又了默认实现, 不能再作为子命令的名称:
+    /// "-h" "--help"
+    /// "-e" "--help"
+    /// "-e" "--example"
     /// ```
     /// use chenbao_cmd::*;
     ///     cmd!("build")
@@ -65,7 +65,7 @@ impl<'a> SubCommand<'a> {
             _help_message: None,
             _short_name: "",
             _exaples: Examples::new(),
-            _arg_type_with_action: ArgAction::default(),
+            _arg_type_with_action: Arg::default(),
         }
     }
 }
@@ -103,7 +103,7 @@ impl<'a> SubCommand<'a> {
     }
 
     /// set `Command.action`
-    pub fn action(self, need_arg_type: ArgAction) -> Self {
+    pub fn action(self, need_arg_type: Arg) -> Self {
         let mut re = self;
         re._arg_type_with_action = need_arg_type;
 
@@ -142,32 +142,32 @@ impl<'a> SubCommand<'a> {
         let short_name = self._short_name.bright_cyan();
 
         let arg_in_usage = match self._arg_type_with_action {
-            ArgAction::Empty(_) => "".to_string(),
-            ArgAction::String(_) => "String".styled_arg_type().to_string(),
-            ArgAction::Number(_) => "Number".styled_arg_type().to_string(),
-            ArgAction::Path(_) => "Path".styled_arg_type().to_string(),
-            ArgAction::Bool(_) => "Bool".styled_arg_type().to_string(),
+            Arg::Empty(_) => "".to_string(),
+            Arg::String(_) => "String".styled_arg_type().to_string(),
+            Arg::Number(_) => "Number".styled_arg_type().to_string(),
+            Arg::Path(_) => "Path".styled_arg_type().to_string(),
+            Arg::Bool(_) => "Bool".styled_arg_type().to_string(),
 
-            ArgAction::StringMutiple(_) => format!(r#"{}..."#, "String".styled_arg_type()),
-            ArgAction::NumberMutiple(_) => format!(r#"{}..."#, "Number".styled_arg_type()),
-            ArgAction::PathMutiple(_) => format!(r#"{}..."#, "Path".styled_arg_type()),
-            ArgAction::BoolMutiple(_) => format!(r#"{}..."#, "Bool".styled_arg_type()),
+            Arg::StringMutiple(_) => format!(r#"{}..."#, "String".styled_arg_type()),
+            Arg::NumberMutiple(_) => format!(r#"{}..."#, "Number".styled_arg_type()),
+            Arg::PathMutiple(_) => format!(r#"{}..."#, "Path".styled_arg_type()),
+            Arg::BoolMutiple(_) => format!(r#"{}..."#, "Bool".styled_arg_type()),
 
-            ArgAction::Dialog(_) => "".to_string(),
+            Arg::Dialog(_) => "".to_string(),
         };
 
         // let arg_in_usage = arg_in_usage;
         let app_name = app_name.cyan();
         let a = format!(
             r#"
-{usg}: 
+{usg}:
     {app_name} {command_name} {arg_in_usage}"#,
             usg = "Usage".bright_green(),
         );
 
         let b = format!(
             r#"
-{usg}: 
+{usg}:
     {app_name} {command_name} {arg_in_usage}
     {app_name} {short_name} {arg_in_usage}"#,
             usg = "Usage".bright_green(),
@@ -180,8 +180,8 @@ impl<'a> SubCommand<'a> {
         }
     }
 
-    /// 自动生成的 子命令帮助文档.  
-    /// `app cmd -h` 时显示的帮助文档.  
+    /// 自动生成的 子命令帮助文档.
+    /// `app cmd -h` 时显示的帮助文档.
     pub fn formated_command_help(&self, app_name: &str) -> String {
         if let Some(s) = &self._help_message {
             // 自定义了帮助文档的情况;
@@ -328,16 +328,16 @@ impl<'a> SubCommand<'a> {
             let v = SubcommandArgsValue::new(cmd_args);
 
             let re = match &self._arg_type_with_action {
-                ArgAction::Empty(f) => run(v.get_empty(), need_to, f),
-                ArgAction::String(f) => run(v.get_string(), need_to, f),
-                ArgAction::StringMutiple(f) => run(v.get_vec_string(), need_to, f),
-                ArgAction::Number(f) => run(v.get_number(), need_to, f),
-                ArgAction::NumberMutiple(f) => run(v.get_vec_number(), need_to, f),
-                ArgAction::Path(f) => run(v.get_path(), need_to, f),
-                ArgAction::PathMutiple(f) => run(v.get_vec_path(), need_to, f),
-                ArgAction::Bool(f) => run(v.get_bool(), need_to, f),
-                ArgAction::BoolMutiple(f) => run(v.get_vec_bool(), need_to, f),
-                ArgAction::Dialog(f) => run(v.get_repl(), need_to, &|s| {
+                Arg::Empty(f) => run(v.get_empty(), need_to, f),
+                Arg::String(f) => run(v.get_string(), need_to, f),
+                Arg::StringMutiple(f) => run(v.get_vec_string(), need_to, f),
+                Arg::Number(f) => run(v.get_number(), need_to, f),
+                Arg::NumberMutiple(f) => run(v.get_vec_number(), need_to, f),
+                Arg::Path(f) => run(v.get_path(), need_to, f),
+                Arg::PathMutiple(f) => run(v.get_vec_path(), need_to, f),
+                Arg::Bool(f) => run(v.get_bool(), need_to, f),
+                Arg::BoolMutiple(f) => run(v.get_vec_bool(), need_to, f),
+                Arg::Dialog(f) => run(v.get_repl(), need_to, &|s| {
                     match s {
                         Some(json_string) => {
                             /* 收到了参数 "stdin" */
@@ -436,16 +436,16 @@ impl<'a> SubCommand<'a> {
             let v = SubcommandArgsValue::new(cmd_args);
 
             let re = match &self._arg_type_with_action {
-                ArgAction::Empty(_f) => run(v.get_empty()),
-                ArgAction::String(_f) => run(v.get_string()),
-                ArgAction::StringMutiple(_f) => run(v.get_vec_string()),
-                ArgAction::Number(_f) => run(v.get_number()),
-                ArgAction::NumberMutiple(_f) => run(v.get_vec_number()),
-                ArgAction::Path(_f) => run(v.get_path()),
-                ArgAction::PathMutiple(_f) => run(v.get_vec_path()),
-                ArgAction::Bool(_f) => run(v.get_bool()),
-                ArgAction::BoolMutiple(_f) => run(v.get_vec_bool()),
-                ArgAction::Dialog(_f) => run(v.get_repl()),
+                Arg::Empty(_f) => run(v.get_empty()),
+                Arg::String(_f) => run(v.get_string()),
+                Arg::StringMutiple(_f) => run(v.get_vec_string()),
+                Arg::Number(_f) => run(v.get_number()),
+                Arg::NumberMutiple(_f) => run(v.get_vec_number()),
+                Arg::Path(_f) => run(v.get_path()),
+                Arg::PathMutiple(_f) => run(v.get_vec_path()),
+                Arg::Bool(_f) => run(v.get_bool()),
+                Arg::BoolMutiple(_f) => run(v.get_vec_bool()),
+                Arg::Dialog(_f) => run(v.get_repl()),
             };
 
             return re.map_err(|err| {
@@ -487,7 +487,7 @@ impl<'a> SubCommand<'a> {
             };
 
             let cmd_arg = {
-                let mut virtual_env_args = helper::parse_arg_string(exam.command);
+                let mut virtual_env_args = helper::parse_arg_string(&exam.command);
                 if !virtual_env_args.is_empty() {
                     let name = virtual_env_args.remove(0); // 移除 app name
                     if app_name != name {
@@ -502,9 +502,10 @@ impl<'a> SubCommand<'a> {
                     }
                 }
                 if !virtual_env_args.is_empty() {
+                    // 子命令的名字
                     let name = virtual_env_args.remove(0); // 移除 子命令的名字
 
-                    if self._cmd_name != name {
+                    if self._cmd_name != name && self._short_name != name {
                         let err_msg = format!(
                             "{}: 需要 {} 实际收到的: {:?}",
                             "子命令名称错误".bright_red(),
@@ -525,8 +526,10 @@ impl<'a> SubCommand<'a> {
                     wait_to_putsh.err_msg.push(err_msg);
                 }
             }
-
-            bad_examples.failures_examples.push(wait_to_putsh);
+            if !wait_to_putsh.err_msg.is_empty() {
+                // 如果有 错误信息, 则这个这是一个 failures_example.
+                bad_examples.failures_examples.push(wait_to_putsh);
+            }
         }
 
         bad_examples
@@ -536,7 +539,7 @@ impl<'a> SubCommand<'a> {
 pub(crate) struct ExampleTestResult<'a> {
     cmd: &'a SubCommand<'a>,
     failures_examples: Vec<Sadadsf<'a>>,
-    success_examples: Vec<&'a SingleExample<'a>>,
+    success_examples: Vec<&'a SingleExample>,
 }
 
 impl<'a> ExampleTestResult<'a> {
@@ -594,8 +597,9 @@ impl<'a> ExampleTestResult<'a> {
     }
 }
 
+/// 存储一个 SingleExample 中出现的多个错误.
 pub(crate) struct Sadadsf<'a> {
-    base: &'a SingleExample<'a>,
+    base: &'a SingleExample,
 
     err_msg: Vec<String>,
 }
@@ -612,7 +616,7 @@ impl Sadadsf<'_> {
 // example test "build" ... FAILED
 //      app build 2 # this can not parse.
 
-pub struct ErrorTable {
+pub(crate) struct ErrorTable {
     pub title: Row,
     pub err_messages: Vec<Row>,
     pub format: TableFormat,

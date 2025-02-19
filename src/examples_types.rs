@@ -1,4 +1,5 @@
-use prettytable::{row, Row};
+use owo_colors::OwoColorize;
+use prettytable::{format::TableFormat, row, table, Row};
 
 ///
 /// List the files in the current directory, sorted by size:
@@ -13,21 +14,21 @@ use prettytable::{row, Row};
 
 // ------- Examples -------
 #[derive(Clone, Debug, Hash)]
-pub struct Examples<'a> {
-    pub(crate) val: Vec<SingleExample<'a>>,
+pub struct Examples {
+    pub(crate) val: Vec<SingleExample>,
 }
 
-impl std::fmt::Display for Examples<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl std::fmt::Display for Examples {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.formated())
     }
 }
-impl Default for Examples<'_> {
+impl Default for Examples {
     fn default() -> Self {
         Self::new()
     }
 }
-impl<'a> Examples<'a> {
+impl Examples {
     pub fn new() -> Self {
         Self { val: vec![] }
     }
@@ -56,11 +57,11 @@ impl<'a> Examples<'a> {
         re
     }
 
-    pub fn add_single_example(&mut self, command: &'a str, description: &'a str) {
+    pub fn add_single_example(&mut self, command: &str, description: &str) {
         self.val.push(SingleExample::new(command, description));
     }
 
-    pub fn iter(&self) -> core::slice::Iter<'_, SingleExample<'a>> {
+    pub fn iter(&self) -> core::slice::Iter<'_, SingleExample> {
         self.val.iter()
     }
 }
@@ -68,36 +69,51 @@ impl<'a> Examples<'a> {
 // ------- SingleExample -------
 
 #[derive(Clone, Debug, Hash)]
-pub struct SingleExample<'a> {
-    pub command: &'a str,
-    pub description: &'a str,
+pub struct SingleExample {
+    // pub command: &'a str,
+    pub command: String,
+    // pub description: &'a str,
+    pub description: String,
 }
 
-impl<'a> SingleExample<'a> {
-    fn new(command: &'a str, description: &'a str) -> Self {
+impl SingleExample {
+    fn new(command: &str, description: &str) -> Self {
         Self {
-            command,
-            description,
+            command: command.to_string(),
+            description: description.to_owned(),
             // exaple_check_state: ExapleCheckState::Uncheck,
         }
     }
 }
 
-impl std::fmt::Display for SingleExample<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl std::fmt::Display for SingleExample {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.formated())
     }
 }
 
-impl SingleExample<'_> {
+impl SingleExample {
     pub fn formated(&self) -> String {
+        let mut t = table!();
+
+        let mut f = TableFormat::new();
+        {
+            f.column_separator(' ');
+            f.padding(1, 0);
+            f.left_border('│');
+        }
+        t.set_format(f);
+
         format!(
             r#"
-{}
-    {}
+{left_border} {des}
+{left_border} 
+{left_border}     {cmd_name}
 
 "#,
-            self.description, self.command
+            des = self.description,
+            cmd_name = self.command,
+            left_border = "┃".bright_yellow()
         )
     }
 }

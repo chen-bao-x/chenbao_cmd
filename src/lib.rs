@@ -93,7 +93,7 @@
 
 // ------- Public -------
 
-pub use action::ArgAction;
+pub use action::Arg;
 pub use application::App;
 pub use application::DidHandled;
 pub use chenbao_cmd_macro::cmd;

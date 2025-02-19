@@ -65,7 +65,7 @@ fn test_parse_string() {
 // sub_cmd_color    cyan
 // type_color       magenta
 
-pub(crate) fn table_formater() -> TableFormat {
+pub(crate) fn plain_table_formater() -> TableFormat {
     let mut f = TableFormat::new();
     {
         f.column_separator(' ');
@@ -243,7 +243,7 @@ impl<T: ToString> StyledString for T {
 
 pub fn vec_row_to_table(arr: Vec<Row>) -> Table {
     let mut table = table!();
-    table.set_format(table_formater());
+    table.set_format(plain_table_formater());
 
     for x in arr {
         table.add_row(x);

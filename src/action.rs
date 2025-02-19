@@ -1,4 +1,3 @@
-
 use super::arg_type;
 use crate::helper::StyledString;
 use crate::SharedVecString;
@@ -9,7 +8,7 @@ pub type ParseResultMessage = String;
 pub type ParseResult<T> = Result<T, ParseResultMessage>;
 
 #[derive(Clone)]
-pub enum ArgAction  {
+pub enum Arg {
     /// 表示这个子命令不需要参数
     Empty(&'static dyn Fn(arg_type::Empty)),
 
@@ -31,33 +30,31 @@ pub enum ArgAction  {
 
     /// 对话式交互.
     Dialog(&'static dyn Fn(&mut arg_type::Dialog)),
-   
-    
 }
 
-impl std::fmt::Display for ArgAction {
+impl std::fmt::Display for Arg {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ArgAction::Empty(_) => write!(f, "ArgType::Empty"),
-            ArgAction::String(_) => write!(f, "ArgType::String"),
-            ArgAction::StringMutiple(_) => write!(f, "ArgType::VecString"),
-            ArgAction::Number(_) => write!(f, "ArgType::Number"),
-            ArgAction::NumberMutiple(_) => write!(f, "ArgType::VecNumber"),
-            ArgAction::Path(_) => write!(f, "ArgType::Path"),
-            ArgAction::PathMutiple(_) => write!(f, "ArgType::VecPath"),
-            ArgAction::Bool(_) => write!(f, "ArgType::Bool"),
-            ArgAction::BoolMutiple(_) => write!(f, "ArgType::VecBool"),
-            ArgAction::Dialog(_) => write!(f, "ArgType::Repl"),
+            Arg::Empty(_) => write!(f, "ArgType::Empty"),
+            Arg::String(_) => write!(f, "ArgType::String"),
+            Arg::StringMutiple(_) => write!(f, "ArgType::VecString"),
+            Arg::Number(_) => write!(f, "ArgType::Number"),
+            Arg::NumberMutiple(_) => write!(f, "ArgType::VecNumber"),
+            Arg::Path(_) => write!(f, "ArgType::Path"),
+            Arg::PathMutiple(_) => write!(f, "ArgType::VecPath"),
+            Arg::Bool(_) => write!(f, "ArgType::Bool"),
+            Arg::BoolMutiple(_) => write!(f, "ArgType::VecBool"),
+            Arg::Dialog(_) => write!(f, "ArgType::Repl"),
         }
     }
 }
 
-impl default::Default for ArgAction {
+impl default::Default for Arg {
     fn default() -> Self {
         Self::Empty(&|_x| {})
     }
 }
-impl fmt::Debug for ArgAction {
+impl fmt::Debug for Arg {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Empty(_arg0) => f.debug_tuple("Empty(_)").finish(),
@@ -74,48 +71,48 @@ impl fmt::Debug for ArgAction {
     }
 }
 
-impl ArgAction {
+impl Arg {
     /// 当音帮助文档时的 arguments 参数说明.
     pub(crate) fn arg_message(&self) -> String {
         let arg_tips = match self {
-            ArgAction::Empty(_) => "".to_string(),
-            ArgAction::String(_) => format!(
+            Arg::Empty(_) => "".to_string(),
+            Arg::String(_) => format!(
                 r#"{s} -- 需要 1 个 {s}, 示例: {z}"#,
                 s = r#"string"#.styled_arg_type(),
                 z = r#""input an string""#.styled_arg(),
             ),
-            ArgAction::StringMutiple(_) => format!(
+            Arg::StringMutiple(_) => format!(
                 r#"{s}... -- 需要 多个 {s}, 示例: {example}"#,
                 s = r#"string"#.styled_arg_type(),
                 example = r#""input an string" "string 2" "string 3" "#.styled_arg(),
             ),
-            ArgAction::Number(_) => format!(
+            Arg::Number(_) => format!(
                 r#"{s} -- 需要 1 个 Number, 示例: {z}"#,
                 s = r#"Number"#.styled_arg_type(),
                 z = r#"100"#.styled_arg(),
             ),
-            ArgAction::NumberMutiple(_) => {
+            Arg::NumberMutiple(_) => {
                 format!(
                     r#"{s}... -- 需要 多个 {s}, 每个 {s} 用 [空格] 分开, 示例: {z}"#,
                     s = r#"Number"#.styled_arg_type(),
                     z = r#"0 1 2 5 123 100"#.styled_arg(),
                 )
             }
-            ArgAction::Path(_) => {
+            Arg::Path(_) => {
                 return format!(
                     r#"{s} -- 需要 1 个 {s}, 示例: {z}"#,
                     s = r#"Path"#.styled_arg_type(),
                     z = r#""./folder/hello.txt""#.styled_arg(),
                 );
             }
-            ArgAction::PathMutiple(_) => {
+            Arg::PathMutiple(_) => {
                 format!(
                     r#"{s}... -- 需要 多个 {s},  每个 Path 用 [空格] 分开, 示例: {z}"#,
                     s = r#"Path"#.styled_arg_type(),
                     z = r#"0 1 2 5 123 100"#.styled_arg(),
                 )
             }
-            ArgAction::Bool(_) => format!(
+            Arg::Bool(_) => format!(
                 r#"{s} -- 需要 1 个 {s} 类型的值, {t} 或者 {f}, 示例: {z}"#,
                 s = r#"bool"#.styled_arg_type(),
                 t = r#"true"#.styled_arg(),
@@ -123,7 +120,7 @@ impl ArgAction {
                 z = r#"true"#.styled_arg(),
             ),
 
-            ArgAction::BoolMutiple(_) => {
+            Arg::BoolMutiple(_) => {
                 format!(
                     r#"{s}... -- 需要 多个 {s} 类型的值, {t} 或者 {f}, 每个 {s} 用 [空格] 分开, 示例: {z}"#,
                     // s = r#"Bool..."#.styled_arg_type(),
@@ -133,7 +130,7 @@ impl ArgAction {
                     z = r#"true false true false"#.styled_arg(),
                 )
             }
-            ArgAction::Dialog(_) => "".to_string(),
+            Arg::Dialog(_) => "".to_string(),
         };
 
         format!("    {}", arg_tips)
@@ -208,7 +205,7 @@ impl ArgAction {
     //         ArgAction::BoolMutiple(_) => r#"<bool>..."#,
     //         ArgAction::Dialog(_) => "",
     //     };
-//
+    //
     //     re.to_string()
     // }
 }
@@ -408,8 +405,8 @@ impl SubcommandArgsValue {
             } else if lovwercase == "false" {
                 re.push(false);
             } else {
-                
-     
+
+
 
                 err_massage = Some(format!(
                     "{}: 参数的类型是 {btype}, {btype} 类型的值可以是: {t}, {f}, 实际接收到的是: {args}",
@@ -681,6 +678,5 @@ mod arg_check {
         if re.is_ok() {
             panic!("");
         }
-      
     }
 }

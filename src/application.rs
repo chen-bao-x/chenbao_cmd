@@ -5,6 +5,7 @@ use crate::{examples_types::Examples, subcommand::ExampleTestResult};
 use core::fmt;
 use owo_colors::OwoColorize;
 use prettytable::{cell, row, table, Row, Table};
+
 use std::rc::Rc;
 
 #[derive(Clone)]
@@ -51,7 +52,7 @@ impl DidHandled {
 
 #[derive(Clone, Debug)]
 pub struct App<'a> {
-    /// 此程序的名称;  
+    /// 此程序的名称;
     /// 所有自动生成的帮助文档和示例都会使用到 self._app_name
     pub _app_name: SharedString,
 
@@ -75,7 +76,7 @@ pub struct App<'a> {
 
     /// 使用此程序的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
-    pub _app_examples: Examples<'a>,
+    pub _app_examples: Examples,
 
     /// 子命令的 “参数”
     pub _commands_arg: SharedVecString,
@@ -87,7 +88,7 @@ pub struct App<'a> {
     /// `let env_arg: Vec<String> = std::env::args().collect()`
     _env_arg: SharedVecString,
 
-    /// 标记是否需要执行 SubCommand 的 action.  
+    /// 标记是否需要执行 SubCommand 的 action.
     /// 默认是 NeedTo::Run
     _need_to: NeedTo,
 }
@@ -126,8 +127,8 @@ impl<'a> App<'a> {
         re
     }
 
-    /// 使用此程序的一些示例,  
-    /// 当用户使用 `app -e` 时会打印在这里添加的示例.  
+    /// 使用此程序的一些示例,
+    /// 当用户使用 `app -e` 时会打印在这里添加的示例.
     /// 此 method 可以多次调用来给此程序添加多个示例.
     pub fn add_app_example(self, command: &'a str, description: &'a str) -> Self {
         let mut re = self;
@@ -137,9 +138,9 @@ impl<'a> App<'a> {
         re
     }
 
-    /// 此程序的版本信息.  
-    /// 当用户使用 `app --version` 时会打印在这里添加的版本信息.  
-    /// 此 method 只需要调用一次.  
+    /// 此程序的版本信息.
+    /// 当用户使用 `app --version` 时会打印在这里添加的版本信息.
+    /// 此 method 只需要调用一次.
     /// ```
     /// let app = chenbao_cmd::App::new().version_message(env!("CARGO_PKG_VERSION"));
     /// ```
@@ -150,9 +151,9 @@ impl<'a> App<'a> {
         re
     }
 
-    /// 此程序的版本信息.  
-    /// 当用户使用 `app --version` 时会打印在这里添加的版本信息.  
-    /// 此 method 只需要调用一次.  
+    /// 此程序的版本信息.
+    /// 当用户使用 `app --version` 时会打印在这里添加的版本信息.
+    /// 此 method 只需要调用一次.
     pub fn author(self, author: &'a str) -> Self {
         let mut re = self;
 
@@ -161,8 +162,8 @@ impl<'a> App<'a> {
     }
 
     ///
-    /// 设置只有 程序名, 没有任何子命令也没有任何参数时执行的 action.  
-    /// 默认情况下是打印此程序的帮助信息.  
+    /// 设置只有 程序名, 没有任何子命令也没有任何参数时执行的 action.
+    /// 默认情况下是打印此程序的帮助信息.
     /// `app_default_action` 有默认实现, 可以不用设置.
     pub fn app_default_action(self, action: &'static dyn Fn()) -> Self {
         let mut re = self;
@@ -171,7 +172,7 @@ impl<'a> App<'a> {
     }
 
     /// ### 为此 App 添加指令
-    /// 示例:  
+    /// 示例:
     /// ```
     /// use chenbao_cmd::*;
     /// let app = App::new()
@@ -185,7 +186,7 @@ impl<'a> App<'a> {
         re
     }
 
-    /// 自定义帮助信息.  
+    /// 自定义帮助信息.
     /// 此方法会替换掉 自动生成的 帮助文档.
     pub fn help_message(self, message: &'a str) -> Self {
         let mut re = self;
@@ -193,8 +194,8 @@ impl<'a> App<'a> {
         re
     }
 
-    /// ### 启动 app.  
-    /// 示例:  
+    /// ### 启动 app.
+    /// 示例:
     /// ```rust
     /// use chenbao_cmd::*;
     ///    let app = chenbao_cmd::App::new()
@@ -284,7 +285,7 @@ impl<'a> App<'a> {
 
     //  ------- Print -------
 
-    /// 打印 App 的帮助信息.  
+    /// 打印 App 的帮助信息.
     /// `app -h` 时调用此函数.
     pub fn print_app_help(&self) {
         if self._help_message.trim() != "" {
@@ -294,7 +295,7 @@ impl<'a> App<'a> {
         }
 
         let mut table = table!();
-        table.set_format(helper::table_formater());
+        table.set_format(helper::plain_table_formater());
 
         for x in &self._commands {
             let short_name = if x._short_name.is_empty() {
@@ -365,7 +366,7 @@ impl<'a> App<'a> {
         );
     }
 
-    /// 打印 App 的示例.  
+    /// 打印 App 的示例.
     /// `app -e` 时调用此函数.
     pub fn print_app_examples(&self) {
         if self._app_examples.is_empty() {
@@ -394,7 +395,7 @@ impl App<'_> {
 
     fn _handle_defalt_implement(&self) {}
 
-    /// app help 的默认实现;  
+    /// app help 的默认实现;
     /// // -h --help -v -version
     fn _handle_app_help(&self) -> DidHandled {
         let command_name = &*self._env_arg[1];
@@ -432,7 +433,7 @@ impl App<'_> {
             {
                 // print all commands
                 let mut table = Table::new();
-                table.set_format(table_formater());
+                table.set_format(plain_table_formater());
 
                 self._commands.iter().for_each(|x| {
                     x.formated_row_in_list_all_command().iter().for_each(|x| {
@@ -514,13 +515,91 @@ impl App<'_> {
             DidHandled::Failed("不是 version 命令".to_string())
         }
     }
+
+    fn _formated_help(&self) -> String {
+        if self._help_message.trim() != "" {
+            // 有自定义的帮助文档.
+            println!("{}", self._help_message);
+        }
+
+        let mut table = table!();
+        table.set_format(helper::plain_table_formater());
+
+        for x in &self._commands {
+            let short_name = if x._short_name.is_empty() {
+                "".to_string()
+            } else {
+                // ", ".to_string() + &x.short_name
+
+                format!("{}{}", &x._short_name, ", ",)
+            };
+
+            let command_name = &x._cmd_name;
+
+            // TODO: 为 cmd_name 添加颜色.
+            let cmd_name = format!("{}{}", short_name, command_name,);
+
+            table.add_row(row![cmd_name.styled_sub_command(), x._about]);
+        }
+
+        let all_commands_about: String = table.to_string();
+
+        let app_usage = format!(
+            r#"
+{usg}:
+    {app_name} {command} {arguments}
+"#,
+            app_name = self._app_name.cyan(),
+            command = "<command>".bright_cyan(),
+            arguments = "[arguments]".green(),
+            usg = "Usage".bright_green()
+        );
+        let help = format!(
+            "{}, {}",
+            "-h".styled_sub_command(),
+            "--help".styled_sub_command()
+        );
+        let ver = format!(
+            "{}, {}",
+            "-v".styled_sub_command(),
+            "--version".styled_sub_command()
+        );
+        let example = format!(
+            "{}, {}",
+            "-e".styled_sub_command(),
+            "--example".styled_sub_command()
+        );
+        let list_all_commands = "--list-all-commands".styled_sub_command().to_string();
+
+        // TODO: 让打印的信息更优美.
+        let flag_message = format!("{}\n    {help}\t\t显示此命令的帮助.\n    {ver}\t查看此程序的版本.\n    {example}\t查看示例.\n    {list_all_commands}\t查看所有 command.\n" , "Flags:".bright_green());
+        let author = if self._author.is_empty() {
+            "".to_string()
+        } else {
+            format!("{}: {}\n", "Author".bright_green(), self._author)
+        };
+
+        let commands = format!("{}\n{}", "Commands:".bright_green(), all_commands_about);
+
+        format!(
+            r#"
+{about}
+{app_usage}
+{author}
+{flag_message}
+{commands}
+"#,
+            about = self._about,
+            // version = self.app_versioCn_message,
+        )
+    }
 }
 
 impl<'a> App<'a> {
     //  ------- Debug Functions -------
 
-    /// 模拟用户输入,  
-    /// 用来更方便的测试程序.  
+    /// 模拟用户输入,
+    /// 用来更方便的测试程序.
     // #[cfg(debug_assertions)]
     pub fn deubug_run<const N: usize>(self, virtual_env_args: [&str; N]) -> Self {
         println!(
@@ -557,36 +636,38 @@ impl<'a> App<'a> {
         self
     }
 
-    /// 检查子命令示example是否能正确的被解析  
-    /// 检查子命令的名字是否重复.  
+    /// 检查子命令示example是否能正确的被解析
+    /// 检查子命令的名字是否重复.
     // #[cfg(debug_assertions)] // 只在 debug 模式下使用
-    pub fn debug_check(&self) {
-        // TODO: 打印两个名称冲突的 Cmd
-
+    pub fn debug_check(self) -> Self {
+        #[cfg(debug_assertions)]
         {
-            let re = self.debug_duplicate_names_check();
+            {
+                let re = self.debug_duplicate_names_check();
 
-            if !re.is_empty() {
-                println!("\n{}\n", "有子命令的名称重复了".bright_yellow().bold());
+                if !re.is_empty() {
+                    println!("\n{}\n", "有子命令的名称重复了".bright_yellow().bold());
 
-                for x in &re {
-                    println!("{}", x.generate_table())
+                    for x in &re {
+                        println!("{}", x.generate_table())
+                    }
+                }
+            }
+
+            {
+                let re = self.debug_example_check();
+                if !re.is_empty() {
+                    println!(
+                        "\n{}\n",
+                        "开始检查 example 是否能被解析".bright_yellow().bold()
+                    );
+                    for x in re {
+                        print!("{}", x.formated_massage());
+                    }
                 }
             }
         }
-
-        {
-            let re = self.debug_example_check();
-            if !re.is_empty() {
-                println!(
-                    "\n{}\n",
-                    "开始检查 example 是否能被解析".bright_yellow().bold()
-                );
-                for x in re {
-                    print!("{}", x.formated_massage());
-                }
-            }
-        }
+        self
     }
 
     fn debug_duplicate_names_check(&self) -> Vec<ErrorTable> {
