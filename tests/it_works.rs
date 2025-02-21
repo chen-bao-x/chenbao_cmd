@@ -67,27 +67,27 @@ fn it_works() {
                     print!("testing arg_zero");
                 })),
         )
-        // .add_command(
-        //     SubCommand::create_an_sub_command("repl")
-        //         .about("用来测试 ArgCount::Repl(_) ")
-        //         .action(ArgAction::Dialog(
-        //             &(|r| {
-        //                 let items = vec!["one", "two", "tree", "four"];
+        .add_command(
+            SubCommand::create_an_sub_command("repl")
+                .about("用来测试 ArgCount::Repl(_) ")
+                .action(Arg::Dialog(
+                    &(|r| {
+                        let items = vec!["one", "two", "tree", "four"];
 
-        //                 let _req_bool = r.number("你要吃几个汉堡包?");
-        //                 let _你要吃几个汉堡包 = r.number_multiple("多个 number");
-        //                 let _多个_number = r.string("string");
-        //                 let _string = r.string_multiple("string_multiple");
-        //                 let _string_multiple = r.yes_or_no("bool");
-        //                 let _path = r.path("path");
-        //                 let _path_multiple = r.path_multiple("path");
-        //                 let _seleted = r.select("selete", &items);
-        //                 let _seleted = r.select_multiple("selete", &items);
-        //                 // .yes_or_no_multiple(&mut req_bool_multiple, "bool mutiple")
-        //             }),
-        //         )),
-        // )
-        
+                        let _req_bool = r.number("你要吃几个汉堡包?").unwrap();
+                        let _你要吃几个汉堡包 = r.number_multiple("多个 number").unwrap();
+                        let _多个_number = r.string("string").unwrap();
+                        let _string = r.string_multiple("string_multiple").unwrap();
+                        let _string_multiple = r.yes_or_no("bool").unwrap();
+                        let _path = r.path("path").unwrap();
+                        let _path_multiple = r.path_multiple("path").unwrap();
+                        let _seleted = r.select("selete", &items).unwrap();
+                        let _seleted = r.select_multiple("selete", &items).unwrap();
+                        
+                    }),
+                )),
+        )
+        // asdfsdaf
         ;
 
     // let re = app.debug_duplicate_names_check();
@@ -111,18 +111,6 @@ fn it_works() {
         .deubug_run(["cmd", "-h"])
         .deubug_run(["cmd"])
         .deubug_run(["cmd", "arg_one", "-h"]);
-}
-
-#[test]
-fn maadsfin() {
-    println!("请输入一些文本：");
-
-    let mut input = String::new();
-    std::io::stdin()
-        .read_line(&mut input)
-        .expect("读取输入失败");
-
-    println!("你输入了：{}", input.trim());
 }
 
 use std::backtrace::Backtrace;
@@ -286,16 +274,16 @@ fn dsafdsaf() {
 }
 use std::cell::Cell;
 use std::rc::Rc;
+
 #[test]
 fn maasdfasfin() {
-  let c = Cell::new("asdf");
-  let one = c.get();
-  c.set("qwer");
-  let two = c.get();
-  println!("{},{},{}", one, two, c.get());
+    let c = Cell::new("asdf");
+    let one = c.get();
+    c.set("qwer");
+    let two = c.get();
+    println!("{},{},{}", one, two, c.get());
 
-  let a = Rc::new(String::from("hello, world"));
-  let b = Rc::clone(&a);
-  let _c = b.clone();
-  
+    let a = Rc::new(String::from("hello, world"));
+    let b = Rc::clone(&a);
+    let _c = b.clone();
 }

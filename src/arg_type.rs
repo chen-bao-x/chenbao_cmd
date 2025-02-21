@@ -14,7 +14,6 @@ pub type Dialog = crate::question_and_anser::DialogGenerator;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Empty;
 
-
 impl Empty {
     pub fn new() -> Self {
         Self {}
@@ -43,60 +42,71 @@ pub(crate) enum ReplArg {
 }
 
 impl ReplArg {
-    pub fn get_number(&self) -> i64 {
+    // pub fn get_number(&self) -> i64 {
+    pub fn get_number(&self) -> Result<i64, String> {
         if let ReplArg::Number(val) = self {
-            return *val;
+            return Ok(*val);
         }
-        panic!("{:?}", self);
+
+        Err(format!("类型不正确: {:?}", self))
     }
     // pub fn get_number_multiple(&self) -> Vec<i64> {
-    pub fn get_number_multiple(&self) -> &Vec<i64> {
+    // pub fn get_number_multiple(&self) -> &Vec<i64> {
+    pub fn get_number_multiple(&self) -> Result<&Vec<i64>, String> {
         if let ReplArg::NumberMultiple(val) = self {
-            // if let ReplArg::StringMultiple(val) = self {
-            // return val.iter().map(|x| x.parse().unwrap()).collect();
-
-            // return val.clone();
-            return val;
+            return Ok(val);
         }
 
-        panic!("{:?}", self);
+        // panic!("{:?}", self);
+        Err(format!("类型不正确: {:?}", self))
     }
 
-    pub fn get_string(&self) -> &str {
+    // pub fn get_string(&self) -> &str {
+    pub fn get_string(&self) -> Result<String, String> {
         if let ReplArg::String(val) = self {
             // return val.to_string();
-            return val;
+            return Ok(val.to_string());
         }
-        panic!("{:?}", self);
+        // panic!("{:?}", self);
+        Err(format!("类型不正确: {:?}", self))
     }
-    pub fn get_string_multiple(&self) -> &Vec<String> {
+    // pub fn get_string_multiple(&self) -> &Vec<String> {
+    pub fn get_string_multiple(&self) -> Result<&Vec<String>, String> {
         if let ReplArg::StringMultiple(val) = self {
-            return val;
+            return Ok(val);
         }
-        panic!("{:?}", self);
+        // panic!("{:?}", self);
+        Err(format!("类型不正确: {:?}", self))
     }
-    pub fn get_path(&self) -> std::path::PathBuf {
+    // pub fn get_path(&self) -> std::path::PathBuf {
+    pub fn get_path(&self) -> Result<std::path::PathBuf, String> {
         if let ReplArg::String(val) = self {
-            return std::path::Path::new(val).to_path_buf();
+            let path = std::path::Path::new(val).to_path_buf();
+            return Ok(path);
             // return val.to_path_buf();
         }
-        panic!("{:?}", self);
+        // panic!("{:?}", self);
+        Err(format!("类型不正确: {:?}", self))
     }
-    pub fn get_path_multiple(&self) -> Vec<std::path::PathBuf> {
+    // pub fn get_path_multiple(&self) -> Vec<std::path::PathBuf> {
+    pub fn get_path_multiple(&self) -> Result<Vec<std::path::PathBuf>, String> {
         if let ReplArg::StringMultiple(val) = self {
-            return val
+            // return
+            let paths: Vec<std::path::PathBuf> = val
                 .iter()
                 .map(|x| std::path::Path::new(x).to_path_buf())
                 .collect();
-            // return val.to_vec();
+
+            return Ok(paths);
         }
-        panic!("{:?}", self);
+        Err(format!("类型不正确: {:?}", self))
     }
-    pub fn get_bool(&self) -> bool {
+    // pub fn get_bool(&self) -> bool {
+    pub fn get_bool(&self) -> Result<bool, String> {
         if let ReplArg::Bool(val) = self {
-            return *val;
+            return Ok(*val);
         }
-        panic!("{:?}", self);
+        Err(format!("类型不正确: {:?}", self))
     }
 
     // pub fn get_bool_multiple(&self) -> &Vec<bool> {
@@ -133,6 +143,7 @@ impl ReplArgStore {
 
     pub fn get(&self, index: usize, prompt: &str) -> Option<&ReplArg> {
         let key = key_gen(index, prompt);
+
         self.0.get(&key)
     }
 

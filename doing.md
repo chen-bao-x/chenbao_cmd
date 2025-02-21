@@ -2,11 +2,13 @@
 
 [x] 为 子命令 自动生成一些 example.
 [x] Q&A style repl for rule 资料: https://yexiyue.github.io/dialogue-macro/guide/password.html
-[ ] dialogue 交互式问答要求用户输入 path 的时候能提供 completion.
-debug_检查子命令示example是否能正确的被解析
+[ ] dialog 交互式问答要求用户输入 path 的时候能提供 completion.
+[x] debug_检查子命令示example是否能正确的被解析
+[x] 子命令的名称重复问题 [2025-01-30 17:09:54] App::debug_duplicate_names_check() 函数用于检查子命令名称重复的问题.
+[ ] 提供生成 shell completions 的功能.
+
 ## know issue:
 
-[x] 子命令的名称重复问题 [2025-01-30 17:09:54] App::debug_duplicate_names_check() 函数用于检查子命令名称重复的问题.
 
 
 2025-02-12 
@@ -43,8 +45,8 @@ app repl--stdin # 这个跟 flag 长得太像了.
 app repl-stdin # 这个跟 flag 长得也有点像.
 app repl*stdin # 这个还行, 就是会给子命令名称添加一个小尾巴.
 app repl@stdin # 这个还行, 就是会给子命令名称添加一个小尾巴.
-app repl stdin << '###\_mark*###'
-text here ###_mark_###
+app repl stdin << '###mark*###'
+text here ###mark###
 /Users/chenbao/Downloads/cmd*test/target/debug/cmd_test repl stdin << '###\_marker*###'
 [
 "1324",
