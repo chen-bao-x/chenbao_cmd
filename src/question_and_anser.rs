@@ -1,4 +1,4 @@
-use crate::arg_type::{ReplArg, ReplArgStore};
+use crate::arg_type::ReplArgStore;
 
 use crate::helper::*;
 use owo_colors::OwoColorize;
@@ -20,7 +20,7 @@ pub struct DialogGenerator {
     pub index: usize,
 
     /// 是否是从 json_str 转换过来的?
-    pub is_from_json: bool,
+    pub is_from_toml: bool,
     theme: dialoguer::theme::ColorfulTheme,
 }
 
@@ -46,7 +46,7 @@ impl DialogGenerator {
             arguments: ReplArgStore::new(),
             index: ARGUMENTS_START_INDEX,
 
-            is_from_json: false,
+            is_from_toml: false,
             theme: dialoguer::theme::ColorfulTheme::default(),
             // 占位符号: PhantomData,
         }
@@ -61,7 +61,7 @@ impl DialogGenerator {
                 arguments: art_store,
                 index: ARGUMENTS_START_INDEX,
 
-                is_from_json: true,
+                is_from_toml: true,
                 theme: dialoguer::theme::ColorfulTheme::default(),
                 // 占位符号: PhantomData,
             })
@@ -73,36 +73,33 @@ impl DialogGenerator {
     /// let cmd = DialogGenerator::new(Some(r#"["hello"]"#));
     /// let json_string = cmd.to_json_str();
     /// ```
-    pub fn to_toml(&self) -> String {
-        self.arguments.to_toml().unwrap()
+    // pub fn to_toml(&self) -> String {
+    pub fn to_toml(&self) -> Result<String, toml::ser::Error> {
+        self.arguments.to_toml()
     }
 }
 
 impl DialogGenerator {
     // _string
-    // pub fn string(&mut self, prompt: &str) -> arg_type::String {
+
     pub fn string(&mut self, prompt: &str) -> Result<arg_type::String, String> {
         // pub fn string(&mut self, prompt: &str) -> &str {
-        if !self.is_from_json {
+        if !self.is_from_toml {
             let result_value = DialogerWraper::get_string(prompt, &self.theme);
 
             self.arguments
                 .add(self.index, prompt, arg_type::ReplArg::String(result_value));
         }
 
-        let result_value = self.get(self.index, prompt).unwrap().get_string();
+        let result_value = self.arguments.get(self.index, prompt).unwrap().get_string();
 
         self.ret(result_value)
     }
 
-    fn get(&self, indasdex: usize, prompt: &str) -> Option<&ReplArg> {
-        self.arguments.get(indasdex, prompt)
-    }
-
     // _string_multiple
-    // pub fn string_multiple(&mut self, prompt: &str) -> arg_type::StringMutiple {
+
     pub fn string_multiple(&mut self, prompt: &str) -> Result<arg_type::StringMutiple, String> {
-        if self.is_from_json {
+        if self.is_from_toml {
             let result_value = self
                 .arguments
                 .get(self.index, prompt)
@@ -123,11 +120,10 @@ impl DialogGenerator {
     }
 
     // _number
-    // pub fn number(&mut self, prompt: &str) -> arg_type::Number {
     pub fn number(&mut self, prompt: &str) -> Result<i64, String> {
         // let mut self = self;
 
-        if self.is_from_json {
+        if self.is_from_toml {
             let result_value = self
                 .arguments
                 .get(self.index, prompt)
@@ -147,9 +143,9 @@ impl DialogGenerator {
         }
     }
     // _number_multiple
-    // pub fn number_multiple(&mut self, prompt: &str) -> arg_type::NumberMutiple {
+
     pub fn number_multiple(&mut self, prompt: &str) -> Result<arg_type::NumberMutiple, String> {
-        if self.is_from_json {
+        if self.is_from_toml {
             let result_value = self
                 .arguments
                 .get(self.index, prompt)
@@ -190,7 +186,7 @@ impl DialogGenerator {
     }
     // _yes_or_no
     pub fn yes_or_no(&mut self, prompt: &str) -> Result<arg_type::Bool, String> {
-        if self.is_from_json {
+        if self.is_from_toml {
             let result_value = self.arguments.get(self.index, prompt).unwrap().get_bool();
             self.ret(result_value)
         } else {
@@ -203,10 +199,10 @@ impl DialogGenerator {
             self.ret(Ok(result_value))
         }
     }
+
     // _path
-    // pub fn path(&mut self, prompt: &str) -> arg_type::Path {
     pub fn path(&mut self, prompt: &str) -> Result<arg_type::Path, String> {
-        if self.is_from_json {
+        if self.is_from_toml {
             let val = self.arguments.get(self.index, prompt).unwrap();
             let result_value = val.get_path();
 
@@ -224,10 +220,10 @@ impl DialogGenerator {
             self.ret(Ok(result_value))
         }
     }
+
     // _path_multiple
-    // pub fn path_multiple(&mut self, prompt: &str) -> arg_type::PathMutiple {
     pub fn path_multiple(&mut self, prompt: &str) -> Result<arg_type::PathMutiple, String> {
-        if self.is_from_json {
+        if self.is_from_toml {
             let result_value = self
                 .arguments
                 .get(self.index, prompt)
@@ -251,10 +247,10 @@ impl DialogGenerator {
             self.ret(Ok(result_value))
         }
     }
+
     // _select
-    // pub fn select(&mut self, prompt: &str, items: &Vec<&str>) -> &str {
     pub fn select(&mut self, prompt: &str, items: &Vec<&str>) -> Result<String, String> {
-        if !self.is_from_json {
+        if !self.is_from_toml {
             let str = DialogerWraper::get_single_selected(prompt, items, &self.theme);
 
             let result_value = arg_type::ReplArg::String(str.to_string());
@@ -275,7 +271,7 @@ impl DialogGenerator {
         prompt: &str,
         items: &Vec<&str>,
     ) -> Result<Vec<String>, String> {
-        if self.is_from_json {
+        if self.is_from_toml {
             let result_value = self
                 .arguments
                 .get(self.index, prompt)
@@ -299,31 +295,31 @@ impl DialogGenerator {
             self.ret(Ok(result_value))
         }
     }
+
     // _editor
-
-    // pub fn editor(&mut self, prompt: &str) -> &str {
     pub fn editor(&mut self, prompt: &str) -> Result<String, String> {
-        if self.is_from_json {
-            let result_value = DialogerWraper::get_string_from_editor(prompt);
-            self.arguments.add(
-                self.index,
-                prompt,
-                arg_type::ReplArg::String(result_value.clone()),
-            );
+        if self.is_from_toml {
+            self.arguments
+                .get(self.index, prompt)
+                .unwrap_or_else(|| panic!("没找到需要的参数: {}", key_gen(self.index, prompt)));
+
+            let result_value = self.arguments.get(self.index, prompt).unwrap().get_string();
+
+            return self.ret(result_value);
         }
 
-        let result_value = self.arguments.get(self.index, prompt).unwrap().get_string();
+        let result_value = DialogerWraper::get_string_from_editor(prompt);
+        self.arguments.add(
+            self.index,
+            prompt,
+            arg_type::ReplArg::String(result_value.clone()),
+        );
 
-        {
-            // ret
-            self.index += 1;
-            result_value
-        }
+        self.ret(Ok(result_value))
     }
 
     // _password
     /// 让用户手动输入密码.
-    // pub fn password(&mut self, prompt: &str) -> String {
     pub fn password(&mut self, prompt: &str) -> Result<String, dialoguer::Error> {
         // 密码不应该被输出到 self.arguments 里面.
 
@@ -342,14 +338,14 @@ impl DialogGenerator {
     pub fn finesh_and_print(&self, app_name: &str, command_name: &str) {
         let app_name = app_name.cyan();
         let command_name = command_name.bright_cyan();
-        // println!("runing command: {app_name} {command_name} stdin << '###_marker_###'\n{}\n###_marker_###\n", self.to_toml().green());
+
         println!(
             r#"
 Executed command: {app_name} {command_name} stdin << '{marker}'
 {toml_str}
 {marker}
 "#,
-            toml_str = self.to_toml().green(),
+            toml_str = self.to_toml().unwrap().green(),
             // marker = r#"###_marker_###"#,
             marker = r#""""""""""""#,
         );
@@ -490,7 +486,9 @@ impl DialogerWraper {
         match re {
             Ok(ostr) => ostr.unwrap_or("".to_string()),
             Err(_e) => {
-                panic!("{}", _e.red());
+                eprintln!("{}", _e.red());
+                "".to_string()
+                // panic!("{}", _e.red());
             }
         }
     }

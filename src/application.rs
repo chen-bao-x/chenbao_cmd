@@ -51,28 +51,25 @@ impl DidHandled {
 }
 
 #[derive(Clone, Debug)]
-pub struct App<'a> {
+pub struct App {
     /// 此程序的名称;
     /// 所有自动生成的帮助文档和示例都会使用到 self._app_name
     pub _app_name: SharedString,
 
     /// 一句话介绍此程序.
-    // pub _about: SharedString,
-    pub _about: &'a str,
+    pub _about: String,
 
     /// 此程序的作者
-    // pub _author: SharedString,
-    pub _author: &'a str,
+    pub _author: String,
 
     /// 当用户查询此程序的 version 信息时显示的信息;
-    // pub _app_version_message: SharedString,
-    pub _app_version_message: &'a str,
+    pub _app_version_message: String,
 
     /// 此程序的帮助文档,
-    pub _help_message: &'a str,
+    pub _help_message: String,
 
     /// 此 app 的所有子命令.
-    pub _commands: Vec<SubCommand<'a>>,
+    pub _commands: Vec<SubCommand>,
 
     /// 使用此程序的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
@@ -93,7 +90,7 @@ pub struct App<'a> {
     _need_to: NeedTo,
 }
 
-impl<'a> App<'a> {
+impl<'a> App {
     // ============================
     // =        Public Part       =
     // ============================
@@ -103,7 +100,7 @@ impl<'a> App<'a> {
     ///     app.run();
     /// ```
     // pub fn new(app_name: &str) -> App {
-    pub fn new() -> App<'a> {
+    pub fn new() -> App {
         Self {
             ..Default::default()
         }
@@ -120,17 +117,17 @@ impl<'a> App<'a> {
     }
 
     /// 在这里介绍这个程序是什么. 做什么用的
-    pub fn about(self, about: &'a str) -> Self {
+    pub fn about(self, about: &str) -> Self {
         let mut re = self;
         // re._about = about.to_string().into();
-        re._about = about;
+        re._about = about.to_owned();
         re
     }
 
     /// 使用此程序的一些示例,
     /// 当用户使用 `app -e` 时会打印在这里添加的示例.
     /// 此 method 可以多次调用来给此程序添加多个示例.
-    pub fn add_app_example(self, command: &'a str, description: &'a str) -> Self {
+    pub fn add_app_example(self, command: &str, description: &str) -> Self {
         let mut re = self;
 
         re._app_examples.add_single_example(command, description);
@@ -144,20 +141,20 @@ impl<'a> App<'a> {
     /// ```
     /// let app = chenbao_cmd::App::new().version_message(env!("CARGO_PKG_VERSION"));
     /// ```
-    pub fn version_message(self, version_message: &'a str) -> Self {
+    pub fn version_message(self, version_message: &str) -> Self {
         let mut re = self;
         // re._app_version_message = version_message.to_owned().into();
-        re._app_version_message = version_message;
+        re._app_version_message = version_message.to_owned();
         re
     }
 
     /// 此程序的版本信息.
     /// 当用户使用 `app --version` 时会打印在这里添加的版本信息.
     /// 此 method 只需要调用一次.
-    pub fn author(self, author: &'a str) -> Self {
+    pub fn author(self, author: &str) -> Self {
         let mut re = self;
 
-        re._author = author;
+        re._author = author.to_owned();
         re
     }
 
@@ -178,7 +175,7 @@ impl<'a> App<'a> {
     /// let app = App::new()
     ///     .add_command( cmd!("init")  .about("初始化羡慕"));
     /// ```
-    pub fn add_command(self, cmd: SubCommand<'a>) -> Self {
+    pub fn add_command(self, cmd: SubCommand) -> Self {
         let mut re = self;
 
         re._commands.push(cmd);
@@ -188,9 +185,9 @@ impl<'a> App<'a> {
 
     /// 自定义帮助信息.
     /// 此方法会替换掉 自动生成的 帮助文档.
-    pub fn help_message(self, message: &'a str) -> Self {
+    pub fn help_message(self, message: &str) -> Self {
         let mut re = self;
-        re._help_message = message;
+        re._help_message = message.to_owned();
         re
     }
 
@@ -205,7 +202,7 @@ impl<'a> App<'a> {
     ///        .add_command(
     ///            cmd!("run")
     ///                .about("运行程序")
-    ///                .action(chenbao_cmd::ArgAction::Empty(
+    ///                .action(chenbao_cmd::Arg::Empty(
     ///                    &(|_| {
     ///                        println!(r#"ning commmand: "run""#);
     ///                    }),
@@ -390,7 +387,7 @@ impl<'a> App<'a> {
     }
 }
 
-impl App<'_> {
+impl App {
     // -------- Private Part --------
 
     fn _handle_defalt_implement(&self) {}
@@ -484,7 +481,7 @@ impl App<'_> {
     fn _handle_commands(&self, command_name: &String) -> DidHandled {
         {
             for x in &self._commands {
-                if command_name == x._cmd_name || command_name == x._short_name {
+                if command_name == &x._cmd_name || command_name == &x._short_name {
                     let cmd_args = self._commands_arg.clone();
 
                     return x.sub_command_try_run(&self._app_name, cmd_args, self._need_to);
@@ -595,7 +592,7 @@ impl App<'_> {
     }
 }
 
-impl<'a> App<'a> {
+impl App {
     //  ------- Debug Functions -------
 
     /// 模拟用户输入,
@@ -644,7 +641,6 @@ impl<'a> App<'a> {
         {
             {
                 let re = self.debug_duplicate_names_check();
-
                 if !re.is_empty() {
                     println!("\n{}\n", "有子命令的名称重复了".bright_yellow().bold());
 
@@ -678,7 +674,7 @@ impl<'a> App<'a> {
                 let abouts: Vec<Row> = self
                     ._commands
                     .iter()
-                    .filter(|x| [x._cmd_name, x._short_name].contains(&name))
+                    .filter(|x| [&x._cmd_name, &x._short_name].contains(&&name.to_owned()))
                     .map(|x| {
                         let mut r = row![];
 
@@ -737,7 +733,7 @@ impl<'a> App<'a> {
         }
         for x in &self._commands {
             {
-                let name = &x._cmd_name;
+                let name = x._cmd_name.as_str();
 
                 if set.contains(name) || default_impls.contains(name) {
                     duplicated_names.insert(name);
@@ -747,13 +743,12 @@ impl<'a> App<'a> {
             }
 
             {
-                let short_name = x._short_name;
+                let short_name = &x._short_name.as_str();
 
                 if short_name.is_empty() {
+                    // 没有设置 short name.
                     continue;
-                }
-
-                if (set.contains(&short_name)) || default_impls.contains(short_name) {
+                } else if (set.contains(short_name)) || default_impls.contains(short_name) {
                     duplicated_names.insert(short_name);
                 } else {
                     set.insert(short_name);
@@ -769,7 +764,7 @@ impl<'a> App<'a> {
     }
 
     /// 检查所有 子命令 的示例是否能被解析.
-    fn debug_example_check(&'a self) -> Vec<ExampleTestResult<'a>> {
+    fn debug_example_check<'a>(&'a self) -> Vec<ExampleTestResult<'a>> {
         let mut ok: Vec<ExampleTestResult<'a>> = vec![];
         let mut err: Vec<ExampleTestResult<'a>> = vec![];
 
@@ -786,11 +781,9 @@ impl<'a> App<'a> {
 
         ok
     }
-
-    // pub(crate) fn debug_子命令——人类友好度检查(&self) {}
 }
 
-impl Default for App<'_> {
+impl Default for App {
     fn default() -> Self {
         let env_args: Vec<String> = std::env::args().collect();
 
@@ -820,7 +813,7 @@ impl Default for App<'_> {
             _app_name: app_name.into(),
             _about: Default::default(),
             _author: Default::default(),
-            _app_version_message: "0.0.1",
+            _app_version_message: "0.0.1".to_owned(),
             _help_message: Default::default(),
             _commands: Default::default(),
             _env_arg: env_args.into(),

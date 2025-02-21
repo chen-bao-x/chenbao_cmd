@@ -17,16 +17,19 @@ use prettytable::{
 
 /// 子命令
 #[derive(Clone, Debug)]
-pub struct SubCommand<'a> {
+pub struct SubCommand {
     /// 子命令名
     /// 命令的名称长度最好不要超过 20 个字符.
-    pub _cmd_name: &'a str,
+    // pub _cmd_name: &'a str,
+    pub _cmd_name: String,
 
     /// 命令名的简写形式, 通常是一个字符
-    pub _short_name: &'a str,
+    // pub _short_name: &'a str,
+    pub _short_name: String,
 
     /// 一句话介绍此命令
-    pub _about: &'a str,
+    // pub _about: &'a str,
+    pub _about: String,
 
     /// 是用此命令的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
@@ -34,14 +37,15 @@ pub struct SubCommand<'a> {
 
     /// 自定义的帮助文档.
     /// 当用户使用 help 命令查询此命令时显示的帮助文档.
-    pub _help_message: Option<&'a str>,
+    // pub _help_message: Option<&'a str>,
+    pub _help_message: Option<String>,
 
     /// 子命令需要的参数的类型以及该子命令的 action.
     /// 在打印子命令的帮助文档时需要用到此属性.
     pub _arg_type_with_action: Arg,
 }
 
-impl<'a> SubCommand<'a> {
+impl SubCommand {
     /// 创建新的 SubCommand.
     ///
     /// 这几个已经又了默认实现, 不能再作为子命令的名称:
@@ -53,35 +57,35 @@ impl<'a> SubCommand<'a> {
     ///     cmd!("build")
     ///         .short_name("b")
     ///         .about("编译项目")
-    ///         .action(ArgAction::Bool(&|_x| {
+    ///         .action(Arg::Bool(&|_x| {
     ///             print!("command \"run\"{:?}\n", _x);
     ///         }));
     /// ```
-    pub fn create_an_sub_command(name: &'a str) -> Self {
+    pub fn create_an_sub_command(name: &str) -> Self {
         SubCommand {
-            _cmd_name: name,
+            _cmd_name: name.to_owned(),
 
-            _about: "",
+            _about: String::new(),
             _help_message: None,
-            _short_name: "",
+            _short_name: "".to_owned(),
             _exaples: Examples::new(),
             _arg_type_with_action: Arg::default(),
         }
     }
 }
 
-impl<'a> SubCommand<'a> {
+impl<'a> SubCommand {
     /// set `Command.short_name`
     // pub fn short_name(self, short_name: &'a str) -> Self {
     pub fn short_name(mut self, short_name: &'a str) -> Self {
-        self._short_name = short_name;
+        self._short_name = short_name.to_string();
         self
     }
 
     /// set `SubCommand.about`
     pub fn about(self, about: &'a str) -> Self {
         let mut re = self;
-        re._about = about;
+        re._about = about.to_owned();
         re
     }
 
@@ -97,7 +101,7 @@ impl<'a> SubCommand<'a> {
     /// set `Command.example`
     pub fn help_document(self, str: &'a str) -> Self {
         let mut re = self;
-        re._help_message = Some(str);
+        re._help_message = Some(str.to_owned());
 
         re
     }
@@ -115,7 +119,7 @@ impl<'a> SubCommand<'a> {
     }
 }
 
-impl SubCommand<'_> {
+impl SubCommand {
     pub fn print_command_help(&self, app_name: &str) {
         println!("{}", self.formated_command_help(app_name));
     }
@@ -136,7 +140,7 @@ impl SubCommand<'_> {
     }
 }
 
-impl<'a> SubCommand<'a> {
+impl<'a> SubCommand {
     pub fn formated_usage(&self, app_name: &str) -> String {
         let command_name = self._cmd_name.bright_cyan();
         let short_name = self._short_name.bright_cyan();
@@ -363,7 +367,7 @@ impl<'a> SubCommand<'a> {
 
                             let mut repl = arg_type::Dialog::new();
                             f(&mut repl);
-                            repl.finesh_and_print(app_name, self._cmd_name);
+                            repl.finesh_and_print(app_name, &self._cmd_name);
                         }
                     }
                 }),
@@ -537,13 +541,13 @@ impl<'a> SubCommand<'a> {
 }
 
 pub(crate) struct ExampleTestResult<'a> {
-    cmd: &'a SubCommand<'a>,
+    cmd: &'a SubCommand,
     failures_examples: Vec<Sadadsf<'a>>,
     success_examples: Vec<&'a SingleExample>,
 }
 
 impl<'a> ExampleTestResult<'a> {
-    pub fn new(cmd: &'a SubCommand<'a>) -> Self {
+    pub fn new(cmd: &'a SubCommand) -> Self {
         Self {
             cmd,
             failures_examples: vec![],
