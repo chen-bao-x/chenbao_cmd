@@ -93,6 +93,9 @@
 
 // ------- Public -------
 
+use std::hash::DefaultHasher;
+use std::hash::Hash;
+
 pub use action::Arg;
 pub use application::App;
 pub use application::DidHandled;
@@ -109,5 +112,6 @@ mod helper;
 mod question_and_anser;
 mod subcommand;
 
-pub(crate) type SharedString = std::rc::Rc<String>;
+// pub(crate) type SharedString = std::rc::Rc<String>;
 pub(crate) type SharedVecString = std::rc::Rc<Vec<String>>;
+ 

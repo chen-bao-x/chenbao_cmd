@@ -3,6 +3,7 @@ use chenbao_cmd::*;
 #[test]
 fn it_works() {
     use chenbao_cmd::*;
+    use chenbao_cmd::Arg;
 
     // ------- 基础 API 测试 -------
     println!("--------hello--------");
@@ -248,28 +249,28 @@ fn dsafdsaf() {
 
     let _ = app
         .deubug_run(["app_name", "-e"])
-        // .deubug_run(vec!["app_name", "help"])
-        // .deubug_run(vec!["app_name", "-h"])
-        // .deubug_run(vec!["app_name", "b"])
-        // .deubug_run(vec!["app_name", "build"])
-        // .deubug_run(vec!["app_name", "build", "-h"])
-        // .deubug_run(vec!["app_name", "build", "-e"])
-        // .deubug_run(vec!["app_name", "run"])
-        // .deubug_run(vec!["app_name", "run", "3"])
-        // .deubug_run(vec!["app_name", "run", "3", "32"]) // 类型正确, 数量不正确
-        // .deubug_run(vec!["app_name", "run", "-h"])
-        // .deubug_run(vec!["app_name", "run", "-e"])
-        // .deubug_run(vec!["app_name", "-h"])
-        // .deubug_run(vec!["app_name"])
-        // .deubug_run(vec!["app_name", "repl"])
-        // .deubug_run(vec!["app_name", "run"])
-        // .deubug_run(vec!["app_name", "build"])
-        // .deubug_run(vec!["app_name", "empty"])
-        // .deubug_run(vec!["app_name", "number"])
-        // .deubug_run(vec!["app_name", "vecnumber"])
-        // .deubug_run(vec!["app_name", "vecbool"])
-        // .deubug_run(vec!["app_name", "vecstring"])
-        // .deubug_run(vec!["app_name", "repl"])
+        .deubug_run( ["app_name", "help"])
+        .deubug_run( ["app_name", "-h"])
+        .deubug_run( ["app_name", "b"])
+        .deubug_run( ["app_name", "build"])
+        .deubug_run( ["app_name", "build", "-h"])
+        .deubug_run( ["app_name", "build", "-e"])
+        .deubug_run( ["app_name", "run"])
+        .deubug_run( ["app_name", "run", "3"])
+        .deubug_run( ["app_name", "run", "3", "32"]) 
+        .deubug_run( ["app_name", "run", "-h"])
+        .deubug_run( ["app_name", "run", "-e"])
+        .deubug_run( ["app_name", "-h"])
+        .deubug_run( ["app_name"])
+        .deubug_run( ["app_name", "repl"])
+        .deubug_run( ["app_name", "run"])
+        .deubug_run( ["app_name", "build"])
+        .deubug_run( ["app_name", "empty"])
+        .deubug_run( ["app_name", "number"])
+        .deubug_run( ["app_name", "vecnumber"])
+        .deubug_run( ["app_name", "vecbool"])
+        .deubug_run( ["app_name", "vecstring"])
+        .deubug_run( ["app_name", "repl"])
         .deubug_run(["app_name", "--list-all-commands"]);
 }
 use std::cell::Cell;

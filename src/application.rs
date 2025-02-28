@@ -6,8 +6,6 @@ use core::fmt;
 use owo_colors::OwoColorize;
 use prettytable::{cell, row, table, Row, Table};
 
-use std::rc::Rc;
-
 #[derive(Clone)]
 pub(crate) enum AppDefaultAction {
     /// 打印 app 的帮助文档
@@ -54,7 +52,7 @@ impl DidHandled {
 pub struct App {
     /// 此程序的名称;
     /// 所有自动生成的帮助文档和示例都会使用到 self._app_name
-    pub _app_name: SharedString,
+    pub _app_name: String,
 
     /// 一句话介绍此程序.
     pub _about: String,
@@ -90,16 +88,16 @@ pub struct App {
     _need_to: NeedTo,
 }
 
-impl<'a> App {
+impl App {
     // ============================
     // =        Public Part       =
     // ============================
 
+    /// 创建一个新的 App.
     /// ```rust
     ///     let app = chenbao_cmd::App::new();
     ///     app.run();
     /// ```
-    // pub fn new(app_name: &str) -> App {
     pub fn new() -> App {
         Self {
             ..Default::default()
@@ -107,12 +105,13 @@ impl<'a> App {
     }
 
     /// 如果不设置 app_name(_), 则会使用编译后可执行文件的文件名字作为 app_name.
-    /// ```
-    /// let app = chenbao_cmd::App::new().app_name(env!("CARGO_PKG_NAME"));
+    /// ```rust
+    ///     let app = chenbao_cmd::App::new().app_name(env!("CARGO_PKG_NAME"));
     /// ```
     pub fn app_name(self, app_name: &str) -> Self {
         let mut re = self;
-        re._app_name = Rc::new(app_name.to_string());
+        // re._app_name = Rc::new(app_name.to_string());
+        re._app_name = app_name.to_string();
         re
     }
 
@@ -139,7 +138,7 @@ impl<'a> App {
     /// 当用户使用 `app --version` 时会打印在这里添加的版本信息.
     /// 此 method 只需要调用一次.
     /// ```
-    /// let app = chenbao_cmd::App::new().version_message(env!("CARGO_PKG_VERSION"));
+    ///     let app = chenbao_cmd::App::new().version_message(env!("CARGO_PKG_VERSION"));
     /// ```
     pub fn version_message(self, version_message: &str) -> Self {
         let mut re = self;
@@ -171,9 +170,9 @@ impl<'a> App {
     /// ### 为此 App 添加指令
     /// 示例:
     /// ```
-    /// use chenbao_cmd::*;
-    /// let app = App::new()
-    ///     .add_command( cmd!("init")  .about("初始化羡慕"));
+    ///     use chenbao_cmd::*;
+    ///     let app = App::new()
+    ///         .add_command( cmd!("init")  .about("初始化羡慕"));
     /// ```
     pub fn add_command(self, cmd: SubCommand) -> Self {
         let mut re = self;
@@ -209,8 +208,6 @@ impl<'a> App {
     ///                )),
     ///        );
     ///    app.run();
-    ///
-    ///
     /// ```
     pub fn run(self) {
         let mut re = self;
@@ -225,7 +222,7 @@ impl<'a> App {
         }
     }
 
-    /// like run(), but has result type.
+    /// like run(), but need to handle result.
     pub fn try_run(self) -> DidHandled {
         let option_string = self._env_arg.get(1);
         match option_string {
@@ -370,7 +367,7 @@ impl<'a> App {
             //  自动生成的示例效果不好, 先不自动生成.
 
             // let mut table = table!();
-            // table.set_format(table_formater());
+            // table.set_format(helper::plain_table_formater());
 
             // for x in &self._commands {
             //     let rows = x.formated_command_example(&self._app_name);
@@ -595,9 +592,37 @@ impl App {
 impl App {
     //  ------- Debug Functions -------
 
-    /// 模拟用户输入,
+    /// 模拟用户输入,  
     /// 用来更方便的测试程序.
-    // #[cfg(debug_assertions)]
+    /// ### Example:
+    /// ```
+    /// use chenbao_cmd::*;
+    ///    let _ = App::new()
+    ///         .deubug_run(["app_name", "-e"])
+    ///         .deubug_run( ["app_name", "help"])
+    ///         .deubug_run( ["app_name", "-h"])
+    ///         .deubug_run( ["app_name", "b"])
+    ///         .deubug_run( ["app_name", "build"])
+    ///         .deubug_run( ["app_name", "build", "-h"])
+    ///         .deubug_run( ["app_name", "build", "-e"])
+    ///         .deubug_run( ["app_name", "run"])
+    ///         .deubug_run( ["app_name", "run", "3"])
+    ///         .deubug_run( ["app_name", "run", "3", "32"])
+    ///         .deubug_run( ["app_name", "run", "-h"])
+    ///         .deubug_run( ["app_name", "run", "-e"])
+    ///         .deubug_run( ["app_name", "-h"])
+    ///         .deubug_run( ["app_name"])
+    ///         .deubug_run( ["app_name", "repl"])
+    ///         .deubug_run( ["app_name", "run"])
+    ///         .deubug_run( ["app_name", "build"])
+    ///         .deubug_run( ["app_name", "empty"])
+    ///         .deubug_run( ["app_name", "number"])
+    ///         .deubug_run( ["app_name", "vecnumber"])
+    ///         .deubug_run( ["app_name", "vecbool"])
+    ///         .deubug_run( ["app_name", "vecstring"])
+    ///         .deubug_run( ["app_name", "repl"])
+    ///         .deubug_run(["app_name", "--list-all-commands"]);
+    /// ```
     pub fn deubug_run<const N: usize>(self, virtual_env_args: [&str; N]) -> Self {
         println!(
             "------- command testing for: {} ",
@@ -617,7 +642,7 @@ impl App {
         re._commands_arg = sub_cmd_arg;
         re._env_arg = env_arg.into();
         if re._app_name.is_empty() {
-            re._app_name = env!("CARGO_PKG_NAME").to_string().into();
+            re._app_name = env!("CARGO_PKG_NAME").to_string();
         }
 
         let did_handled = re.try_run();
@@ -810,7 +835,7 @@ impl Default for App {
         };
 
         Self {
-            _app_name: app_name.into(),
+            _app_name: app_name,
             _about: Default::default(),
             _author: Default::default(),
             _app_version_message: "0.0.1".to_owned(),
