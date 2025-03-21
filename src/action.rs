@@ -51,9 +51,14 @@ impl std::fmt::Display for Arg {
 
 impl default::Default for Arg {
     fn default() -> Self {
-        Self::Empty(&|_x| {})
+        Self::Empty(&none_func)
     }
 }
+
+fn none_func(a: arg_type::Empty) {
+    _ = a;
+}
+
 impl fmt::Debug for Arg {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

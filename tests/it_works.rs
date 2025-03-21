@@ -2,94 +2,84 @@ use chenbao_cmd::*;
 
 #[test]
 fn it_works() {
-    use chenbao_cmd::*;
     use chenbao_cmd::Arg;
+    use chenbao_cmd::*;
 
     // ------- 基础 API 测试 -------
     println!("--------hello--------");
 
-    let app = App::new()
-        .about("这个程序主要是为了测试我写的 cmd crate")
-        .author("chen bao")
-        .version_message("0.0.1")
-        .app_name("app")
-        .add_command(
-            cmd!("run")
-                .about("运行程序")
-                .action(Arg::Empty(&|_x| {
-                    print!(r#"runing commmand: "run""#);
-                })),
-        )
-        .add_command(
-            cmd!("help")
-                .about("运行程序")
-                .action(Arg::Empty(&(|_x| {}))),
-        )
-        .add_command(
-            cmd!("build")
-                .short_name("b")
-                .about("编译项目")
-                .action(Arg::Bool(&|_x| {
-                    println!("command \"run\"{:?}", _x);
-                })),
-        )
-        .add_command(
-            cmd!("empty")
-                .about("用来测试 ArgCount::Zero ")
-                .action(Arg::Empty(&|_x| {
+    let app =
+        App::new()
+            .about("这个程序主要是为了测试 cmd crate")
+            .author("chen bao")
+            .version_message("0.0.1")
+            .app_name("app")
+            .add_command(cmd!("run").about("运行程序").action(Arg::Empty(&|_x| {
+                print!(r#"runing commmand: "run""#);
+            })))
+            .add_command(
+                cmd!("help")
+                    .about("运行程序")
+                    .action(Arg::Empty(&(|_x| {}))),
+            )
+            .add_command(
+                cmd!("build")
+                    .short_name("b")
+                    .about("编译项目")
+                    .action(Arg::Bool(&|_x| {
+                        println!("command \"run\"{:?}", _x);
+                    })),
+            )
+            .add_command(
+                cmd!("empty")
+                    .about("用来测试 ArgCount::Zero ")
+                    .action(Arg::Empty(&|_x| {
+                        print!("testing arg_zero");
+                    })),
+            )
+            .add_command(
+                cmd!("number")
+                    .about("用来测试 ArgCount::Zero ")
+                    .action(Arg::Number(&|_x| {
+                        print!("testing arg_zero");
+                    })),
+            )
+            .add_command(cmd!("vecnumber").about("用来测试 ArgCount::Zero ").action(
+                Arg::NumberMutiple(&|_x| {
                     print!("testing arg_zero");
-                })),
-        )
-        .add_command(
-            cmd!("number")
-                .about("用来测试 ArgCount::Zero ")
-                .action(Arg::Number(&|_x| {
+                }),
+            ))
+            .add_command(cmd!("vecbool").about("用来测试 ArgCount::Zero ").action(
+                Arg::BoolMutiple(&|_x| {
                     print!("testing arg_zero");
-                })),
-        )
-        .add_command(
-            cmd!("vecnumber")
-                .about("用来测试 ArgCount::Zero ")
-                .action(Arg::NumberMutiple(&|_x| {
+                }),
+            ))
+            .add_command(cmd!("vecstring").about("用来测试 ArgCount::Zero ").action(
+                Arg::StringMutiple(&|_x| {
                     print!("testing arg_zero");
-                })),
-        )
-        .add_command(
-            cmd!("vecbool")
-                .about("用来测试 ArgCount::Zero ")
-                .action(Arg::BoolMutiple(&|_x| {
-                    print!("testing arg_zero");
-                })),
-        )
-        .add_command(
-            cmd!("vecstring")
-                .about("用来测试 ArgCount::Zero ")
-                .action(Arg::StringMutiple(&|_x| {
-                    print!("testing arg_zero");
-                })),
-        )
-        .add_command(
-            cmd!("repl")
-                .about("用来测试 ArgCount::Repl(_) ")
-                .action(Arg::Dialog(
-                    &(|r| {
-                        let items = vec!["one", "two", "tree", "four"];
+                }),
+            ))
+            .add_command(
+                cmd!("repl")
+                    .about("用来测试 ArgCount::Repl(_) ")
+                    .action(Arg::Dialog(
+                        &(|r| {
+                            let items = vec!["one", "two", "tree", "four"];
 
-                        let _req_bool = r.number("你要吃几个汉堡包?").unwrap();
-                        let _你要吃几个汉堡包 = r.number_multiple("多个 number").unwrap();
-                        let _多个_number = r.string("string").unwrap();
-                        let _string = r.string_multiple("string_multiple").unwrap();
-                        let _string_multiple = r.yes_or_no("bool").unwrap();
-                        let _path = r.path("path").unwrap();
-                        let _path_multiple = r.path_multiple("path").unwrap();
-                        let _seleted = r.select("selete", &items).unwrap();
-                        let _seleted = r.select_multiple("selete", &items).unwrap();
-                        
-                    }),
-                )),
-        )
-        // asdfsdaf
-        ;
+                            let _req_bool = r.number("你要吃几个汉堡包?").unwrap();
+                            let _你要吃几个汉堡包 = r.number_multiple("多个 number").unwrap();
+                            let _多个_number = r.string("string").unwrap();
+                            let _string = r.string_multiple("string_multiple").unwrap();
+                            let _string_multiple = r.yes_or_no("bool").unwrap();
+                            let _path = r.path("path").unwrap();
+                            let _path_multiple = r.path_multiple("path").unwrap();
+                            let _seleted = r.select("selete", &items).unwrap();
+                            let _seleted = r.select_multiple("selete", &items).unwrap();
+                        }),
+                    )),
+            );
+
+    // app.clone().run();
 
     // let re = app.debug_duplicate_names_check();
     // match re {
@@ -183,15 +173,13 @@ fn dsafdsaf() {
                     }),
                 )),
         )
-        .add_command(
-            cmd!("vecnumber")
-                .about("用来测试 ArgCount::Zero ")
-                .action(Arg::NumberMutiple(
-                    &(|_x| {
-                        println!("testing vec number {:?}", _x);
-                    }),
-                )),
-        )
+        .add_command(cmd!("vecnumber").about("用来测试 ArgCount::Zero ").action(
+            Arg::NumberMutiple(
+                &(|_x| {
+                    println!("testing vec number {:?}", _x);
+                }),
+            ),
+        ))
         .add_command(
             SubCommand::create_an_sub_command("vecbool")
                 .about("用来测试 ArgCount::Zero ")
@@ -249,28 +237,28 @@ fn dsafdsaf() {
 
     let _ = app
         .deubug_run(["app_name", "-e"])
-        .deubug_run( ["app_name", "help"])
-        .deubug_run( ["app_name", "-h"])
-        .deubug_run( ["app_name", "b"])
-        .deubug_run( ["app_name", "build"])
-        .deubug_run( ["app_name", "build", "-h"])
-        .deubug_run( ["app_name", "build", "-e"])
-        .deubug_run( ["app_name", "run"])
-        .deubug_run( ["app_name", "run", "3"])
-        .deubug_run( ["app_name", "run", "3", "32"]) 
-        .deubug_run( ["app_name", "run", "-h"])
-        .deubug_run( ["app_name", "run", "-e"])
-        .deubug_run( ["app_name", "-h"])
-        .deubug_run( ["app_name"])
-        .deubug_run( ["app_name", "repl"])
-        .deubug_run( ["app_name", "run"])
-        .deubug_run( ["app_name", "build"])
-        .deubug_run( ["app_name", "empty"])
-        .deubug_run( ["app_name", "number"])
-        .deubug_run( ["app_name", "vecnumber"])
-        .deubug_run( ["app_name", "vecbool"])
-        .deubug_run( ["app_name", "vecstring"])
-        .deubug_run( ["app_name", "repl"])
+        .deubug_run(["app_name", "help"])
+        .deubug_run(["app_name", "-h"])
+        .deubug_run(["app_name", "b"])
+        .deubug_run(["app_name", "build"])
+        .deubug_run(["app_name", "build", "-h"])
+        .deubug_run(["app_name", "build", "-e"])
+        .deubug_run(["app_name", "run"])
+        .deubug_run(["app_name", "run", "3"])
+        .deubug_run(["app_name", "run", "3", "32"])
+        .deubug_run(["app_name", "run", "-h"])
+        .deubug_run(["app_name", "run", "-e"])
+        .deubug_run(["app_name", "-h"])
+        .deubug_run(["app_name"])
+        .deubug_run(["app_name", "repl"])
+        .deubug_run(["app_name", "run"])
+        .deubug_run(["app_name", "build"])
+        .deubug_run(["app_name", "empty"])
+        .deubug_run(["app_name", "number"])
+        .deubug_run(["app_name", "vecnumber"])
+        .deubug_run(["app_name", "vecbool"])
+        .deubug_run(["app_name", "vecstring"])
+        .deubug_run(["app_name", "repl"])
         .deubug_run(["app_name", "--list-all-commands"]);
 }
 use std::cell::Cell;

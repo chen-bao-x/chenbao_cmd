@@ -4,7 +4,7 @@ use crate::*;
 use crate::{examples_types::Examples, subcommand::ExampleTestResult};
 use core::fmt;
 use owo_colors::OwoColorize;
-use prettytable::{cell, row, table, Row, Table};
+use prettytable::{cell, row, table, Row};
 
 #[derive(Clone)]
 pub(crate) enum AppDefaultAction {
@@ -52,29 +52,29 @@ impl DidHandled {
 pub struct App {
     /// 此程序的名称;
     /// 所有自动生成的帮助文档和示例都会使用到 self._app_name
-    pub _app_name: String,
+    _app_name: String,
 
     /// 一句话介绍此程序.
-    pub _about: String,
+    _about: String,
 
     /// 此程序的作者
-    pub _author: String,
+    _author: String,
 
     /// 当用户查询此程序的 version 信息时显示的信息;
-    pub _app_version_message: String,
+    _app_version_message: String,
 
     /// 此程序的帮助文档,
-    pub _help_message: String,
+    _help_message: String,
 
     /// 此 app 的所有子命令.
-    pub _commands: Vec<SubCommand>,
+    _commands: Vec<SubCommand>,
 
     /// 使用此程序的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
-    pub _app_examples: Examples,
+    _app_examples: Examples,
 
     /// 子命令的 “参数”
-    pub _commands_arg: SharedVecString,
+    _commands_arg: SharedVecString,
 
     /// 只输入了程序名称没有子命令也没有任何 flag 时之行的 action.
     /// 默认是 AppDefaultAction::PrintHelpMessage;
@@ -123,16 +123,16 @@ impl App {
         re
     }
 
-    /// 使用此程序的一些示例,
-    /// 当用户使用 `app -e` 时会打印在这里添加的示例.
-    /// 此 method 可以多次调用来给此程序添加多个示例.
-    pub fn add_app_example(self, command: &str, description: &str) -> Self {
-        let mut re = self;
+    // /// 使用此程序的一些示例,
+    // /// 当用户使用 `app -e` 时会打印在这里添加的示例.
+    // /// 此 method 可以多次调用来给此程序添加多个示例.
+    // pub fn add_app_example(self, command: &str, description: &str) -> Self {
+    //     let mut re = self;
 
-        re._app_examples.add_single_example(command, description);
+    //     re._app_examples.add_single_example(command, description);
 
-        re
-    }
+    //     re
+    // }
 
     /// 此程序的版本信息.
     /// 当用户使用 `app --version` 时会打印在这里添加的版本信息.
@@ -248,20 +248,21 @@ impl App {
                     }
                 }
 
-                {
-                    let re = self._handle_app_example();
-                    match re {
-                        DidHandled::Handled => return re,
-                        DidHandled::Failed(_x) => { /* continue. */ }
-                    }
-                }
-                {
-                    let re = self._handle_list_all_command();
-                    match re {
-                        DidHandled::Handled => return re,
-                        DidHandled::Failed(_x) => { /* continue. */ }
-                    }
-                }
+                // {
+                //     let re = self._handle_app_example();
+                //     match re {
+                //         DidHandled::Handled => return re,
+                //         DidHandled::Failed(_x) => { /* continue. */ }
+                //     }
+                // }
+
+                // {
+                //     let re = self.handle_list_all_command();
+                //     match re {
+                //         DidHandled::Handled => return re,
+                //         DidHandled::Failed(_x) => { /* continue. */ }
+                //     }
+                // }
 
                 {
                     let re = self._handle_commands(command_name);
@@ -330,15 +331,18 @@ impl App {
             "-v".styled_sub_command(),
             "--version".styled_sub_command()
         );
-        let example = format!(
-            "{}, {}",
-            "-e".styled_sub_command(),
-            "--example".styled_sub_command()
-        );
-        let list_all_commands = "--list-all-commands".styled_sub_command().to_string();
+        // let example = format!(
+        //     "{}, {}",
+        //     "-e".styled_sub_command(),
+        //     "--example".styled_sub_command()
+        // );
+        // let list_all_commands = "--list-all-commands".styled_sub_command().to_string();
 
         // TODO: 让打印的信息更优美.
-        let flag_message = format!("{}\n    {help}\t\t显示此命令的帮助.\n    {ver}\t查看此程序的版本.\n    {example}\t查看示例.\n    {list_all_commands}\t查看所有 command.\n" , "Flags:".bright_green());
+        let flag_message = format!(
+            "{}\n    {help}\t\t显示此命令的帮助.\n    {ver}\t查看此程序的版本.\n",
+            "Flags:".bright_green()
+        );
         let author = if self._author.is_empty() {
             "".to_string()
         } else {
@@ -360,28 +364,28 @@ impl App {
         );
     }
 
-    /// 打印 App 的示例.
-    /// `app -e` 时调用此函数.
-    pub fn print_app_examples(&self) {
-        if self._app_examples.is_empty() {
-            //  自动生成的示例效果不好, 先不自动生成.
+    // /// 打印 App 的示例.
+    // /// `app -e` 时调用此函数.
+    // pub fn print_app_examples(&self) {
+    //     if self._app_examples.is_empty() {
+    //         //  自动生成的示例效果不好, 先不自动生成.
 
-            // let mut table = table!();
-            // table.set_format(helper::plain_table_formater());
+    //         // let mut table = table!();
+    //         // table.set_format(helper::plain_table_formater());
 
-            // for x in &self._commands {
-            //     let rows = x.formated_command_example(&self._app_name);
+    //         // for x in &self._commands {
+    //         //     let rows = x.formated_command_example(&self._app_name);
 
-            //     for x in rows {
-            //         table.add_row(x);
-            //     }
-            // }
-            // println!("{}", table);
-            // table.printstd();
-        } else {
-            println!("{}", vec_row_to_table(self._app_examples.pretty_formated()));
-        }
-    }
+    //         //     for x in rows {
+    //         //         table.add_row(x);
+    //         //     }
+    //         // }
+    //         // println!("{}", table);
+    //         // table.printstd();
+    //     } else {
+    //         println!("{}", vec_row_to_table(self._app_examples.pretty_formated()));
+    //     }
+    // }
 }
 
 impl App {
@@ -420,33 +424,33 @@ impl App {
         }
     }
 
-    fn _handle_list_all_command(&self) -> DidHandled {
-        let command_name = &self._env_arg[1];
+    // fn handle_list_all_command(&self) -> DidHandled {
+    //     let command_name = &self._env_arg[1];
 
-        if command_name == "--list-all-commands" {
-            {
-                // print all commands
-                let mut table = Table::new();
-                table.set_format(plain_table_formater());
+    //     if command_name == "--list-all-commands" {
+    //         {
+    //             // print all commands
+    //             let mut table = Table::new();
+    //             table.set_format(plain_table_formater());
 
-                self._commands.iter().for_each(|x| {
-                    x.formated_row_in_list_all_command().iter().for_each(|x| {
-                        table.add_row(x.clone());
-                    });
-                });
-                if self._need_to.is_run() {
-                    println!("{}", table);
-                }
-            }
+    //             self._commands.iter().for_each(|x| {
+    //                 x.formated_row_in_list_all_command().iter().for_each(|x| {
+    //                     table.add_row(x.clone());
+    //                 });
+    //             });
+    //             if self._need_to.is_run() {
+    //                 println!("{}", table);
+    //             }
+    //         }
 
-            DidHandled::Handled
-        } else {
-            DidHandled::Failed(format!(
-                "不是 {} 命令",
-                "--list-all-commands".styled_sub_command()
-            ))
-        }
-    }
+    //         DidHandled::Handled
+    //     } else {
+    //         DidHandled::Failed(format!(
+    //             "不是 {} 命令",
+    //             "--list-all-commands".styled_sub_command(),
+    //         ))
+    //     }
+    // }
 
     /// 处理只输入了程序名称没有子命令也没有任何 flag 的情况.
     fn _handle_app_default_acton(&self) -> DidHandled {
@@ -488,27 +492,31 @@ impl App {
             }
         }
 
+        // DidHandled::Failed(format!(
+        //     "未知命令: {}\n\n输入 {} {} 查看所有命令",
+        //     self._env_arg.join(" ").styled_sub_command(),
+        //     self._app_name.styled_sub_command(),
+        //     "--list-all-commands".styled_sub_command(),
+        // ))
         DidHandled::Failed(format!(
-            "未知命令: {}\n\n输入 {} {} 查看所有命令",
+            "未知命令: {}\n",
             self._env_arg.join(" ").styled_sub_command(),
-            self._app_name.styled_sub_command(),
-            "--list-all-commands".styled_sub_command(),
         ))
     }
 
-    fn _handle_app_example(&self) -> DidHandled {
-        let command_name = self._env_arg[1].clone();
+    // fn _handle_app_example(&self) -> DidHandled {
+    //     let command_name = self._env_arg[1].clone();
 
-        if command_name == "-e" || command_name == "--example" {
-            if self._need_to.is_run() {
-                self.print_app_examples();
-            }
+    //     if command_name == "-e" || command_name == "--example" {
+    //         if self._need_to.is_run() {
+    //             self.print_app_examples();
+    //         }
 
-            DidHandled::Handled
-        } else {
-            DidHandled::Failed("不是 version 命令".to_string())
-        }
-    }
+    //         DidHandled::Handled
+    //     } else {
+    //         DidHandled::Failed("不是 version 命令".to_string())
+    //     }
+    // }
 
     fn _formated_help(&self) -> String {
         if self._help_message.trim() != "" {
@@ -753,8 +761,8 @@ impl App {
             default_impls.insert("--help");
             default_impls.insert("-v");
             default_impls.insert("--version");
-            default_impls.insert("-e");
-            default_impls.insert("--example");
+            // default_impls.insert("-e");
+            // default_impls.insert("--example");
         }
         for x in &self._commands {
             {

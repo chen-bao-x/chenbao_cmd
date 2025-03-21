@@ -61,9 +61,9 @@ impl Examples {
         self.val.push(SingleExample::new(command, description));
     }
 
-    pub fn iter(&self) -> core::slice::Iter<'_, SingleExample> {
-        self.val.iter()
-    }
+    // pub fn iter(&self) -> core::slice::Iter<'_, SingleExample> {
+    //     self.val.iter()
+    // }
 }
 
 // ------- SingleExample -------

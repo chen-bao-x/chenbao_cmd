@@ -21,28 +21,28 @@ pub struct SubCommand {
     /// 子命令名
     /// 命令的名称长度最好不要超过 20 个字符.
     // pub _cmd_name: &'a str,
-    pub _cmd_name: String,
+    pub(crate) _cmd_name: String,
 
     /// 命令名的简写形式, 通常是一个字符
     // pub _short_name: &'a str,
-    pub _short_name: String,
+    pub(crate) _short_name: String,
 
     /// 一句话介绍此命令
     // pub _about: &'a str,
-    pub _about: String,
+    pub(crate) _about: String,
 
     /// 是用此命令的一些示范和例子.
     /// 自动生成帮助文档时会用的这里面的例子.
-    pub _exaples: Examples,
+    pub(crate) _exaples: Examples,
 
     /// 自定义的帮助文档.
     /// 当用户使用 help 命令查询此命令时显示的帮助文档.
     // pub _help_message: Option<&'a str>,
-    pub _help_message: Option<String>,
+    _help_message: Option<String>,
 
     /// 子命令需要的参数的类型以及该子命令的 action.
     /// 在打印子命令的帮助文档时需要用到此属性.
-    pub _arg_type_with_action: Arg,
+    _arg_type_with_action: Arg,
 }
 
 impl SubCommand {
@@ -114,18 +114,18 @@ impl<'a> SubCommand {
         re
     }
 
-    pub fn sub_command_run(&self, app_name: &str, cmd_args: SharedVecString) -> DidHandled {
-        self.sub_command_try_run(app_name, cmd_args, NeedTo::Run)
-    }
+    // pub(crate) fn sub_command_run(&self, app_name: &str, cmd_args: SharedVecString) -> DidHandled {
+    //     self.sub_command_try_run(app_name, cmd_args, NeedTo::Run)
+    // }
 }
 
 impl SubCommand {
-    pub fn print_command_help(&self, app_name: &str) {
+    pub(crate) fn print_command_help(&self, app_name: &str) {
         println!("{}", self.formated_command_help(app_name));
     }
 
     /// `app cmd -e` 打印当前子命令的示例.
-    pub fn print_command_example(&self, app_name: &str) {
+    pub(crate) fn print_command_example(&self, app_name: &str) {
         let arr = self.formated_command_example(app_name);
 
         let table = helper::vec_row_to_table(arr);
@@ -141,7 +141,7 @@ impl SubCommand {
 }
 
 impl<'a> SubCommand {
-    pub fn formated_usage(&self, app_name: &str) -> String {
+    fn formated_usage(&self, app_name: &str) -> String {
         let command_name = self._cmd_name.bright_cyan();
         let short_name = self._short_name.bright_cyan();
 
@@ -186,7 +186,7 @@ impl<'a> SubCommand {
 
     /// 自动生成的 子命令帮助文档.
     /// `app cmd -h` 时显示的帮助文档.
-    pub fn formated_command_help(&self, app_name: &str) -> String {
+    fn formated_command_help(&self, app_name: &str) -> String {
         if let Some(s) = &self._help_message {
             // 自定义了帮助文档的情况;
             s.to_string()
@@ -234,31 +234,31 @@ impl<'a> SubCommand {
         }
     }
 
-    pub fn formated_row_in_list_all_command(&self) -> Vec<Row> {
-        let x = self;
-        let short_name = if x._short_name.is_empty() {
-            "".to_string()
-        } else {
-            format!("{}{}", &x._short_name, ", ")
-        };
+    // pub(crate) fn formated_row_in_list_all_command(&self) -> Vec<Row> {
+    //     let x = self;
+    //     let short_name = if x._short_name.is_empty() {
+    //         "".to_string()
+    //     } else {
+    //         format!("{}{}", &x._short_name, ", ")
+    //     };
 
-        let command_name = &x._cmd_name;
+    //     let command_name = &x._cmd_name;
 
-        let mut result: Vec<Row> = vec![];
+    //     let mut result: Vec<Row> = vec![];
 
-        result.push(row![command_name.styled_sub_command(), x._about]);
-        if !x._short_name.is_empty() {
-            result.push(row![
-                short_name.styled_sub_command(),
-                format!("alias: {}", command_name.styled_sub_command())
-            ]);
-        }
+    //     result.push(row![command_name.styled_sub_command(), x._about]);
+    //     if !x._short_name.is_empty() {
+    //         result.push(row![
+    //             short_name.styled_sub_command(),
+    //             format!("alias: {}", command_name.styled_sub_command())
+    //         ]);
+    //     }
 
-        result
-    }
+    //     result
+    // }
 
     /// 已经格式化好了, 直接放进 Table 打印就行.
-    pub fn formated_command_example(&self, app_name: &str) -> Vec<Row> {
+    fn formated_command_example(&self, app_name: &str) -> Vec<Row> {
         if self._exaples.is_empty() {
             _ = app_name;
             vec![]

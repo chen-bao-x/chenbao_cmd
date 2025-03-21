@@ -71,11 +71,11 @@ fn contains_default_flags(value: &str) -> bool {
     let arr: Vec<String> = vec![
         "-h".to_string(),
         "--help".to_string(),
-        "-e".to_string(),
-        "--example".to_string(),
+        // "-e".to_string(),
+        // "--example".to_string(),
         "-v".to_string(),
         "--version".to_string(),
-        "--list-all-commands".to_string(),
+        // "--list-all-commands".to_string(),
     ];
 
     arr.contains(&string_value)
