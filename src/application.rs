@@ -211,6 +211,7 @@ impl App {
     /// ```
     pub fn run(self) {
         let mut re = self;
+
         re._need_to = NeedTo::Run;
 
         let re = re.try_run();
@@ -228,7 +229,6 @@ impl App {
         match option_string {
             None => {
                 //只输入了程序名称没有子命令也没有任何 flag
-
                 self._handle_app_default_acton()
             }
             Some(command_name) => {
@@ -633,7 +633,7 @@ impl App {
     /// ```
     pub fn deubug_run<const N: usize>(self, virtual_env_args: [&str; N]) -> Self {
         println!(
-            "------- command testing for: {} ",
+            "------- command testing for: {} -------",
             virtual_env_args.join(" ").styled_sub_command()
         );
 
@@ -663,7 +663,7 @@ impl App {
         }
 
         // 返回未修改的 self
-        self
+        return self;
     }
 
     /// 检查子命令示example是否能正确的被解析
@@ -696,7 +696,7 @@ impl App {
                 }
             }
         }
-        self
+        return self;
     }
 
     fn debug_duplicate_names_check(&self) -> Vec<ErrorTable> {
@@ -812,7 +812,7 @@ impl App {
 
         ok.append(&mut err);
 
-        ok
+        return ok;
     }
 }
 
@@ -860,7 +860,7 @@ impl Default for App {
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum NeedTo {
-    /// 之行设置的 ArgAction
+    /// 执行设置的 ArgAction
     Run,
 
     /// 只解析, 不执行.

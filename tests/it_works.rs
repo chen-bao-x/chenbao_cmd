@@ -20,6 +20,12 @@ fn it_works() {
             .add_command(
                 cmd!("help")
                     .about("运行程序")
+                    .action(Arg::Empty(&(|_x| {})))
+                    .add_example("app help ", "description"),
+            )
+            .add_command(
+                cmd!("help")
+                    .about("运行程序")
                     .action(Arg::Empty(&(|_x| {}))),
             )
             .add_command(
@@ -79,7 +85,7 @@ fn it_works() {
                     )),
             );
 
-    // app.clone().run();
+    app.clone().debug_check().run();
 
     // let re = app.debug_duplicate_names_check();
     // match re {
@@ -88,8 +94,9 @@ fn it_works() {
     // }
 
     let _asdf = app
+        .debug_check()
         .deubug_run(["cmd", "-e"])
-        .deubug_run(["cmd", "help"])
+        .deubug_run(["cmd", "help", "-e"])
         .deubug_run(["cmd", "-h"])
         .deubug_run(["cmd", "b"])
         .deubug_run(["cmd", "build", "true"])
@@ -101,7 +108,10 @@ fn it_works() {
         .deubug_run(["cmd", "run", "-h"])
         .deubug_run(["cmd", "-h"])
         .deubug_run(["cmd"])
-        .deubug_run(["cmd", "arg_one", "-h"]);
+        .deubug_run(["cmd", "arg_one", "-h"])
+        .deubug_run(["cmd", "repl", "-h"])
+        .deubug_run(["cmd", "help", "-h"])
+        .deubug_run(["cmd", "help", "-e"]);
 }
 
 use std::backtrace::Backtrace;
@@ -238,6 +248,7 @@ fn dsafdsaf() {
     let _ = app
         .deubug_run(["app_name", "-e"])
         .deubug_run(["app_name", "help"])
+        .deubug_run(["app_name", "help", "-e"])
         .deubug_run(["app_name", "-h"])
         .deubug_run(["app_name", "b"])
         .deubug_run(["app_name", "build"])
@@ -250,7 +261,6 @@ fn dsafdsaf() {
         .deubug_run(["app_name", "run", "-e"])
         .deubug_run(["app_name", "-h"])
         .deubug_run(["app_name"])
-        .deubug_run(["app_name", "repl"])
         .deubug_run(["app_name", "run"])
         .deubug_run(["app_name", "build"])
         .deubug_run(["app_name", "empty"])
@@ -258,7 +268,6 @@ fn dsafdsaf() {
         .deubug_run(["app_name", "vecnumber"])
         .deubug_run(["app_name", "vecbool"])
         .deubug_run(["app_name", "vecstring"])
-        .deubug_run(["app_name", "repl"])
         .deubug_run(["app_name", "--list-all-commands"]);
 }
 use std::cell::Cell;

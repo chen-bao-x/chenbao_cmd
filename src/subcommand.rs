@@ -129,14 +129,15 @@ impl SubCommand {
         let arr = self.formated_command_example(app_name);
 
         let table = helper::vec_row_to_table(arr);
-
-        println!(
-            "子命令 {} {} 的使用示例:",
-            app_name,
-            self._cmd_name.styled_sub_command()
-        );
-        println!();
-        println!("{}", table);
+        if !table.is_empty() {
+            println!(
+                "子命令 {} {} 的使用示例:",
+                app_name,
+                self._cmd_name.styled_sub_command()
+            );
+            println!();
+            println!("{}", table);
+        }
     }
 }
 
@@ -214,8 +215,11 @@ impl<'a> SubCommand {
                 "-e".styled_sub_command(),
                 "--example".styled_sub_command()
             );
-            let flag_message =
-                format!("Flags:\n    {help}\t\t显示此命令的帮助.\n    {example}\t查看示例.\n");
+            let flag_message: String = if self._exaples.is_empty() {
+                format!("Flags:\n    {help}\t\t显示此命令的帮助.\n")
+            } else {
+                format!("Flags:\n    {help}\t\t显示此命令的帮助.\n    {example}\t查看示例.\n")
+            };
 
             let message = format!(
                 r#"

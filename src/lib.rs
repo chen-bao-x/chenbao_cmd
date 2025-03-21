@@ -57,9 +57,6 @@
 //! app subcommand -h           # 查看帮助文档
 //! app subcommand --help       # 查看帮助文档
 //!
-//!
-//! app subcommand -e           # 查看示例
-//! app subcommand --example    # 查看示例
 //! ```
 //!
 //! ### 4. app 自带的 flags:
@@ -69,9 +66,6 @@
 //!
 //! app -v                      # 查看 app 的版本信息
 //! app --version               # 查看 app 的版本信息
-//!
-//! app -e                      # 查看示例
-//! app --example               # 查看示例
 //! ```
 //!
 //!
